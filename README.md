@@ -1,6 +1,13 @@
 # celltracktech
-R package for working with Cellular Tracking Technologies data
+R package for working with Cellular Tracking Technologies data!  
 
+To install this package, please run:  
+```
+library(devtools)
+install_github('cellular-tracking-technologies/celltracktech')``
+```
+
+An example script using the API tools to download files:  
 ```
 library(celltracktech)
 library(DBI)
