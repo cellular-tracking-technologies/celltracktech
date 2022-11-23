@@ -1,3 +1,4 @@
+#source("~/Documents/celltracktech/R/newdb.R")
 Correct_Colnames <- function(df) {
   rowval <- gsub("^X\\.", "-",  colnames(df))
   rowval <- gsub("^X", "",  rowval)
@@ -35,13 +36,66 @@ stations <- '/station/api/stations/'
 files <- '/station/api/file-list'
 file_types <- c("data", "node-data", "gps", "log", "telemetry", "sensorgnome")
 
+project_list <- function(my_token, myproject=NULL) {
+  projects <- httr::content(httr::POST(host, path = project, body = list(token=my_token), encode="json"))
+  print(projects)
+  projects <- projects[['projects']]
+  #print(projects)
+  if(!is.null(myproject)) {
+    projects <- list(projects[[which(sapply(projects, function(x) x[["name"]]) == myproject)]])
+  }
+  return(projects)
+}
+
+pop_proj <- function(a, conn) {
+  b <- unname(as.data.frame(a))
+  vars <- paste(DBI::dbListFields(conn, "ctt_project"), sep="", collapse=",")
+  insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ","ctt_project"," (",vars,") VALUES ($1, $2) ON CONFLICT DO NOTHING",sep=""))
+  #it is possible you should be using dbSendStatement for all of these
+  DBI::dbBind(insertnew, params=b)
+  DBI::dbClearResult(insertnew)
+
+  basename <- a$name
+  id <- a[['id']]
+  my_stations <- getStations(project_id=id)
+  print("RETURNED FROM API")
+  print(my_stations)
+  mystations <- lapply(my_stations$stations, function(c) {
+    c <- as.data.frame(t(unlist(c)), stringsAsFactors=FALSE)
+
+    c$project_id <- id
+    colnames(c)[colnames(c)=="station.db-id"] <- "db_id"
+    colnames(c)[colnames(c)=="station.id"] <- "station_id"
+    colnames(c)[colnames(c)=="deploy-at"] <- "deploy_at"
+    if (is.null(c$`end-at`)) {
+      c$end_at <- NA} else {colnames(c)[colnames(c)=="end-at"] <- "end_at"}
+    return(c)})
+  mystations <- as.data.frame(dplyr::bind_rows(mystations))
+  MYSTATIONS <- list(unique(mystations$station_id))
+  mystations <- unname(mystations)
+  print("FORMATTED")
+  print(mystations)
+
+  #insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ","station (station_id)"," VALUES ($1)
+  #                                     ON CONFLICT DO NOTHING",sep=""))
+  #dbBind(insertnew, params=MYSTATIONS)
+  #dbClearResult(insertnew)
+
+  vars <- paste(DBI::dbListFields(conn, "ctt_project_station"), sep="", collapse=",")
+  #print(vars)
+  insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ","ctt_project_station"," (",vars,") VALUES ($1, $4, $2, $3, $5)
+                                       ON CONFLICT DO NOTHING",sep=""))
+  DBI::dbBind(insertnew, params=mystations)
+  DBI::dbClearResult(insertnew)
+}
+
 post <- function(endpoint, payload=NULL) {
   payload_to_send <- list(token=my_token)
   if (!is.null(payload)) {
     payload_to_send <- c(payload_to_send, payload)
   }
   print(endpoint)
-  response <- httr::POST(host, path = endpoint, body=payload_to_send,encode="json")
+  response <- httr::POST(host, path = endpoint, body=payload_to_send,encode="json",httr::timeout(300))
   httr::stop_for_status(response)
   return(response)
 }
@@ -68,7 +122,15 @@ downloadFiles <- function(file_id) {
   return(post(endpoint=endpoint, payload=payload))
 }
 
-create_db <- function(conn, projects) {
+#' Create database
+#'
+#' This function allows you to create a blank version of the CTT designed database
+#' @param conn the connection to your local database
+#' @export
+#' @examples
+#' create_db(conn)
+
+create_db <- function(conn) {
 DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS ctt_project
   (
     id	smallint PRIMARY KEY,
@@ -151,48 +213,6 @@ DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS gps
     n_fixes smallint,
     PRIMARY KEY (gps_at, station_id)
   )")
-
-  sapply(projects, function(a) {
-    b <- unname(as.data.frame(a))
-    vars <- paste(DBI::dbListFields(conn, "ctt_project"), sep="", collapse=",")
-    insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ","ctt_project"," (",vars,") VALUES ($1, $2) ON CONFLICT DO NOTHING",sep=""))
-  #it is possible you should be using dbSendStatement for all of these
-    DBI::dbBind(insertnew, params=b)
-    DBI::dbClearResult(insertnew)
-
-    basename <- a$name
-    id <- a[['id']]
-    my_stations <- getStations(project_id=id)
-    print("RETURNED FROM API")
-    print(my_stations)
-    mystations <- lapply(my_stations$stations, function(c) {
-      c <- as.data.frame(t(unlist(c)), stringsAsFactors=FALSE)
-
-      c$project_id <- id
-      colnames(c)[colnames(c)=="station.db-id"] <- "db_id"
-      colnames(c)[colnames(c)=="station.id"] <- "station_id"
-      colnames(c)[colnames(c)=="deploy-at"] <- "deploy_at"
-      if (is.null(c$`end-at`)) {
-        c$end_at <- NA} else {colnames(c)[colnames(c)=="end-at"] <- "end_at"}
-      return(c)})
-    mystations <- as.data.frame(dplyr::bind_rows(mystations))
-    MYSTATIONS <- list(unique(mystations$station_id))
-    mystations <- unname(mystations)
-    print("FORMATTED")
-    print(mystations)
-
-  #insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ","station (station_id)"," VALUES ($1)
-  #                                     ON CONFLICT DO NOTHING",sep=""))
-  #dbBind(insertnew, params=MYSTATIONS)
-  #dbClearResult(insertnew)
-
-    vars <- paste(DBI::dbListFields(conn, "ctt_project_station"), sep="", collapse=",")
-    #print(vars)
-    insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ","ctt_project_station"," (",vars,") VALUES ($1, $4, $2, $3, $5)
-                                       ON CONFLICT DO NOTHING",sep=""))
-    DBI::dbBind(insertnew, params=mystations)
-    DBI::dbClearResult(insertnew)
-  })
 }
 
 querygen <- function(mycont) {
@@ -269,10 +289,23 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin, readin=NULL) {
                                            ON CONFLICT DO NOTHING",sep=""))
         DBI::dbBind(insertnew, params=list(unique(nodeids)))
         DBI::dbClearResult(insertnew)
+
+        nodecheck <- contents[!is.na(contents$NodeId),]
+        nodecheck <- nodecheck[!duplicated(nodecheck[c("Time", "TagId", "NodeId", "TagRSSI")]),]
+        badrec <- nodecheck[duplicated(nodecheck[c("Time", "TagId", "NodeId")]),]
+        if (nrow(badrec) > 0) {
+          nodecheck$id <- paste(nodecheck$Time, nodecheck$TagId, nodecheck$NodeId)
+          badrec$id <- paste(badrec$Time, badrec$TagId, badrec$NodeId)
+          nodecheck <- nodecheck[!nodecheck$id %in% badrec$id,]
+          nodecheck$id <- NULL
+        }
+        print(nrow(nodecheck))
+        contents <- rbind(nodecheck, contents[is.na(contents$NodeId),])
       }
       if(length(which(nchar(contents$TagId) != 8)) > 0) {
         contents <- contents[-which(nchar(contents$TagId) != 8),] #drop rows where TagId not 8 characters
       }
+
       names(contents) <- sapply(names(contents), function(x) gsub('([[:lower:]])([[:upper:]])', '\\1_\\2', x))
       #if(fix=TRUE) {
       #  query <- querygen(contents[1,])
@@ -521,16 +554,10 @@ return(failed)}
 #' get_my_data(token, "~/mydata", myproject="Project Name from CTT Account")
 
 get_my_data <- function(my_token, outpath, db_name=NULL, myproject=NULL, mystation=NULL, begin=NULL, end=NULL) {
-  projects <- httr::content(httr::POST(host, path = project, body = list(token=my_token), encode="json"))
-  print(projects)
-  projects <- projects[['projects']]
-  #print(projects)
-  if(!is.null(myproject)) {
-    projects <- list(projects[[which(sapply(projects, function(x) x[["name"]]) == myproject)]])
-  }
-
+  projects <- project_list(my_token, myproject)
   if(!is.null(db_name)) {
-    create_db(db_name, projects)
+    create_db(db_name) #EDIT TO TAKE NEW create_db() when you switch back!
+    sapply(projects, pop_proj, conn=conn)
     failed <- lapply(projects, get_data, f=db_name, outpath=outpath, my_station=mystation, beginning=begin, ending=end)
   } else {
       failed <- lapply(projects, get_data, outpath=outpath, my_station=mystation, beginning=begin, ending=end)
@@ -584,14 +611,14 @@ update_db <- function(d, outpath, myproject, fix=FALSE) {
   files_import <- myfiles[which(!files_loc %in% filesdone)]
   write.csv(files_import, file.path(outpath,"files.csv"))
   failed2 <- lapply(files_import, get_files_import, conn=d, outpath=outpath, myproject=myproject)
-  faul <- which(!sapply(failed2[[1]], is.null))
-  if(length(faul) > 0) {
-  failed2 <- Map(`[`, failed2, faul)
-  resave(failed2, file=file.path(outpath, "caught.RData"))
-  } else {
-    failed2 <- "all good!"
-    resave(failed2, file=file.path(outpath, "caught.RData"))
-    }
+  #faul <- which(!sapply(failed2[[1]], is.null))
+  #if(length(faul) > 0) {
+  #failed2 <- Map(`[`, failed2, faul)
+  #resave(failed2, file=file.path(outpath, "caught.RData"))
+  #} else {
+  #  failed2 <- "all good!"
+  #  resave(failed2, file=file.path(outpath, "caught.RData"))
+  #  }
 }
 
 get_files_import <- function(e, conn, outpath, myproject) {
@@ -605,6 +632,7 @@ get_files_import <- function(e, conn, outpath, myproject) {
   sensor <- sensorid[1]
   i <- DBI::dbReadTable(conn, "ctt_project_station")
   begin <- i[i$station_id==sensor,]$deploy_at
+  if(length(begin) == 0) {begin <- as.POSIXct("2010-01-01")}
   filenameinfo <- sensorid[2]
   file_info <- unlist(strsplit(filenameinfo, "\\."))[1]
   filetype <- ifelse(is.na(as.integer(file_info)),file_info,"sensorgnome")
@@ -649,6 +677,7 @@ get_files_import <- function(e, conn, outpath, myproject) {
           contents[rowfix,] <- fixed
         }
       }
+
       } else if(filetype=="gps") {
         if(length(delete.columns) > 0) {
           if(ncol(contents) > 8) {
