@@ -4,8 +4,6 @@
 #' (combination of time, tag ID and node).
 #' @param conn the connection to your local database
 #' @export
-#' @examples
-#' create_db(conn)
 
 db_cleanup <- function(conn) {
   DBI::dbExecute(conn, "WITH ordered AS (

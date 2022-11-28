@@ -13,6 +13,3 @@ db_cleanup(conn)
 This function allows you to remove records for more than one beep on the same node at the same time. Additionally, it gets rid of all records where RSSI varies for the same beep record
 (combination of time, tag ID and node).
 }
-\examples{
-create_db(conn)
-}
