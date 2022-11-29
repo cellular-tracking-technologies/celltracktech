@@ -225,7 +225,7 @@ querygen <- function(mycont) {
 
 timeset <- function(g) {unname(sapply(g, function(h) ifelse(is.na(h), NA, paste(as.character(h), "UTC"))))}
 
-db_insert <- function(contents, filetype, conn, sensor, y, begin, readin=NULL) {
+db_insert <- function(contents, filetype, conn, sensor, y, begin) {
   print(filetype)
   print(str(contents))
   print(begin)
@@ -240,13 +240,17 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin, readin=NULL) {
     } else {
     contents <- dplyr::filter(contents, Time < Sys.time() & Time > begin)
     }
-    print(contents)
+    #print(contents)
     #contents <- contents[contents$Time < Sys.time() & contents$Time > begin,]
   }
-  contents[,unname(which(sapply(contents, is.POSIXct)))] <- ifelse(nrow(contents[,unname(which(sapply(contents, is.POSIXct)))]) > 1,
-                                                                   tibble::as_tibble(apply(contents[,unname(which(sapply(contents, is.POSIXct)))], 2,
-                                                                                   timeset)),
-    dplyr::bind_rows(apply(contents[,unname(which(sapply(contents, is.POSIXct)))], 2, timeset)))
+
+  if(nrow(contents) > 0) {
+  contents <- contents[!is.na(contents$Time),]
+
+  #contents[,unname(which(sapply(contents, is.POSIXct)))] <- ifelse(nrow(contents[,unname(which(sapply(contents, is.POSIXct)))]) > 1,
+  #                                                                 tibble::as_tibble(apply(contents[,unname(which(sapply(contents, is.POSIXct)))], 2,
+  #                                                                                 timeset)),
+  #  dplyr::bind_rows(apply(contents[,unname(which(sapply(contents, is.POSIXct)))], 2, timeset)))
 
   contents <- data.frame(contents)
 
@@ -281,32 +285,46 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin, readin=NULL) {
     } else if (filetype == "raw") {
       print(names(contents))
       if (!(any(tolower(names(contents))=="validated"))) {contents$validated <- NA}
+
       contents$RadioId <- as.integer(contents$RadioId)
       contents$TagRSSI <- as.integer(contents$TagRSSI)
-      if (length(which(!is.na(contents$NodeId))) > 0) {
-        nodeids <- contents$NodeId[which(!is.na(contents$NodeId))]
+      names(contents) <- sapply(names(contents), function(x) gsub('([[:lower:]])([[:upper:]])', '\\1_\\2', x))
+      names(contents) <- tolower(names(contents))
+      if(is.na(sensor)) {
+        mmy <- paste0("select * from raw where time between '", min(contents$time),"' and '", max(contents$time), "'")
+        sametime <- dbGetQuery(conn, mmy)
+        sametime$id <- NULL
+        contents <- rbind(sametime, contents)
+      }
+
+      if (length(which(!is.na(contents$node_id))) > 0) {
+        nodeids <- contents$node_id[which(!is.na(contents$node_id))]
         insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ","nodes (node_id)"," VALUES ($1)
                                            ON CONFLICT DO NOTHING",sep=""))
         DBI::dbBind(insertnew, params=list(unique(nodeids)))
         DBI::dbClearResult(insertnew)
 
-        nodecheck <- contents[!is.na(contents$NodeId),]
-        nodecheck <- nodecheck[!duplicated(nodecheck[c("Time", "TagId", "NodeId", "TagRSSI")]),]
-        badrec <- nodecheck[duplicated(nodecheck[c("Time", "TagId", "NodeId")]),]
+        nodecheck <- contents[!is.na(contents$node_id),]
+        nodecheck <- nodecheck[!duplicated(nodecheck[c("time", "tag_id", "node_id", "tag_rssi")]),]
+        badrec <- nodecheck[duplicated(nodecheck[c("time", "tag_id", "node_id")]),]
         if (nrow(badrec) > 0) {
-          nodecheck$id <- paste(nodecheck$Time, nodecheck$TagId, nodecheck$NodeId)
-          badrec$id <- paste(badrec$Time, badrec$TagId, badrec$NodeId)
+          nodecheck$id <- paste(nodecheck$time, nodecheck$tag_id, nodecheck$node_id)
+          badrec$id <- paste(badrec$time, badrec$tag_id, badrec$node_id)
           nodecheck <- nodecheck[!nodecheck$id %in% badrec$id,]
           nodecheck$id <- NULL
         }
         print(nrow(nodecheck))
-        contents <- rbind(nodecheck, contents[is.na(contents$NodeId),])
-      }
-      if(length(which(nchar(contents$TagId) != 8)) > 0) {
-        contents <- contents[-which(nchar(contents$TagId) != 8),] #drop rows where TagId not 8 characters
+        contents <- rbind(nodecheck, contents[is.na(contents$node_id),])
+
+        if(is.na(sensor)) {
+          contents <- contents[is.na(contents$station_id),]
+        }
       }
 
-      names(contents) <- sapply(names(contents), function(x) gsub('([[:lower:]])([[:upper:]])', '\\1_\\2', x))
+      if(length(which(nchar(contents$tag_id) != 8)) > 0) {
+        contents <- contents[-which(nchar(contents$tag_id) != 8),] #drop rows where TagId not 8 characters
+      }
+
       #if(fix=TRUE) {
       #  query <- querygen(contents[1,])
       #  res <- DBI::dbGetQuery(conn, paste0("select * from raw where ", query))
@@ -350,7 +368,6 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin, readin=NULL) {
       if (filetype == "raw") {
         vars <- paste(DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))], sep="", collapse=",")
         vals <- paste(seq_along(1:(length(DBI::dbListFields(conn, filetype))-1)), sep="", collapse = ", $")
-        names(contents) <- tolower(names(contents))
         contents <- contents[,DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]]
       } else {
       vars <- paste(DBI::dbListFields(conn, filetype), sep="", collapse=",")
@@ -385,7 +402,7 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin, readin=NULL) {
         }
         )
     }
-  }
+  }}
   if(!exists("h")) {h <- NULL}
 return(h)}
 
@@ -632,7 +649,7 @@ get_files_import <- function(e, conn, outpath, myproject) {
   sensor <- sensorid[1]
   i <- DBI::dbReadTable(conn, "ctt_project_station")
   begin <- i[i$station_id==sensor,]$deploy_at
-  if(length(begin) == 0) {begin <- as.POSIXct("2010-01-01")}
+  if(length(begin) == 0) {begin <- as.POSIXct("2018-01-01")}
   filenameinfo <- sensorid[2]
   file_info <- unlist(strsplit(filenameinfo, "\\."))[1]
   filetype <- ifelse(is.na(as.integer(file_info)),file_info,"sensorgnome")
@@ -698,7 +715,7 @@ get_files_import <- function(e, conn, outpath, myproject) {
       #if(fix=TRUE) {
       #z <- db_insert(contents, filetype, conn, sensor, y, begin, fix=TRUE)
       #} else {
-        z <- db_insert(contents, filetype, conn, sensor, y, begin, readin=e)
+        z <- db_insert(contents, filetype, conn, sensor, y, begin)
       #}
       }
   }
