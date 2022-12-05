@@ -241,11 +241,11 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
     contents <- dplyr::filter(contents, Time < Sys.time() & Time > begin)
     }
     #print(contents)
-    #contents <- contents[contents$Time < Sys.time() & contents$Time > begin,]
-  }
+    if(nrow(contents) > 0) {
+      contents <- contents[!is.na(contents$Time),]
+  }}
 
-  if(nrow(contents) > 0) {
-  contents <- contents[!is.na(contents$Time),]
+
 
   #contents[,unname(which(sapply(contents, is.POSIXct)))] <- ifelse(nrow(contents[,unname(which(sapply(contents, is.POSIXct)))]) > 1,
   #                                                                 tibble::as_tibble(apply(contents[,unname(which(sapply(contents, is.POSIXct)))], 2,
