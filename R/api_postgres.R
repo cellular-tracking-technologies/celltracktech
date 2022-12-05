@@ -402,7 +402,7 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
         }
         )
     }
-  }}
+  }
   if(!exists("h")) {h <- NULL}
 return(h)}
 
