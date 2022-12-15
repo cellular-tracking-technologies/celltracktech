@@ -226,9 +226,9 @@ querygen <- function(mycont) {
 timeset <- function(g) {unname(sapply(g, function(h) ifelse(is.na(h), NA, paste(as.character(h), "UTC"))))}
 
 db_insert <- function(contents, filetype, conn, sensor, y, begin) {
-  print(filetype)
-  print(str(contents))
-  print(begin)
+  #print(filetype)
+  #print(str(contents))
+  #print(begin)
   if("Time" %in% colnames(contents)) {
     if(is.character(contents$Time)) { #does this just handle 1 broken date? if so, what happens when there are more broken rows?
       DatePattern = '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T, ][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?'
@@ -283,7 +283,7 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
     #  }
     #}
     } else if (filetype == "raw") {
-      print(names(contents))
+      #print(names(contents))
       if (!(any(tolower(names(contents))=="validated"))) {contents$validated <- NA}
 
       contents$RadioId <- as.integer(contents$RadioId)
@@ -313,7 +313,7 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
           nodecheck <- nodecheck[!nodecheck$id %in% badrec$id,]
           nodecheck$id <- NULL
         }
-        print(nrow(nodecheck))
+        #print(nrow(nodecheck))
         contents <- rbind(nodecheck, contents[is.na(contents$node_id),])
 
         if(is.na(sensor)) {

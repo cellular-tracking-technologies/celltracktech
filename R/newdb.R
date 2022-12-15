@@ -63,6 +63,7 @@ import_node_data <- function(d, outpath, myproject=NULL) {
 
 load_node_data <- function(e, conn, outpath, myproject) {
   #e <- file.path(outpath, "nodes", e)
+  print(e)
   file <- tail(unlist(strsplit(e, "/")), n=2)
   y <- paste(file, collapse="/")
   sensor <- NA
