@@ -14,5 +14,5 @@ node_file <- function(health) {
   colnames(health)[colnames(health)=="latitude"] <- "lat"
   colnames(health)[colnames(health)=="longitude"] <- "lng"
   colnames(health)[colnames(health)=="Group.1"] <- "NodeId"
-  wells_sf <- sf::st_as_sf(health, coords = c("lng","lat"))
+  wells_sf <- sf::st_as_sf(health, coords = c("lng","lat"), crs=4326)
   return(wells_sf)}
