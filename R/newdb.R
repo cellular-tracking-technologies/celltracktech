@@ -77,14 +77,18 @@ load_node_data <- function(e, conn, outpath, myproject) {
 
   if(length(begin) == 0) {begin <- as.POSIXct("2018-01-01")}
   filetype <- "raw"
+  #runs = split(seq_along(badlines), cumsum(c(0, diff(badlines) > 1)))
+  #lapply(runs[lengths(runs) > 1], range)
   df <- tryCatch({
     if (file.size(e) > 0) {
-        read.csv(e,as.is=TRUE, na.strings=c("NA", ""), colClasses=c("id"="character"), skipNul = TRUE)
+        read.csv(e,header=TRUE,as.is=TRUE, na.strings=c("NA", ""), colClasses=c("id"="character"), skipNul = TRUE)
     }}, error = function(err) {
         # error handler picks up where error was generated
         print("ignoring file", e, "- no data")
         return(NULL)
     })
+  badlines <- grep("[^ -~]", df$time)
+  df <- df[-badlines,]
     #if(!all((c("time", "id", "rssi") %in% colnames(df)))) {df <- NULL}
   if(!is.null(df)) {
     df$NodeId <- toupper(file[1])
