@@ -89,7 +89,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
     })
   badlines <- grep("[^ -~]", df$time)
   df <- df[-badlines,]
-  badlines <- grep("[[:digit:]]", df$time, invert=TRUE)
+  badlines <- grep("[[:digit:]]-", df$time, invert=TRUE)
   df <- df[-badlines,]
     #if(!all((c("time", "id", "rssi") %in% colnames(df)))) {df <- NULL}
   if(!is.null(df)) {
