@@ -1,6 +1,6 @@
 #' Make the node file
 #'
-#' This function allows you to create the node location file from your node health data.
+#' This function allows you to create the node location spatial data frame from your node health data.
 #' @param health a data frame of node health data pulled from your local database
 #' @export
 
