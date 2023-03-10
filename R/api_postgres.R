@@ -254,10 +254,9 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
 
   contents <- data.frame(contents)
 
-  contents$station_id <- sensor
-  contents$path <- y
-
-  if(!is.null(contents)) {
+  if(!is.null(contents) & nrow(contents) > 0) {
+    contents$station_id <- sensor
+    contents$path <- y
     if (filetype == "gps") {
       colnames(contents)[colnames(contents)=="recorded.at"] <- "recorded_at"
       contents$recorded_at <- as.character(contents$recorded_at)
