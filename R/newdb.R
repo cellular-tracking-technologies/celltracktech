@@ -88,9 +88,9 @@ load_node_data <- function(e, conn, outpath, myproject) {
         return(NULL)
     })
   badlines <- grep("[^ -~]", df$time)
-  if length(badlines) > 0 { df <- df[-badlines,]}
+  if (length(badlines) > 0) { df <- df[-badlines,]}
   badlines <- grep("[[:digit:]]-", df$time, invert=TRUE)
-  if length(badlines) > 0 { df <- df[-badlines,]}
+  if (length(badlines) > 0) { df <- df[-badlines,]}
     #if(!all((c("time", "id", "rssi") %in% colnames(df)))) {df <- NULL}
   if(!is.null(df)) {
     df$NodeId <- toupper(file[1])
