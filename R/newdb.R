@@ -141,6 +141,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
     df$TagId <- df$id
     df$id <- NULL
     df$TagRSSI <- as.integer(df$rssi)
+    df <- df[!is.na(df$TagRSSI),]
     df$rssi <- NULL
     df$Validated <- 0
     validated <- which(nchar(df$TagId) == 10)
