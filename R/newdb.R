@@ -32,7 +32,6 @@ to_delete AS (
 delete from raw using to_delete where raw.time = to_delete.time and raw.node_id = to_delete.node_id and raw.tag_id =to_delete.tag_id") #2022-04-04 19:43:43-04 1933552D 377c59
 }
 
-
 #' Incorporate node data
 #'
 #' This function allows you to include data pulled directly from your nodes. Create a folder called "nodes" and create sub-folders named for each node ID.
@@ -62,6 +61,13 @@ import_node_data <- function(d, outpath, myproject=NULL) {
 }
 
 load_node_data <- function(e, conn, outpath, myproject) {
+  Correct_Colnames <- function(df) {
+    rowval <- gsub("^X\\.", "-",  colnames(df))
+    rowval <- gsub("^X", "",  rowval)
+    DatePattern = '^[[:digit:]]{4}\\.[[:digit:]]{2}\\.[[:digit:]]{2}[T,\\.][[:digit:]]{2}\\.[[:digit:]]{2}\\.[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?'
+    #rowval[which(grepl(DatePattern,rowval))] <- as.character(as.POSIXct(rowval[grepl(DatePattern,rowval)], format="%Y.%m.%d.%H.%M.%S", tz="UTC"))
+    return(rowval)}
+
   #e <- file.path(outpath, "nodes", e)
   print(e)
   file <- tail(unlist(strsplit(e, "/")), n=2)
@@ -86,7 +92,38 @@ load_node_data <- function(e, conn, outpath, myproject) {
         # error handler picks up where error was generated
         print("ignoring file", e, "- no data")
         return(NULL)
+    }, warning = function(w) {
+
+      x <- read.csv(e,header=TRUE,as.is=TRUE, na.strings=c("NA", ""), skipNul = TRUE)
+      x <- rbind(x,Correct_Colnames(x))
+      colnames(x) <- c("time", "id", "rssi")
+      return(x)
     })
+  badlines <- grep("[^ -~]", df$id)
+  if (length(badlines) > 0) {
+    salvage <- df[badlines,]
+    df <- df[-badlines,]
+    DatePattern = '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T,\\.][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?'
+    salvage <- salvage[which(grepl(DatePattern,salvage$id)),]
+    if (nrow(salvage) > 0) {
+    fil <- tempfile("test")
+    #MAY BREAK WITH MORE THAN 1 ROW
+    cat(salvage$id, file = fil)
+    addin <- readLines(fil)
+    unlink(fil)
+
+    badlines <- grep("[^ -~]", addin)
+    addin <- addin[-badlines]
+
+    fil <- tempfile()
+    cat(addin, file = fil,
+        sep = "\n")
+    svarhis <- read.csv(fil, header=FALSE, col.names=c("time", "id", "rssi"))
+    unlink(fil)
+    df <- rbind(df, svarhis)
+    }
+    #savethis <- regexpr("[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T,\\.][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?.*",salvage$id)
+    }
   badlines <- grep("[^ -~]", df$time)
   if (length(badlines) > 0) { df <- df[-badlines,]}
   badlines <- grep("[[:digit:]]-", df$time, invert=TRUE)
@@ -96,6 +133,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
     df$NodeId <- toupper(file[1])
     time = "UTC"
     df$Time <- as.POSIXct(df$time,format="%Y-%m-%dT%H:%M:%SZ",tz = time, optional=TRUE)
+    df <- df[!is.na(df$Time),]
     df$time <- NULL
   #nodes <- nodes[nodes$Time > as.POSIXct("2020-08-20"),]
     df <- df[order(df$Time),]
