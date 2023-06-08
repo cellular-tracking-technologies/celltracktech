@@ -289,12 +289,12 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
       contents$TagRSSI <- as.integer(contents$TagRSSI)
       names(contents) <- sapply(names(contents), function(x) gsub('([[:lower:]])([[:upper:]])', '\\1_\\2', x))
       names(contents) <- tolower(names(contents))
-      if(is.na(sensor)) {
-        mmy <- paste0("select * from raw where time between '", min(contents$time),"' and '", max(contents$time), "'")
-        sametime <- dbGetQuery(conn, mmy)
-        sametime$id <- NULL
-        contents <- rbind(sametime, contents)
-      }
+      #if(is.na(sensor)) {
+      #  mmy <- paste0("select * from raw where time between '", min(contents$time),"' and '", max(contents$time), "'")
+      #  sametime <- dbGetQuery(conn, mmy)
+      #  sametime$id <- NULL
+      #  contents <- rbind(sametime, contents)
+      #}
 
       if (length(which(!is.na(contents$node_id))) > 0) {
         nodeids <- contents$node_id[which(!is.na(contents$node_id))]

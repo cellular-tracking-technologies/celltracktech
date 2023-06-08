@@ -1,6 +1,6 @@
 Package: celltracktech
 Title: Cellular Tracking Technologies
-Version: 0.0.0.9000
+Version: 1.0.0.0000
 Authors@R: 
     person(given = "Jessica",
            family = "Gorzo",

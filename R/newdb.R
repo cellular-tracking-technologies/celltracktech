@@ -51,7 +51,8 @@ delete from raw using to_delete where raw.time = to_delete.time and raw.node_id 
 import_node_data <- function(d, outpath, myproject=NULL) {
   myout <- outpath
   if(!is.null(myproject)) {myout <- file.path(outpath,myproject)}
-  myfiles <- list.files(file.path(myout, "nodes"), pattern="beep",recursive = TRUE, full.names = TRUE)
+  myfiles <- list.files(file.path(myout, "nodes"), pattern="beep.*csv",recursive = TRUE, full.names = TRUE)
+  print(myfiles)
   files_loc <- sapply(strsplit(myfiles, "/"), tail, n=2)
   files <- paste(files_loc[1,],files_loc[2,],sep="/")
   allnode <- DBI::dbReadTable(d, "data_file")
