@@ -115,13 +115,18 @@ load_node_data <- function(e, conn, outpath, myproject) {
 
     badlines <- grep("[^ -~]", addin)
     addin <- addin[-badlines]
-
     fil <- tempfile()
     cat(addin, file = fil,
         sep = "\n")
-    svarhis <- read.csv(fil, header=FALSE, col.names=c("time", "id", "rssi"))
+    svarhis <- tryCatch({
+      svarhis <- read.csv(fil, header=FALSE, col.names=c("time", "id", "rssi"))
+      }, error = function(err) {
+        # error handler picks up where error was generated
+        data.frame()
+      })
     unlink(fil)
     df <- rbind(df, svarhis)
+
     }
     #savethis <- regexpr("[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T,\\.][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?.*",salvage$id)
     }
