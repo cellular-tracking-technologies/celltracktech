@@ -34,7 +34,7 @@ host <- 'https://api.internetofwildlife.com/'
 project <- '/station/api/projects'
 stations <- '/station/api/stations/'
 files <- '/station/api/file-list'
-file_types <- c("data", "node-data", "gps", "log", "telemetry", "sensorgnome")
+file_types <- c("data", "node-data", "gps", "log", "telemetry", "sensorgnome", "ble")
 
 project_list <- function(my_token, myproject=NULL) {
   projects <- httr::content(httr::POST(host, path = project, body = list(token=my_token), encode="json"))
@@ -478,7 +478,7 @@ get_data <- function(thisproject, outpath, f=NULL, my_station, beginning, ending
       filetype <- "raw"
     }
 
-    if (filetype != "log" & filetype != "telemetry" & filetype != "sensorgnome") {
+    if (filetype != "log" & filetype != "sensorgnome") {
       contents = downloadFiles(file_id = x)
       if (filetype == "raw") {
         contents <- httr::content(contents, type="text", col_types = list(NodeId = 'c'))
@@ -514,7 +514,9 @@ get_data <- function(thisproject, outpath, f=NULL, my_station, beginning, ending
             } else {names(contents) <- c("Time","RadioId","TagId","TagRSSI","NodeId")}
           }
           v <- ifelse(any(colnames(contents)=="Validated"), 2, 1)
+          v <- ifelse(any(colnames(contents)=="Type"), 3, 1)
           correct <- ifelse(v < 2, 5, 6)
+          correct <- ifelse(v > 2, 7, 6)
           indx <- count.fields(file.path(outpath, basename, sensor, filetype, y), sep=",")
           if(any(indx != correct)) {
             rowfix <- which(indx != correct) - 1
