@@ -94,8 +94,8 @@ post <- function(endpoint, payload=NULL) {
   if (!is.null(payload)) {
     payload_to_send <- c(payload_to_send, payload)
   }
-  print(endpoint)
-  response <- httr::POST(host, path = endpoint, body=payload_to_send,encode="json",httr::timeout(300))
+  #print(endpoint)
+  response <- httr::POST(host, path = endpoint, body=payload_to_send,encode="json",httr::timeout(300)) #encode="json",
   httr::stop_for_status(response)
   return(response)
 }
@@ -119,7 +119,18 @@ return(httr::content(post(endpoint=endpoint, payload=payload)))}
 downloadFiles <- function(file_id) {
   endpoint <- "/station/api/download-file/"
   payload <- list("file-id"=file_id)
-  return(post(endpoint=endpoint, payload=payload))
+  response <- tryCatch(
+    {
+      post(endpoint=endpoint, payload=payload)
+    }, error = function(cond) {
+      message("Here's the original error message:")
+      message(conditionMessage(cond))
+      payload <- c(payload, "bypass-encoding"="plain")
+      # Choose a return value in case of error
+      post(endpoint=endpoint, payload=payload)
+    }
+  )
+  return(response)
 }
 
 #' Create database
@@ -479,6 +490,8 @@ get_data <- function(thisproject, outpath, f=NULL, my_station, beginning, ending
     }
 
     if (filetype != "log" & filetype != "sensorgnome") {
+      print(paste("downloading",y,"to",file.path(outpath, basename, sensor, filetype)))
+      print(x)
       contents = downloadFiles(file_id = x)
       if (filetype == "raw") {
         contents <- httr::content(contents, type="text", col_types = list(NodeId = 'c'))
