@@ -514,7 +514,12 @@ get_data <- function(thisproject, outpath, f=NULL, my_station, beginning, ending
         delete.columns <- grep("[[:digit:]]", colnames(contents), perl=T)
         if (length(delete.columns) > 0) {
           newcontents <- tryCatch({
-            rbind(contents,Correct_Colnames(contents))
+            rowfix <- Correct_Colnames(contents)
+            rowfix[2] <- substring(Correct_Colnames(contents)[2],1,1)
+            rowfix[6] <- substring(Correct_Colnames(contents)[6],1,1)
+            rowfix <- data.frame(as.POSIXct(rowfix[1], tz="UTC"), as.integer(rowfix[2]), rowfix[3], rowfix[4], rowfix[5], as.integer(rowfix[6]))
+            names(rowfix) <- names(contents)
+            rbind(contents, rowfix)
           }, error = function(err) {
             return(contents)
           })
@@ -527,11 +532,11 @@ get_data <- function(thisproject, outpath, f=NULL, my_station, beginning, ending
             } else {names(contents) <- c("Time","RadioId","TagId","TagRSSI","NodeId")}
           }
           v <- ifelse(any(colnames(contents)=="Validated"), 2, 1)
-          v <- ifelse(any(colnames(contents)=="Type"), 3, 1)
+          #v <- ifelse(any(colnames(contents)=="Type"), 3, 1)
           correct <- ifelse(v < 2, 5, 6)
-          correct <- ifelse(v > 2, 7, 6)
+          #correct <- ifelse(v > 2, 7, 6)
           indx <- count.fields(file.path(outpath, basename, sensor, filetype, y), sep=",")
-          if(any(indx != correct)) {
+          if(any(indx > correct)) {
             rowfix <- which(indx != correct) - 1
             rowlen <- indx[which(indx != correct)] #what if this is more than 1 row?
             if(length(rowfix) < 2) {
@@ -540,6 +545,17 @@ get_data <- function(thisproject, outpath, f=NULL, my_station, beginning, ending
              fixed <- Map(fixrow, rowlen, rowfix, MoreArgs=list(e=e, DatePattern=DatePattern, correct=correct))
              fixed <- data.table::rbindlist(fixed, use.names=FALSE)
              contents[rowfix,] <- fixed
+            }
+          } else if(any(indx < correct)) {
+            rowfix <- which(indx != correct) - 1
+            rowlen <- indx[which(indx != correct)] #what if this is more than 1 row?
+            if(length(rowfix) < 2) {
+             datetest <- tryCatch({
+                as.POSIXct(contents[rowfix,1])
+              }, error = function(cond) {
+                NA
+              })
+             if(!is.POSIXct(datetest)) {contents <- contents[-rowfix,]}
             }
           }
         } else if(filetype=="gps") {
