@@ -248,7 +248,7 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
       exactDatePattern = '^[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T, ][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?$'
       brokenrow <- grep(exactDatePattern, contents$Time, invert=TRUE) #find row that has a date embedded in a messed up string (i.e. interrupted rows)
       contents[brokenrow,1]<- substring(contents[brokenrow,1], regexpr(DatePattern, contents[brokenrow,1]))
-      contents$Time <- as.POSIXct(contents$Time)
+      contents$Time <- as.POSIXct(contents$Time, tz="UTC")
       contents <- dplyr::filter(contents, Time < Sys.time() & Time > begin)
     } else {
     contents <- dplyr::filter(contents, Time < Sys.time() & Time > begin)
@@ -507,80 +507,7 @@ get_data <- function(thisproject, outpath, f=NULL, my_station, beginning, ending
       print(x)
       write(contents, file=gzfile(file.path(outpath, basename, sensor, filetype, y)))
       e <- file.path(outpath, basename, sensor, filetype, y)
-      contents <- tryCatch({
-          readr::read_csv(e, col_names = TRUE)
-        }, error = function(err) {
-          return(NULL)
-        })
-      if(!is.null(contents)) {
-        delete.columns <- grep("[[:digit:]]", colnames(contents), perl=T)
-        if (length(delete.columns) > 0) {
-          rowfix <- tryCatch({
-            rowfix <- Correct_Colnames(contents)
-            rowfix[2] <- substring(Correct_Colnames(contents)[2],1,1)
-            rowfix[6] <- strsplit(Correct_Colnames(contents)[6],"[.]")[[1]][1]
-            #rowfix <- data.frame(as.POSIXct(rowfix[1], tz="UTC"), as.integer(rowfix[2]), rowfix[3], rowfix[4], rowfix[5], as.integer(rowfix[6]))
-            rowfix
-            #names(rowfix) <- names(contents)
-            #rbind(contents, rowfix)
-          }, error = function(err) {
-            return(data.frame())
-          })
-          #contents <- newcontents
-        }
-        if(filetype == "raw") {
-          if (length(delete.columns) > 0) {
-            if(ncol(contents) > 5) {
-              names(contents) <- c("Time","RadioId","TagId","TagRSSI","NodeId","Validated")
-              if(length(rowfix) > 0) {
-              rowfix <- data.frame(as.POSIXct(rowfix[1], tz="UTC"), as.integer(rowfix[2]), rowfix[3], rowfix[4], rowfix[5], as.integer(rowfix[6]))
-              names(rowfix) <- names(contents)
-              contents <- rbind(contents, rowfix)}
-            } else {names(contents) <- c("Time","RadioId","TagId","TagRSSI","NodeId")}
-          }
-          v <- ifelse(any(colnames(contents)=="Validated"), 2, 1)
-          #v <- ifelse(any(colnames(contents)=="Type"), 3, 1)
-          correct <- ifelse(v < 2, 5, 6)
-          #correct <- ifelse(v > 2, 7, 6)
-          indx <- count.fields(file.path(outpath, basename, sensor, filetype, y), sep=",")
-          if(any(indx > correct)) {
-            rowfix <- which(indx != correct) - 1
-            rowlen <- indx[which(indx != correct)] #what if this is more than 1 row?
-            if(length(rowfix) < 2) {
-              contents[rowfix,] <- fixrow(rowlen,rowfix,e,correct,DatePattern)
-            } else {
-             fixed <- Map(fixrow, rowlen, rowfix, MoreArgs=list(e=e, DatePattern=DatePattern, correct=correct))
-             fixed <- data.table::rbindlist(fixed, use.names=FALSE)
-             contents[rowfix,] <- fixed
-            }
-          } else if(any(indx < correct)) {
-            rowfix <- which(indx != correct) - 1
-            rowlen <- indx[which(indx != correct)] #what if this is more than 1 row?
-            if(length(rowfix) < 2) {
-             datetest <- tryCatch({
-                as.POSIXct(contents[rowfix,1])
-              }, error = function(cond) {
-                NA
-              })
-             if(!is.POSIXct(datetest)) {contents <- contents[-rowfix,]}
-            }
-          }
-        } else if(filetype=="gps") {
-          if(length(delete.columns) > 0) {
-            if(ncol(contents) > 8) {
-              names(contents) <- c("recorded.at","gps.at","latitude","longitude","altitude","quality","mean.lat","mean.lng","n.fixes")
-            } else {names(contents) <- c("recorded.at","gps.at","latitude","longitude","altitude","quality")}
-            }
-        } else if(filetype == "node_health") {
-          if (length(delete.columns) > 0) {
-            if(ncol(contents) > 9) {
-              names(contents) <- c("Time","RadioId","NodeId","NodeRssi","Battery","celsius","RecordedAt","firmware","SolarVolts","SolarCurrent","CumulativeSolarCurrent","latitude","longitude")
-            } else {
-               names(contents) <- c("Time","RadioId","NodeId","NodeRssi","Battery","celsius")
-            }
-          }
-        }
-        }
+      contents <- file_handle(e)
       if(!is.null(f)) {
         print(begin)
         z <- db_insert(contents, filetype, f, sensor, y, begin)
@@ -592,6 +519,95 @@ get_data <- function(thisproject, outpath, f=NULL, my_station, beginning, ending
 
 failed <- Map(get_files, ids, file_names)
 return(failed)}
+
+badrow <- function(e, correct, contents) {
+  indx <- count.fields(e, sep=",")
+  if(any(indx > correct)) {
+    rowfix <- which(indx != correct) - 1
+    rowlen <- indx[which(indx != correct)] #what if this is more than 1 row?
+    if(length(rowfix) < 2) {
+      contents[rowfix,] <- fixrow(rowlen,rowfix,e,correct,DatePattern)
+    } else {
+      fixed <- Map(fixrow, rowlen, rowfix, MoreArgs=list(e=e, DatePattern=DatePattern, correct=correct))
+      fixed <- data.table::rbindlist(fixed, use.names=FALSE)
+      contents[rowfix,] <- fixed
+    }
+  } else if(any(indx < correct)) {
+    rowfix <- which(indx != correct) - 1
+    rowlen <- indx[which(indx != correct)] #what if this is more than 1 row?
+    if(length(rowfix) < 2) {
+      datetest <- tryCatch({
+        as.POSIXct(contents[rowfix,1])
+      }, error = function(cond) {
+        NA
+      })
+      if(!is.POSIXct(datetest)) {contents <- contents[-rowfix,]}
+    }
+  }
+return(contents)}
+
+file_handle <- function(e, filetype) {
+  contents <- tryCatch({
+    readr::read_csv(e, col_names = TRUE)
+  }, error = function(err) {
+    return(NULL)
+  })
+  if(!is.null(contents)) {
+    delete.columns <- grep("[[:digit:]]", colnames(contents), perl=T)
+    if (length(delete.columns) > 0) {
+      rowfix <- tryCatch({
+        myrowfix <- Correct_Colnames(contents)
+        myrowfix[2] <- substring(Correct_Colnames(contents)[2],1,1)
+        myrowfix[6] <- strsplit(Correct_Colnames(contents)[6],"[.]")[[1]][1]
+        #rowfix <- data.frame(as.POSIXct(rowfix[1], tz="UTC"), as.integer(rowfix[2]), rowfix[3], rowfix[4], rowfix[5], as.integer(rowfix[6]))
+        myrowfix
+        #names(rowfix) <- names(contents)
+        #rbind(contents, rowfix)
+      }, error = function(err) {
+        return(data.frame())
+      })
+      #contents <- newcontents
+    }
+    if(filetype == "raw") {
+      if (length(delete.columns) > 0) {
+        if(ncol(contents) > 5) {
+          names(contents) <- c("Time","RadioId","TagId","TagRSSI","NodeId","Validated")
+          if(length(rowfix) > 0) {
+            rowfix <- data.frame(as.POSIXct(rowfix[1], tz="UTC"), as.integer(rowfix[2]), rowfix[3], rowfix[4], rowfix[5], as.integer(rowfix[6]))
+            names(rowfix) <- names(contents)
+            contents <- rbind(contents, rowfix)}
+        } else {names(contents) <- c("Time","RadioId","TagId","TagRSSI","NodeId")}
+      }
+      v <- ifelse(any(colnames(contents)=="Validated"), 2, 1)
+      #v <- ifelse(any(colnames(contents)=="Type"), 3, 1)
+      correct <- ifelse(v < 2, 5, 6)
+      #correct <- ifelse(v > 2, 7, 6)
+      contents <- badrow(e, correct, contents)
+    } else if(filetype=="gps") {
+      if(length(delete.columns) > 0) {
+        if(ncol(contents) > 8) {
+          names(contents) <- c("recorded.at","gps.at","latitude","longitude","altitude","quality","mean.lat","mean.lng","n.fixes")
+        } else {names(contents) <- c("recorded.at","gps.at","latitude","longitude","altitude","quality")}
+      }
+    } else if(filetype == "node_health") {
+      v <- ifelse(ncol(contents) > 9, 2, 1)
+      correct <- ifelse(v < 2, 6, 13)
+      if (length(delete.columns) > 0) {
+        if(ncol(contents) > 9) {
+          names(contents) <- c("Time","RadioId","NodeId","NodeRssi","Battery","celsius","RecordedAt","firmware","SolarVolts","SolarCurrent","CumulativeSolarCurrent","latitude","longitude")
+          if(length(rowfix) > 0) {
+            myrowfix <- data.frame(rowfix[1], as.integer(rowfix[2]), rowfix[3], as.integer(rowfix[4]), as.numeric(rowfix[5]), as.numeric(rowfix[6]), as.POSIXct(rowfix[7], tz="UTC"), rowfix[8], as.numeric(rowfix[9]), as.numeric(rowfix[10]), as.numeric(rowfix[11]), as.numeric(rowfix[12]), as.numeric(rowfix[13]))
+            names(myrowfix) <- names(contents)
+            contents <- rbind(contents, myrowfix)
+          } else {
+            names(contents) <- c("Time","RadioId","NodeId","NodeRssi","Battery","celsius")
+          }
+        }
+      }
+      contents <- badrow(e, correct, contents)
+    }
+  }
+return(contents)}
 
 #' Download data
 #'
@@ -699,62 +715,15 @@ get_files_import <- function(e, conn, outpath, myproject) {
     }
   if (filetype %in% c("raw", "node_health", "gps")) {
     print("attempting import")
-  contents <- tryCatch({
-    if (file.size(e) > 0) {
-      readr::read_csv(e, col_names = TRUE)
-    }}, error = function(err) {
-      return(NULL)
-    })
-    if(!is.null(contents)) {
-      delete.columns <- grep("[[:digit:]]", colnames(contents))
-      if (length(delete.columns) > 0) {
-        #what if the 1st row of the headerless file has the problem?
-        contents <- rbind(contents,Correct_Colnames(contents))
-      }
-      if(filetype == "raw") {
-        if (length(delete.columns) > 0) {
-          if(ncol(contents) > 5) {
-            names(contents) <- c("Time","RadioId","TagId","TagRSSI","NodeId","Validated")
-          } else {names(contents) <- c("Time","RadioId","TagId","TagRSSI","NodeId")}
-        }
-      v <- ifelse(any(colnames(contents)=="Validated"), 2, 1)
-      correct <- ifelse(v < 2, 5, 6)
-      indx <- count.fields(e, sep=",")
-      if(any(indx != correct)) {
-        rowfix <- which(indx != correct) - 1
-        rowlen <- indx[which(indx != correct)] #what if this is more than 1 row?
-        if(length(rowfix) < 2) {
-          contents[rowfix,] <- fixrow(rowlen,rowfix,e,correct,DatePattern)
-        } else {
-          fixed <- Map(fixrow, rowlen, rowfix, MoreArgs=list(e=e, DatePattern=DatePattern, correct=correct))
-          fixed <- data.table::rbindlist(fixed, use.names=FALSE)
-          contents[rowfix,] <- fixed
-        }
-      }
+  contents <- file_handle(e, filetype)
 
-      } else if(filetype=="gps") {
-        if(length(delete.columns) > 0) {
-          if(ncol(contents) > 8) {
-            names(contents) <- c("recorded.at","gps.at","latitude","longitude","altitude","quality","mean.lat","mean.lng","n.fixes")
-          } else {names(contents) <- c("recorded.at","gps.at","latitude","longitude","altitude","quality")}
-        }
-      } else if(filetype == "node_health") {
-        if (length(delete.columns) > 0) {
-          if(ncol(contents) > 9) {
-            names(contents) <- c("Time","RadioId","NodeId","NodeRssi","Battery","celsius","RecordedAt","firmware","SolarVolts","SolarCurrent","CumulativeSolarCurrent","latitude","longitude")
-          } else {
-            names(contents) <- c("Time","RadioId","NodeId","NodeRssi","Battery","celsius")
-          }
-        }
-      }
 
-      print("inserting contents")
+  print("inserting contents")
       #if(fix=TRUE) {
       #z <- db_insert(contents, filetype, conn, sensor, y, begin, fix=TRUE)
       #} else {
-        z <- db_insert(contents, filetype, conn, sensor, y, begin)
+  z <- db_insert(contents, filetype, conn, sensor, y, begin)
       #}
-      }
   }
   if(!exists("z")) {z <- NULL}
 }
