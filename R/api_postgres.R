@@ -507,7 +507,7 @@ get_data <- function(thisproject, outpath, f=NULL, my_station, beginning, ending
       print(x)
       write(contents, file=gzfile(file.path(outpath, basename, sensor, filetype, y)))
       e <- file.path(outpath, basename, sensor, filetype, y)
-      contents <- file_handle(e)
+      contents <- file_handle(e, filetype)
       if(!is.null(f)) {
         print(begin)
         z <- db_insert(contents, filetype, f, sensor, y, begin)
