@@ -5,8 +5,10 @@ Correct_Colnames <- function(df) {
   DatePattern = '^[[:digit:]]{4}\\.[[:digit:]]{2}\\.[[:digit:]]{2}[T,\\.][[:digit:]]{2}\\.[[:digit:]]{2}\\.[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?'
   rowval[which(grepl(DatePattern,rowval))] <- as.character(as.POSIXct(rowval[grepl(DatePattern,rowval)], format="%Y.%m.%d.%H.%M.%S", tz="UTC"))
   return(rowval)}
+
 DatePattern = '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T, ][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?'
 is.POSIXct <- function(x) inherits(x, "POSIXct")
+
 resave <- function(..., list = character(), file) {
   previous  <- load(file)
   var.names <- c(list, as.character(substitute(list(...)))[-1L])
@@ -513,22 +515,27 @@ get_data <- function(thisproject, outpath, f=NULL, my_station, beginning, ending
       if(!is.null(contents)) {
         delete.columns <- grep("[[:digit:]]", colnames(contents), perl=T)
         if (length(delete.columns) > 0) {
-          newcontents <- tryCatch({
+          rowfix <- tryCatch({
             rowfix <- Correct_Colnames(contents)
             rowfix[2] <- substring(Correct_Colnames(contents)[2],1,1)
-            rowfix[6] <- substring(Correct_Colnames(contents)[6],1,1)
-            rowfix <- data.frame(as.POSIXct(rowfix[1], tz="UTC"), as.integer(rowfix[2]), rowfix[3], rowfix[4], rowfix[5], as.integer(rowfix[6]))
-            names(rowfix) <- names(contents)
-            rbind(contents, rowfix)
+            rowfix[6] <- strsplit(Correct_Colnames(contents)[6],"[.]")[[1]][1]
+            #rowfix <- data.frame(as.POSIXct(rowfix[1], tz="UTC"), as.integer(rowfix[2]), rowfix[3], rowfix[4], rowfix[5], as.integer(rowfix[6]))
+            rowfix
+            #names(rowfix) <- names(contents)
+            #rbind(contents, rowfix)
           }, error = function(err) {
-            return(contents)
+            return(data.frame())
           })
-          contents <- newcontents
+          #contents <- newcontents
         }
         if(filetype == "raw") {
           if (length(delete.columns) > 0) {
             if(ncol(contents) > 5) {
               names(contents) <- c("Time","RadioId","TagId","TagRSSI","NodeId","Validated")
+              if(length(rowfix) > 0) {
+              rowfix <- data.frame(as.POSIXct(rowfix[1], tz="UTC"), as.integer(rowfix[2]), rowfix[3], rowfix[4], rowfix[5], as.integer(rowfix[6]))
+              names(rowfix) <- names(contents)
+              contents <- rbind(contents, rowfix)}
             } else {names(contents) <- c("Time","RadioId","TagId","TagRSSI","NodeId")}
           }
           v <- ifelse(any(colnames(contents)=="Validated"), 2, 1)
