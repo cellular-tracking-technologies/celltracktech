@@ -19,7 +19,7 @@ resave <- function(..., list = character(), file) {
 fixtime <- function(y) {
   if(any(grepl("T", y))) {
     vals <- as.POSIXct(y,format="%Y-%m-%dT%H:%M:%OS",tz = "UTC", optional=TRUE)
-  } else {
+  } else { vals <- y
     vals <- unname(sapply(y, function(x) as.POSIXct(x, format="%Y-%m-%d %H:%M:%OS", tz = "UTC", optional=TRUE)))
     vals1 <- sapply(vals, function(x) format(as.POSIXct(x, origin="1970-01-01", tz="UTC"),"%Y-%m-%d %H:%M:%OS"))
     vals <- as.POSIXct(vals1, tz="UTC")
@@ -548,10 +548,10 @@ badrow <- function(e, correct, contents) {
       }, error = function(cond) {
         NA
       })
-      if(!is.POSIXct(datetest)) {contents <- contents[-rowfix,]}
+      if(!is.POSIXct(datetest)) {contents2 <- contents[-rowfix,]}
     }
   }
-return(contents)}
+return(contents2)}
 
 file_handle <- function(e, filetype) {
   contents <- tryCatch({
@@ -580,9 +580,10 @@ file_handle <- function(e, filetype) {
         if(ncol(contents) > 5) {
           names(contents) <- c("Time","RadioId","TagId","TagRSSI","NodeId","Validated")
           if(length(rowfix) > 0) {
-            rowfix <- data.frame(as.POSIXct(rowfix[1], tz="UTC"), as.integer(rowfix[2]), rowfix[3], rowfix[4], rowfix[5], as.integer(rowfix[6]))
+            rowfix <- data.frame(rowfix[1], as.integer(rowfix[2]), rowfix[3], rowfix[4], rowfix[5], as.integer(rowfix[6]))
             names(rowfix) <- names(contents)
-            contents <- rbind(contents, rowfix)}
+            contents <- rbind(contents, rowfix)
+            }
         } else {names(contents) <- c("Time","RadioId","TagId","TagRSSI","NodeId")}
       }
       v <- ifelse(any(colnames(contents)=="Validated"), 2, 1)
@@ -740,3 +741,7 @@ myfiles <- list.files(file.path(outpath, myproject), recursive = TRUE)
 files_loc <- sapply(strsplit(myfiles, "/"), tail, n=1)
 failed2 <- lapply(myfiles, get_files_import, conn=d, outpath=outpath, myproject=myproject, fix=TRUE)
 }
+
+#x <- data.frame("2021-10-26 18:29:52", 1, "52345578", -91, NA, 1)
+#names(x) <- c("Time", "RadioId", "TagId", "TagRSSI", "NodeId", "Validated")
+#rbind(contents, x)
