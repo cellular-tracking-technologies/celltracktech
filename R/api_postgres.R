@@ -548,10 +548,10 @@ badrow <- function(e, correct, contents) {
       }, error = function(cond) {
         NA
       })
-      if(!is.POSIXct(datetest)) {contents2 <- contents[-rowfix,]}
+      if(!is.POSIXct(datetest)) {contents <- contents[-rowfix,]}
     }
   }
-return(contents2)}
+return(contents)}
 
 file_handle <- function(e, filetype) {
   contents <- tryCatch({
