@@ -16,18 +16,25 @@ resave <- function(..., list = character(), file) {
   save(list = unique(c(previous, var.names)), file = file)
 }
 
+fixtime <- function(y) {
+  if(any(grepl("T", y))) {
+    vals <- as.POSIXct(y,format="%Y-%m-%dT%H:%M:%OS",tz = "UTC", optional=TRUE)
+  } else {
+    vals <- unname(sapply(y, function(x) as.POSIXct(x, format="%Y-%m-%d %H:%M:%OS", tz = "UTC", optional=TRUE)))
+    vals1 <- sapply(vals, function(x) format(as.POSIXct(x, origin="1970-01-01", tz="UTC"),"%Y-%m-%d %H:%M:%OS"))
+    vals <- as.POSIXct(vals1, tz="UTC")
+  }
+return(vals)}
+
 fixrow <- function(rowlen,rowfix,e,correct,DatePattern) {
 getrow <- read.csv(e,as.is=TRUE, na.strings=c("NA", ""), header = FALSE, col.names = paste0("V",seq_len(rowlen)), skipNul = TRUE, skip=rowfix, nrow=1, fill=TRUE)
 getrow <- getrow[,(length(getrow) - correct + 1):length(getrow)]
 getrow[,1] <- substring(getrow[,1], regexpr(DatePattern, getrow[,1])) #handling assumes e.g. extra field and correct record starts in column 2
-if(any(grepl("T", getrow[,1]))) {
-  vals <- as.POSIXct(getrow[,1],format="%Y-%m-%dT%H:%M:%OS",tz = "UTC", optional=TRUE)
-} else {
-  vals <- unname(sapply(getrow[,1], function(x) as.POSIXct(x, format="%Y-%m-%d %H:%M:%OS", tz = "UTC", optional=TRUE)))
-  vals1 <- sapply(vals, function(x) format(as.POSIXct(x, origin="1970-01-01", tz="UTC"),"%Y-%m-%d %H:%M:%OS"))
-  vals <- as.POSIXct(vals1, tz="UTC")
+getrow[,1] <- fixtime(getrow[,1])
+if(length(getrow) > 6) {
+  getrow[,7] <- substring(getrow[,7], regexpr(DatePattern, getrow[,7])) #handling assumes e.g. extra field and correct record starts in column 2
+  getrow[,7] <- fixtime(getrow[,7])
 }
-getrow[,1] <- vals
 getrow[,3] <- as.character(getrow[,3])
 return(getrow[1,])
 }
