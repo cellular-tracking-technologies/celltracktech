@@ -316,13 +316,12 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
       #  contents <- rbind(sametime, contents)
       #}
 
-      if (length(which(!is.na(contents$node_id))) > 0) {
+      if (length(which(!is.na(contents$node_id))) > 0) { #if there is anything beside NA nodes
         nodeids <- contents$node_id[which(!is.na(contents$node_id))]
         insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ","nodes (node_id)"," VALUES ($1)
                                            ON CONFLICT DO NOTHING",sep=""))
         DBI::dbBind(insertnew, params=list(unique(nodeids)))
         DBI::dbClearResult(insertnew)
-
         nodecheck <- contents[!is.na(contents$node_id),]
         nodecheck <- nodecheck[!duplicated(nodecheck[c("time", "tag_id", "node_id", "tag_rssi")]),]
         badrec <- nodecheck[duplicated(nodecheck[c("time", "tag_id", "node_id")]),]
@@ -340,7 +339,7 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
         }
       }
 
-      if(length(which(nchar(contents$tag_id) != 8)) > 0) {
+      if(length(which(nchar(contents$tag_id) != 8)) > 0) { #if there are tag ids greater than 8...
         contents <- contents[-which(nchar(contents$tag_id) != 8),] #drop rows where TagId not 8 characters
       }
 
@@ -713,7 +712,7 @@ get_files_import <- function(e, conn, outpath, myproject) {
   if(length(begin) == 0) {begin <- as.POSIXct("2018-01-01")}
   filenameinfo <- sensorid[2]
   file_info <- unlist(strsplit(filenameinfo, "\\."))[1]
-  filetype <- ifelse(is.na(as.integer(file_info)),file_info,"sensorgnome")
+  filetype <- ifelse(is.na(as.integer(file_info)),file_info,"sensorgnome") #this throws a noisy warning message, smooth out?
   if (is.na(filetype)) {
     filetype <- "none"
   } else if (filetype == "node" & !is.na(filetype)) {

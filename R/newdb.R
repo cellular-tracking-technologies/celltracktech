@@ -136,7 +136,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
   if (length(badlines) > 0) { df <- df[-badlines,]}
     #if(!all((c("time", "id", "rssi") %in% colnames(df)))) {df <- NULL}
   if(!is.null(df)) {
-    df$NodeId <- toupper(file[1])
+    df$NodeId <- tolower(file[1])
     time = "UTC"
     df$Time <- as.POSIXct(df$time,format="%Y-%m-%dT%H:%M:%SZ",tz = time, optional=TRUE)
     df <- df[!is.na(df$Time),]
