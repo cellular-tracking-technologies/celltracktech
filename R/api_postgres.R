@@ -513,7 +513,7 @@ get_data <- function(thisproject, outpath, f=NULL, my_station, beginning, ending
       print(x)
       write(contents, file=gzfile(file.path(outpath, basename, sensor, filetype, y)))
       e <- file.path(outpath, basename, sensor, filetype, y)
-      contents <- file_handle(e, filetype)
+      contents <- file_handle(e, filetype)[[1]]
       if(!is.null(f)) {
         print(begin)
         z <- db_insert(contents, filetype, f, sensor, y, begin)
@@ -527,8 +527,10 @@ failed <- Map(get_files, ids, file_names)
 return(failed)}
 
 badrow <- function(e, correct, contents) {
+  file_err <- F
   indx <- count.fields(e, sep=",")
   if(any(indx > correct)) {
+    file_err <- T
     rowfix <- which(indx != correct) - 1
     rowlen <- indx[which(indx != correct)] #what if this is more than 1 row?
     if(length(rowfix) < 2) {
@@ -539,6 +541,7 @@ badrow <- function(e, correct, contents) {
       contents[rowfix,] <- fixed
     }
   } else if(any(indx < correct)) {
+    file_err <- T
     rowfix <- which(indx != correct) - 1
     rowlen <- indx[which(indx != correct)] #what if this is more than 1 row?
     if(length(rowfix) < 2) {
@@ -550,9 +553,10 @@ badrow <- function(e, correct, contents) {
       if(!is.POSIXct(datetest)) {contents <- contents[-rowfix,]}
     }
   }
-return(contents)}
+return(list(contents,file_err))}
 
 file_handle <- function(e, filetype) {
+  file_err=F
   contents <- tryCatch({
     readr::read_csv(e, col_names = TRUE)
   }, error = function(err) {
@@ -561,6 +565,7 @@ file_handle <- function(e, filetype) {
   if(!is.null(contents)) {
     delete.columns <- grep("[[:digit:]]", colnames(contents), perl=T)
     if (length(delete.columns) > 0) {
+      file_err=T
       rowfix <- tryCatch({
         myrowfix <- Correct_Colnames(contents)
         myrowfix[2] <- substring(Correct_Colnames(contents)[2],1,1)
@@ -589,7 +594,11 @@ file_handle <- function(e, filetype) {
       #v <- ifelse(any(colnames(contents)=="Type"), 3, 1)
       correct <- ifelse(v < 2, 5, 6)
       #correct <- ifelse(v > 2, 7, 6)
-      contents <- badrow(e, correct, contents)
+      rowtest <- badrow(e, correct, contents)
+      contents <- rowtest[[1]]
+      if(!file_err) {
+        file_err <- rowtest[[2]]
+      }
     } else if(filetype=="gps") {
       if(length(delete.columns) > 0) {
         if(ncol(contents) > 8) {
@@ -611,10 +620,14 @@ file_handle <- function(e, filetype) {
           }
         }
       }
-      contents <- badrow(e, correct, contents)
+      rowtest <- badrow(e, correct, contents)
+      contents <- rowtest[[1]]
+      if(!file_err) {
+        file_err <- rowtest[[2]]
+      }
     }
-  }
-return(contents)}
+  } else {file_err = T}
+return(list(contents, file_err))}
 
 #' Download data
 #'
@@ -730,7 +743,8 @@ get_files_import <- function(e, conn, fix=F) {
 
   if (filetype %in% c("raw", "node_health", "gps")) {
   #print("attempting import")
-  contents <- file_handle(e, filetype)
+  contents <- file_handle(e, filetype)[[1]]
+  #file_err <- fileimp[[2]]
   #print("inserting contents")
   if(fix=T) {
     if(is.character(contents$Time)) {
@@ -767,3 +781,22 @@ failed2 <- lapply(myfiles, get_files_import, conn=d, outpath=outpath, myproject=
 #x <- data.frame("2021-10-26 18:29:52", 1, "52345578", -91, NA, 1)
 #names(x) <- c("Time", "RadioId", "TagId", "TagRSSI", "NodeId", "Validated")
 #rbind(contents, x)
+
+#' Find files with errors
+#'
+#' This function allows you to copy files with errors or corrupt lines into a new destination to look closer
+#' @param outpath where your files were downloaded
+#' @param file_dest where you want the files with errors to be copied
+#' @export
+#' @examples
+#' error_files("~/mydata", "~/errorfiles")
+
+error_files <- function(dirin,dirout) {
+  myfiles <- list.files(dirin, recursive = TRUE, full.names=TRUE)
+  filetest <- which(sapply(myfiles, function(e) {
+    fileinfo <- get_file_info(e)
+    testerr <- file_handle(e, fileinfo$filetype)[[2]]
+  return(testerr)}))
+  errorfiles <- myfiles[filetest]
+  file.copy(errorfiles, dirout)
+}
