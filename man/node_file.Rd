@@ -10,5 +10,5 @@ node_file(health)
 \item{health}{a data frame of node health data pulled from your local database}
 }
 \description{
-This function allows you to create the node location file from your node health data.
+This function allows you to create the node location spatial data frame from your node health data.
 }

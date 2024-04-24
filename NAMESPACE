@@ -2,6 +2,7 @@
 
 export(create_db)
 export(db_cleanup)
+export(error_files)
 export(findfiles)
 export(get_my_data)
 export(import_node_data)
