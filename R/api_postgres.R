@@ -674,7 +674,7 @@ pop <- function(x) { #this was a function written before the data file table was
 #' update_db(conn, "~/mydata", myproject="Project Name from CTT Account", fix=FALSE)
 
 update_db <- function(d, outpath, myproject, fix=FALSE) {
-  myfiles <- list.files(file.path(outpath, myproject), recursive = TRUE)
+  myfiles <- list.files(file.path(outpath, myproject), recursive = TRUE, full.names=TRUE)
   files_loc <- sapply(strsplit(myfiles, "/"), tail, n=1)
   allnode <- DBI::dbReadTable(d, "data_file")
   if(fix) {
@@ -698,18 +698,12 @@ update_db <- function(d, outpath, myproject, fix=FALSE) {
   #  }
 }
 
-get_files_import <- function(e, conn, outpath, myproject) {
-  e <- file.path(outpath, myproject, e)
-  print(e)
-  y <- tail(unlist(strsplit(e, "/")), n=1)
-
+get_file_info <- function(e) {
+  y <- basename(e)
   splitfile <- unlist(strsplit(y, "CTT-"))
   fileinfo <- splitfile[2]
   sensorid <- unlist(strsplit(fileinfo,"-"))
   sensor <- sensorid[1]
-  i <- DBI::dbReadTable(conn, "ctt_project_station")
-  begin <- i[i$station_id==sensor,]$deploy_at
-  if(length(begin) == 0) {begin <- as.POSIXct("2018-01-01")}
   filenameinfo <- sensorid[2]
   file_info <- unlist(strsplit(filenameinfo, "\\."))[1]
   filetype <- ifelse(is.na(as.integer(file_info)),file_info,"sensorgnome") #this throws a noisy warning message, smooth out?
@@ -718,27 +712,56 @@ get_files_import <- function(e, conn, outpath, myproject) {
   } else if (filetype == "node" & !is.na(filetype)) {
     filetype <- "node_health"
   } else if (filetype == "data") {
-      filetype <- "raw"
-    }
+    filetype <- "raw"
+  }
+  thisfile <- list(filetype=filetype, sensor=sensor, y=y)
+return(thisfile)}
+
+get_files_import <- function(e, conn, fix=F) {
+  #e <- file.path(outpath, myproject, e)
+  print(e)
+  out <- get_file_info(e)
+  filetype <- out$filetype
+  sensor <- out$sensor
+  y <- out$y
+  i <- DBI::dbReadTable(conn, "ctt_project_station")
+  begin <- i[i$station_id==sensor,]$deploy_at
+  if(length(begin) == 0) {begin <- as.POSIXct("2018-01-01")}
+
   if (filetype %in% c("raw", "node_health", "gps")) {
-    print("attempting import")
+  #print("attempting import")
   contents <- file_handle(e, filetype)
-
-
-  print("inserting contents")
-      #if(fix=TRUE) {
-      #z <- db_insert(contents, filetype, conn, sensor, y, begin, fix=TRUE)
-      #} else {
-  z <- db_insert(contents, filetype, conn, sensor, y, begin)
-      #}
+  #print("inserting contents")
+  if(fix=T) {
+    if(is.character(contents$Time)) {
+      DBI::dbExecute(conn, paste0("delete from ",filetype," where path = ", y))
+      z <- db_insert(contents, filetype, conn, sensor, y, begin)
+    }
+  } else {
+    print("inserting contents")
+    z <- db_insert(contents, filetype, conn, sensor, y, begin)
+  }
   }
   if(!exists("z")) {z <- NULL}
 }
 
 patch <- function(d, outpath, myproject) {
-myfiles <- list.files(file.path(outpath, myproject), recursive = TRUE)
-files_loc <- sapply(strsplit(myfiles, "/"), tail, n=1)
-failed2 <- lapply(myfiles, get_files_import, conn=d, outpath=outpath, myproject=myproject, fix=TRUE)
+myfiles <- list.files(file.path(outpath, myproject), recursive = TRUE, full.names=TRUE)
+#files_loc <- sapply(strsplit(myfiles, "/"), tail, n=1)
+DBI::dbExecute(d,"UPDATE raw SET node_id=lower(node_id)")
+DBI::dbExecute(conn, "WITH ordered AS (
+  SELECT upper(node_id)
+    rank() OVER (PARTITION BY upper(node_id)) AS rnk
+  FROM nodes where node_id is not null
+),
+to_delete AS (
+  SELECT *
+  FROM   ordered
+  WHERE  rnk > 1
+)
+delete from nodes using to_delete where nodes.id = to_delete.id")
+
+failed2 <- lapply(myfiles, get_files_import, conn=d, outpath=outpath, myproject=myproject, fix=T)
 }
 
 #x <- data.frame("2021-10-26 18:29:52", 1, "52345578", -91, NA, 1)
