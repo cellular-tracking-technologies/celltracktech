@@ -746,7 +746,7 @@ get_files_import <- function(e, conn, fix=F) {
   contents <- file_handle(e, filetype)[[1]]
   #file_err <- fileimp[[2]]
   #print("inserting contents")
-  if(fix=T) {
+  if(fix) {
     if(is.character(contents$Time)) {
       DBI::dbExecute(conn, paste0("delete from ",filetype," where path = ", y))
       z <- db_insert(contents, filetype, conn, sensor, y, begin)
