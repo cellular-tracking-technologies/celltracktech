@@ -794,6 +794,7 @@ failed2 <- lapply(myfiles, get_files_import, conn=d, outpath=outpath, myproject=
 error_files <- function(dirin,dirout) {
   myfiles <- list.files(dirin, recursive = TRUE, full.names=TRUE)
   filetest <- which(sapply(myfiles, function(e) {
+    print(e)
     fileinfo <- get_file_info(e)
     testerr <- file_handle(e, fileinfo$filetype)[[2]]
   return(testerr)}))
