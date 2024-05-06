@@ -529,6 +529,7 @@ return(failed)}
 badrow <- function(e, correct, contents) {
   file_err <- F
   indx <- count.fields(e, sep=",")
+  indx[which(is.na(indx))] <- correct
   if(any(indx > correct)) {
     file_err <- T
     rowfix <- which(indx != correct) - 1
