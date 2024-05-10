@@ -527,11 +527,11 @@ failed <- Map(get_files, ids, file_names)
 return(failed)}
 
 badrow <- function(e, correct, contents) {
-  file_err <- F
+  file_err <- 0
   indx <- count.fields(e, sep=",")
   indx[which(is.na(indx))] <- correct
   if(any(indx > correct)) {
-    file_err <- T
+    file_err <- 3
     rowfix <- which(indx != correct) - 1
     rowlen <- indx[which(indx != correct)] #what if this is more than 1 row?
     if(length(rowfix) < 2) {
@@ -542,7 +542,7 @@ badrow <- function(e, correct, contents) {
       contents[rowfix,] <- fixed
     }
   } else if(any(indx < correct)) {
-    file_err <- T
+    file_err <- 4
     rowfix <- which(indx != correct) - 1
     rowlen <- indx[which(indx != correct)] #what if this is more than 1 row?
     if(length(rowfix) < 2) {
@@ -557,7 +557,7 @@ badrow <- function(e, correct, contents) {
 return(list(contents,file_err))}
 
 file_handle <- function(e, filetype) {
-  file_err=F
+  file_err=0
   contents <- tryCatch({
     readr::read_csv(e, col_names = TRUE)
   }, error = function(err) {
@@ -566,11 +566,18 @@ file_handle <- function(e, filetype) {
   if(!is.null(contents)) {
     delete.columns <- grep("[[:digit:]]", colnames(contents), perl=T)
     if (length(delete.columns) > 0) {
-      file_err=T
+      file_err=1
       rowfix <- tryCatch({
         myrowfix <- Correct_Colnames(contents)
-        myrowfix[2] <- substring(Correct_Colnames(contents)[2],1,1)
-        myrowfix[6] <- strsplit(Correct_Colnames(contents)[6],"[.]")[[1]][1]
+        myrowfix[1] <- strsplit(Correct_Colnames(contents)[1],"[.]")[[1]][1]
+        myrowfix[2] <- strsplit(Correct_Colnames(contents)[2],"[.]")[[1]][1]
+        myrowfix[5] <- strsplit(Correct_Colnames(contents)[5],"\\.\\.")[[1]][1]
+        if(nchar(myrowfix[5]) < 1) {myrowfix[5] <- NA}
+        if (length(myrowfix) > 5) { myrowfix[6] <- strsplit(Correct_Colnames(contents)[6],"[.]")[[1]][1] }
+        if (length(myrowfix) > 6) {
+          myrowfix[7] <- strsplit(Correct_Colnames(contents)[7],"\\.\\.")[[1]][1]
+          myrowfix[7] <- strsplit(myrowfix[7],"[_]")[[1]][1]
+          }
         #rowfix <- data.frame(as.POSIXct(rowfix[1], tz="UTC"), as.integer(rowfix[2]), rowfix[3], rowfix[4], rowfix[5], as.integer(rowfix[6]))
         myrowfix
         #names(rowfix) <- names(contents)
@@ -585,7 +592,7 @@ file_handle <- function(e, filetype) {
         if(ncol(contents) > 5) {
           names(contents) <- c("Time","RadioId","TagId","TagRSSI","NodeId","Validated")
           if(length(rowfix) > 0) {
-            rowfix <- data.frame(rowfix[1], as.integer(rowfix[2]), rowfix[3], rowfix[4], rowfix[5], as.integer(rowfix[6]))
+            rowfix <- data.frame(as.POSIXct(rowfix[1],tz="UTC"), as.integer(rowfix[2]), rowfix[3], rowfix[4], rowfix[5], as.integer(rowfix[6]))
             names(rowfix) <- names(contents)
             contents <- rbind(contents, rowfix)
             }
@@ -597,23 +604,30 @@ file_handle <- function(e, filetype) {
       #correct <- ifelse(v > 2, 7, 6)
       rowtest <- badrow(e, correct, contents)
       contents <- rowtest[[1]]
-      if(!file_err) {
+      if(file_err < 1) {
         file_err <- rowtest[[2]]
       }
     } else if(filetype=="gps") {
       if(length(delete.columns) > 0) {
         if(ncol(contents) > 8) {
+          correct <- 9
           names(contents) <- c("recorded.at","gps.at","latitude","longitude","altitude","quality","mean.lat","mean.lng","n.fixes")
-        } else {names(contents) <- c("recorded.at","gps.at","latitude","longitude","altitude","quality")}
+          if(length(rowfix) > 0) {
+            myrowfix <- data.frame(as.POSIXct(rowfix[1], tz="UTC"), as.POSIXct(rowfix[2], tz="UTC"), rowfix[3], rowfix[4], as.numeric(rowfix[5]), as.numeric(rowfix[6]), rowfix[7], rowfix[8], as.numeric(rowfix[9]))
+            names(myrowfix) <- names(contents)
+            contents <- rbind(contents, myrowfix)
+          } else {
+          names(contents) <- c("recorded.at","gps.at","latitude","longitude","altitude","quality")
+          correct <- 6 }
       }
-    } else if(filetype == "node_health") {
+    }} else if(filetype == "node_health") {
       v <- ifelse(ncol(contents) > 9, 2, 1)
       correct <- ifelse(v < 2, 6, 13)
       if (length(delete.columns) > 0) {
         if(ncol(contents) > 9) {
           names(contents) <- c("Time","RadioId","NodeId","NodeRssi","Battery","celsius","RecordedAt","firmware","SolarVolts","SolarCurrent","CumulativeSolarCurrent","latitude","longitude")
           if(length(rowfix) > 0) {
-            myrowfix <- data.frame(rowfix[1], as.integer(rowfix[2]), rowfix[3], as.integer(rowfix[4]), as.numeric(rowfix[5]), as.numeric(rowfix[6]), as.POSIXct(rowfix[7], tz="UTC"), rowfix[8], as.numeric(rowfix[9]), as.numeric(rowfix[10]), as.numeric(rowfix[11]), as.numeric(rowfix[12]), as.numeric(rowfix[13]))
+            myrowfix <- data.frame(as.POSIXct(rowfix[1], tz="UTC"), as.integer(rowfix[2]), rowfix[3], as.integer(rowfix[4]), as.numeric(rowfix[5]), as.numeric(rowfix[6]), as.POSIXct(rowfix[7], tz="UTC"), rowfix[8], as.numeric(rowfix[9]), as.numeric(rowfix[10]), as.numeric(rowfix[11]), as.numeric(rowfix[12]), as.numeric(rowfix[13]))
             names(myrowfix) <- names(contents)
             contents <- rbind(contents, myrowfix)
           } else {
@@ -623,11 +637,11 @@ file_handle <- function(e, filetype) {
       }
       rowtest <- badrow(e, correct, contents)
       contents <- rowtest[[1]]
-      if(!file_err) {
+      if(file_err < 1) {
         file_err <- rowtest[[2]]
       }
     }
-  } else {file_err = T}
+  } else {file_err = 2}
 return(list(contents, file_err))}
 
 #' Download data
@@ -689,7 +703,7 @@ pop <- function(x) { #this was a function written before the data file table was
 
 update_db <- function(d, outpath, myproject, fix=FALSE) {
   myfiles <- list.files(file.path(outpath, myproject), recursive = TRUE, full.names=TRUE)
-  files_loc <- sapply(strsplit(myfiles, "/"), tail, n=1)
+  files_loc <- basename(myfiles)
   allnode <- DBI::dbReadTable(d, "data_file")
   if(fix) {
     res <- DBI::dbGetQuery(d, "select distinct path from gps")
@@ -797,8 +811,11 @@ error_files <- function(dirin,dirout) {
   filetest <- which(sapply(myfiles, function(e) {
     print(e)
     fileinfo <- get_file_info(e)
-    testerr <- file_handle(e, fileinfo$filetype)[[2]]
-  return(testerr)}))
+    if (fileinfo$filetype %in% c("raw", "node_health", "gps")) {testerr <- file_handle(e, fileinfo$filetype)[[2]]
+    } else {
+      testerr <- 0
+    }
+  return(testerr)}) > 0)
   errorfiles <- myfiles[filetest]
   file.copy(errorfiles, dirout)
 }
