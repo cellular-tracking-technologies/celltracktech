@@ -635,9 +635,9 @@ file_handle <- function(e, filetype) {
           }
         }
       }
-      rowtest <- badrow(e, correct, contents)
-      contents <- rowtest[[1]]
     }
+    rowtest <- badrow(e, correct, contents)
+    contents <- rowtest[[1]]
     file_err <- ifelse(rowtest[[2]] > 0, rowtest[[2]], file_err)
   } else {file_err = 2}
 return(list(contents, file_err))}
