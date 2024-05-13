@@ -820,6 +820,7 @@ failed2 <- lapply(myfiles, get_files_import, conn=d, outpath=outpath, myproject=
 #' error_files("~/mydata", "~/errorfiles")
 
 error_files <- function(dirin,dirout) {
+  dir.create(file.path(dirout), showWarnings = FALSE)
   myfiles <- list.files(dirin, recursive = TRUE, full.names=TRUE)
   filetest <- sapply(myfiles, function(e) {
     print(e)
@@ -833,8 +834,12 @@ error_files <- function(dirin,dirout) {
   emptyfile <- myfiles[which(filetest==2)]
   longrow <- myfiles[which(filetest==3)]
   shortrow <- myfiles[which(filetest==4)]
+  dir.create(file.path(dirout, "missing_header"), showWarnings = FALSE)
   file.copy(missingheader, file.path(dirout, "missing_header"))
+  dir.create(file.path(dirout, "empty"), showWarnings = FALSE)
   file.copy(emptyfile, file.path(dirout, "empty"))
+  dir.create(file.path(dirout, "restart_row"), showWarnings = FALSE)
   file.copy(longrow, file.path(dirout, "restart_row"))
+  dir.create(file.path(dirout, "abbrev_row"), showWarnings = FALSE)
   file.copy(shortrow, file.path(dirout, "abbrev_row"))
 }
