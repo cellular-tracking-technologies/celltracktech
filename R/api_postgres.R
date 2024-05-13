@@ -26,12 +26,12 @@ fixtime <- function(y) {
   }
 return(vals)}
 
-fixrow <- function(rowlen,rowfix,e,correct,DatePattern) {
+fixrow <- function(rowlen,rowfix,e,correct,DatePattern, filetype) {
 getrow <- read.csv(e,as.is=TRUE, na.strings=c("NA", ""), header = FALSE, col.names = paste0("V",seq_len(rowlen)), skipNul = TRUE, skip=rowfix, nrow=1, fill=TRUE)
 getrow <- getrow[,(length(getrow) - correct + 1):length(getrow)]
 getrow[,1] <- substring(getrow[,1], regexpr(DatePattern, getrow[,1])) #handling assumes e.g. extra field and correct record starts in column 2
 getrow[,1] <- fixtime(getrow[,1])
-if(length(getrow) > 6) {
+if(length(getrow) > 6 & filetype!="gps") {
   getrow[,7] <- substring(getrow[,7], regexpr(DatePattern, getrow[,7])) #handling assumes e.g. extra field and correct record starts in column 2
   getrow[,7] <- fixtime(getrow[,7])
 }
@@ -526,21 +526,25 @@ get_data <- function(thisproject, outpath, f=NULL, my_station, beginning, ending
 failed <- Map(get_files, ids, file_names)
 return(failed)}
 
-badrow <- function(e, correct, contents) {
+badrow <- function(e, correct, contents, filetype) {
   file_err <- 0
   indx <- count.fields(e, sep=",")
   indx[which(is.na(indx))] <- correct
   if(any(indx > correct)) {
-    file_err <- 3
     rowfix <- which(indx != correct) - 1
-    rowlen <- indx[which(indx != correct)] #what if this is more than 1 row?
+    rowlen <- indx[which(indx != correct)]
+    #if (filetype == "gps") {
+    #  if(correct == 6 & rowlen == 9) {contents <- contents[rowfix,]}
+    #} else {
+    file_err <- 3 #what if this is more than 1 row?
     if(length(rowfix) < 2) {
-      contents[rowfix,] <- fixrow(rowlen,rowfix,e,correct,DatePattern)
+      contents[rowfix,] <- fixrow(rowlen,rowfix,e,correct,DatePattern,filetype)
     } else {
-      fixed <- Map(fixrow, rowlen, rowfix, MoreArgs=list(e=e, DatePattern=DatePattern, correct=correct))
+      fixed <- Map(fixrow, rowlen, rowfix, MoreArgs=list(e=e, DatePattern=DatePattern, correct=correct, filetype=filetype))
       fixed <- data.table::rbindlist(fixed, use.names=FALSE)
       contents[rowfix,] <- fixed
     }
+  #}
   } else if(any(indx < correct)) {
     file_err <- 4
     rowfix <- which(indx != correct) - 1
@@ -602,11 +606,11 @@ file_handle <- function(e, filetype) {
       #v <- ifelse(any(colnames(contents)=="Type"), 3, 1)
       correct <- ifelse(v < 2, 5, 6)
       #correct <- ifelse(v > 2, 7, 6)
-      rowtest <- badrow(e, correct, contents)
-      contents <- rowtest[[1]]
-      if(file_err < 1) {
-        file_err <- rowtest[[2]]
-      }
+      #rowtest <- badrow(e, correct, contents)
+      #contents <- rowtest[[1]]
+      #if(file_err < 1) {
+      #  file_err <- rowtest[[2]]
+      #}
     } else if(filetype=="gps") {
       if(length(delete.columns) > 0) {
         if(ncol(contents) > 8) {
@@ -616,11 +620,22 @@ file_handle <- function(e, filetype) {
             myrowfix <- data.frame(as.POSIXct(rowfix[1], tz="UTC"), as.POSIXct(rowfix[2], tz="UTC"), rowfix[3], rowfix[4], as.numeric(rowfix[5]), as.numeric(rowfix[6]), rowfix[7], rowfix[8], as.numeric(rowfix[9]))
             names(myrowfix) <- names(contents)
             contents <- rbind(contents, myrowfix)
+          }} else {
+          indx <- count.fields(e, sep=",")
+          indx[which(is.na(indx))] <- 6
+          if(any(indx == 9)) {
+            correct <- 9
+            rowfix <- which(indx == 9) - 1
+            rowlen <- indx[which(indx == correct)]
+            if(length(rowfix) < 2) {
+              contents <- fixrow(rowlen,rowfix,e,correct,DatePattern,filetype)
+            }
+            names(contents) <- c("recorded.at","gps.at","latitude","longitude","altitude","quality","mean.lat","mean.lng","n.fixes")
           } else {
           names(contents) <- c("recorded.at","gps.at","latitude","longitude","altitude","quality")
-          correct <- 6 }
+          correct <- 6 }}
       }
-    }} else if(filetype == "node_health") {
+    } else if(filetype == "node_health") {
       v <- ifelse(ncol(contents) > 9, 2, 1)
       correct <- ifelse(v < 2, 6, 13)
       if (length(delete.columns) > 0) {
@@ -636,7 +651,7 @@ file_handle <- function(e, filetype) {
         }
       }
     }
-    rowtest <- badrow(e, correct, contents)
+    rowtest <- badrow(e, correct, contents, filetype)
     contents <- rowtest[[1]]
     file_err <- ifelse(rowtest[[2]] > 0, rowtest[[2]], file_err)
   } else {file_err = 2}
