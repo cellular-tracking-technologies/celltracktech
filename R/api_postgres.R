@@ -808,14 +808,20 @@ failed2 <- lapply(myfiles, get_files_import, conn=d, outpath=outpath, myproject=
 
 error_files <- function(dirin,dirout) {
   myfiles <- list.files(dirin, recursive = TRUE, full.names=TRUE)
-  filetest <- which(sapply(myfiles, function(e) {
+  filetest <- sapply(myfiles, function(e) {
     print(e)
     fileinfo <- get_file_info(e)
     if (fileinfo$filetype %in% c("raw", "node_health", "gps")) {testerr <- file_handle(e, fileinfo$filetype)[[2]]
     } else {
       testerr <- 0
     }
-  return(testerr)}) > 0)
-  errorfiles <- myfiles[filetest]
-  file.copy(errorfiles, dirout)
+  return(testerr)})
+  missingheader <- myfiles[which(filetest==1)]
+  emptyfile <- myfiles[which(filetest==2)]
+  longrow <- myfiles[which(filetest==3)]
+  shortrow <- myfiles[which(filetest==4)]
+  file.copy(missingheader, file.path(dirout, "missing_header"))
+  file.copy(emptyfile, file.path(dirout, "empty"))
+  file.copy(longrow, file.path(dirout, "restart_row"))
+  file.copy(shortrow, file.path(dirout, "abbrev_row"))
 }
