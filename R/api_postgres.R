@@ -535,7 +535,16 @@ goodrows <- function(rowlen,rowfix,e,correct,DatePattern,filetype) {
   }
 return(fixed)}
 
-badrow <- function(e, correct, contents, filetype) {
+badrow <- function(e, contents, filetype) {
+  if(filetype == "raw") {
+  correct <- ifelse(ncol(contents) > 5, 6, 5)
+  } else if (filetype == "node_health") {
+  correct <- ifelse(ncol(contents) > 9, 13, 6)
+  } else if (filetype == "gps") {
+    indx <- count.fields(e, sep=",")
+    correct <- ifelse(any(indx == 9), 9, 6)
+  }
+
   file_err <- 0
   indx <- count.fields(e, sep=",")
   indx[which(is.na(indx))] <- correct
@@ -555,13 +564,25 @@ badrow <- function(e, correct, contents, filetype) {
     file_err <- 4
     rowfix <- which(indx != correct) - 1
     rowlen <- indx[which(indx != correct)] #what if this is more than 1 row?
-    if(length(rowfix) < 2) {
+    print(contents[rowfix,])
+    if(filetype=="gps" & correct == 9) {
+      if(any(indx == 6)) {
+        #badrows <- which(indx == 6) - 1
+        #print(contents[badrows[badrows!=0],])
+        rowfix <- which(indx == 9) - 1
+        rowlen <- indx[which(indx == correct)]
+        contents <- goodrows(rowlen,rowfix,e,correct,DatePattern,filetype)
+        }
+    } else if(length(rowfix) < 2) {
       #datetest <- tryCatch({
       #  is.POSIXct(contents[rowfix,1]$Time)
       #}, error = function(cond) {
       #  NA
       #})
-      if(!is.POSIXct(contents[rowfix,1]$Time)) {contents <- contents[-rowfix,]}
+      if(!is.POSIXct(contents[rowfix,1][[1]])) {
+        #print(contents[rowfix,])
+        contents <- contents[-rowfix,]
+        }
     } #else {file_err <- 5}
   }
   if(any(indx < correct) & any(indx > correct)) {file_err <- 5}
@@ -606,6 +627,8 @@ file_handle <- function(e, filetype) {
       })
       #contents <- newcontents
     }
+    rowtest <- badrow(e, contents, filetype)
+    contents <- rowtest[[1]]
     if(filetype == "raw") {
       if (length(delete.columns) > 0) {
         if(ncol(contents) > 5) {
@@ -617,9 +640,6 @@ file_handle <- function(e, filetype) {
             }
         } else {names(contents) <- c("Time","RadioId","TagId","TagRSSI","NodeId")}
       }
-      v <- ifelse(any(colnames(contents)=="Validated"), 2, 1)
-      #v <- ifelse(any(colnames(contents)=="Type"), 3, 1)
-      correct <- ifelse(v < 2, 5, 6)
       #correct <- ifelse(v > 2, 7, 6)
       #rowtest <- badrow(e, correct, contents)
       #contents <- rowtest[[1]]
@@ -629,28 +649,16 @@ file_handle <- function(e, filetype) {
     } else if(filetype=="gps") {
       if(length(delete.columns) > 0) {
         if(ncol(contents) > 8) {
-          correct <- 9
           names(contents) <- c("recorded.at","gps.at","latitude","longitude","altitude","quality","mean.lat","mean.lng","n.fixes")
-          if(length(myrowfix) > 0) {
+          if(length(myrowfix) > 6) {
             rowfix <- data.frame(as.POSIXct(myrowfix[1], tz="UTC"), as.POSIXct(myrowfix[2], tz="UTC"), myrowfix[3], myrowfix[4], as.numeric(myrowfix[5]), as.numeric(myrowfix[6]), myrowfix[7], myrowfix[8], as.numeric(myrowfix[9]))
             names(rowfix) <- names(contents)
             contents <- rbind(contents, rowfix)
-          }} else {
-          indx <- count.fields(e, sep=",")
-          indx[which(is.na(indx))] <- 6
-          if(any(indx == 9)) {
-            correct <- 9
-            nrowfix <- which(indx == 9) - 1
-            rowlen <- indx[which(indx == correct)]
-            contents <- goodrows(rowlen,nrowfix,e,correct,DatePattern,filetype)
-            names(contents) <- c("recorded.at","gps.at","latitude","longitude","altitude","quality","mean.lat","mean.lng","n.fixes")
-          } else {
+          }}  else {
           names(contents) <- c("recorded.at","gps.at","latitude","longitude","altitude","quality")
-          correct <- 6 }}
+          } #not fixing rows for v1
       }
     } else if(filetype == "node_health") {
-      v <- ifelse(ncol(contents) > 9, 2, 1)
-      correct <- ifelse(v < 2, 6, 13)
       if (length(delete.columns) > 0) {
         if(ncol(contents) > 9) {
           names(contents) <- c("Time","RadioId","NodeId","NodeRssi","Battery","celsius","RecordedAt","firmware","SolarVolts","SolarCurrent","CumulativeSolarCurrent","latitude","longitude")
@@ -664,11 +672,10 @@ file_handle <- function(e, filetype) {
         }
       }
     }
-    rowtest <- badrow(e, correct, contents, filetype)
-    contents <- rowtest[[1]]
     file_err <- ifelse(rowtest[[2]] > 0, rowtest[[2]], file_err)
-  } else {file_err = 2}
-return(list(contents, file_err, myrowfix))}
+    } else {file_err = 2}
+    print(tail(contents))
+return(list(contents, file_err, myrowfix, contents[1,]))}
 
 #' Download data
 #'
