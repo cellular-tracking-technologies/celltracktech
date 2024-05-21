@@ -778,7 +778,7 @@ get_file_info <- function(e) {
   thisfile <- list(filetype=filetype, sensor=sensor, y=y)
 return(thisfile)}
 
-get_files_import <- function(e, conn, fix=F) {
+get_files_import <- function(e, errtpe=0, conn, fix=F) {
   #e <- file.path(outpath, myproject, e)
   print(e)
   out <- get_file_info(e)
@@ -798,6 +798,9 @@ get_files_import <- function(e, conn, fix=F) {
     if(is.character(contents$Time)) {
       DBI::dbExecute(conn, paste0("delete from ",filetype," where path = ", y))
       z <- db_insert(contents, filetype, conn, sensor, y, begin)
+    } else if(errtpe > 0) {
+      DBI::dbExecute(conn, paste0("delete from ",filetype," where path = ", y))
+      z <- db_insert(contents, filetype, conn, sensor, y, begin)
     }
   } else {
     print("inserting contents")
@@ -807,8 +810,9 @@ get_files_import <- function(e, conn, fix=F) {
   if(!exists("z")) {z <- NULL}
 }
 
-patch <- function(d, outpath, myproject) {
+patch <- function(d, outpath, myproject, dirout) {
 myfiles <- list.files(file.path(outpath, myproject), recursive = TRUE, full.names=TRUE)
+errors <- error_files(file.path(outpath, myproject), dirout)
 #files_loc <- sapply(strsplit(myfiles, "/"), tail, n=1)
 DBI::dbExecute(d,"UPDATE raw SET node_id=lower(node_id)")
 DBI::dbExecute(conn, "WITH ordered AS (
@@ -823,7 +827,7 @@ to_delete AS (
 )
 delete from nodes using to_delete where nodes.id = to_delete.id")
 
-failed2 <- lapply(myfiles, get_files_import, conn=d, outpath=outpath, myproject=myproject, fix=T)
+failed2 <- lapply(get_files_import, myfiles, errors, MoreArgs=list(conn=d, fix=T))
 }
 
 #x <- data.frame("2021-10-26 18:29:52", 1, "52345578", -91, NA, 1)
@@ -872,4 +876,4 @@ error_files <- function(dirin,dirout) {
   file.copy(shortrow, file.path(dirout, "abbrev_row"))
   dir.create(file.path(dirout, "row_error"), showWarnings = FALSE)
   file.copy(rowerr, file.path(dirout, "row_error"))
-}
+return(filetest)}
