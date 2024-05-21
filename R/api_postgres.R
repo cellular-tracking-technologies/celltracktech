@@ -810,6 +810,17 @@ get_files_import <- function(e, errtpe=0, conn, fix=F) {
   if(!exists("z")) {z <- NULL}
 }
 
+#' Fix database entries
+#'
+#' This function allows you to copy files with errors or corrupt lines into a new destination to look closer
+#' @param d database connection
+#' @param outpath where your files were downloaded
+#' @param myproject the name of your project at CTT
+#' @param dirout where the problem files will be copied
+#' @export
+#' @examples
+#' patch(dbConnect(RPostgres::Postgres(), dbname=db_name), "~/mydata", "My Project", "~/errfiles")
+
 patch <- function(d, outpath, myproject, dirout) {
 myfiles <- list.files(file.path(outpath, myproject), recursive = TRUE, full.names=TRUE)
 errors <- error_files(file.path(outpath, myproject), dirout)
@@ -837,8 +848,8 @@ failed2 <- lapply(get_files_import, myfiles, errors, MoreArgs=list(conn=d, fix=T
 #' Find files with errors
 #'
 #' This function allows you to copy files with errors or corrupt lines into a new destination to look closer
-#' @param outpath where your files were downloaded
-#' @param file_dest where you want the files with errors to be copied
+#' @param dirin where your files were downloaded
+#' @param dirout where you want the files with errors to be copied
 #' @export
 #' @examples
 #' error_files("~/mydata", "~/errorfiles")

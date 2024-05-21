@@ -7,9 +7,9 @@
 error_files(dirin, dirout)
 }
 \arguments{
-\item{outpath}{where your files were downloaded}
+\item{dirin}{where your files were downloaded}
 
-\item{file_dest}{where you want the files with errors to be copied}
+\item{dirout}{where you want the files with errors to be copied}
 }
 \description{
 This function allows you to copy files with errors or corrupt lines into a new destination to look closer
