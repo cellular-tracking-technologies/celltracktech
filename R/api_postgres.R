@@ -797,9 +797,11 @@ get_files_import <- function(e, errtpe=0, conn, fix=F) {
   if(fix) {
     if(is.character(contents$Time)) {
       DBI::dbExecute(conn, paste0("delete from ",filetype," where path = ", y))
+      DBI::dbExecute(conn, paste0("delete from data_file where path = ", y))
       #z <- db_insert(contents, filetype, conn, sensor, y, begin)
     } else if(errtpe > 0) {
       DBI::dbExecute(conn, paste0("delete from ",filetype," where path = ", y))
+      DBI::dbExecute(conn, paste0("delete from data_file where path = ", y))
       #z <- db_insert(contents, filetype, conn, sensor, y, begin)
     }
   } else {
