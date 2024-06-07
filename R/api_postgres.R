@@ -797,10 +797,10 @@ get_files_import <- function(e, errtpe=0, conn, fix=F) {
   if(fix) {
     if(is.character(contents$Time)) {
       DBI::dbExecute(conn, paste0("delete from ",filetype," where path = ", y))
-      z <- db_insert(contents, filetype, conn, sensor, y, begin)
+      #z <- db_insert(contents, filetype, conn, sensor, y, begin)
     } else if(errtpe > 0) {
       DBI::dbExecute(conn, paste0("delete from ",filetype," where path = ", y))
-      z <- db_insert(contents, filetype, conn, sensor, y, begin)
+      #z <- db_insert(contents, filetype, conn, sensor, y, begin)
     }
   } else {
     print("inserting contents")
@@ -826,9 +826,8 @@ myfiles <- list.files(file.path(outpath, myproject), recursive = TRUE, full.name
 errors <- error_files(file.path(outpath, myproject), dirout)
 #files_loc <- sapply(strsplit(myfiles, "/"), tail, n=1)
 DBI::dbExecute(d,"UPDATE raw SET node_id=lower(node_id)")
-DBI::dbExecute(conn, "WITH ordered AS (
-  SELECT upper(node_id)
-    rank() OVER (PARTITION BY upper(node_id)) AS rnk
+try(DBI::dbSendQuery(conn, "WITH ordered AS (SELECT upper(node_id),
+    RANK() OVER (PARTITION BY upper(node_id)) AS rnk
   FROM nodes where node_id is not null
 ),
 to_delete AS (
@@ -836,9 +835,9 @@ to_delete AS (
   FROM   ordered
   WHERE  rnk > 1
 )
-delete from nodes using to_delete where nodes.id = to_delete.id")
+delete from nodes using to_delete where nodes.node_id = to_delete.node_id"))
 
-failed2 <- lapply(get_files_import, myfiles, errors, MoreArgs=list(conn=d, fix=T))
+failed2 <- Map(get_files_import, myfiles, errors, MoreArgs=list(conn=d, fix=T))
 }
 
 #x <- data.frame("2021-10-26 18:29:52", 1, "52345578", -91, NA, 1)
