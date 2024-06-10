@@ -583,7 +583,6 @@ badrow <- function(e, contents, filetype) {
       #  NA
       #})
     } #else {file_err <- 5}
-  }
   if(any(indx < correct) & any(indx > correct)) {file_err <- 5}
 return(list(contents,file_err))}
 
