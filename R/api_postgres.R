@@ -596,7 +596,7 @@ file_handle <- function(e, filetype) {
   }, error = function(err) {
     return(NULL)
   })
-  if(!is.null(contents)) {
+  if(!is.null(contents) & filetype %in% c("raw", "node_health", "gps")) {
     delete.columns <- grep("[[:digit:]]", colnames(contents), perl=T)
     if (length(delete.columns) > 0) {
       file_err=1
