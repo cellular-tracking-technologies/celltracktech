@@ -566,23 +566,22 @@ badrow <- function(e, contents, filetype) {
     rowlen <- indx[which(indx != correct)] #what if this is more than 1 row?
     print(contents[rowfix,])
     if(filetype=="gps" & correct == 9) {
-      if(any(indx == 6)) {
-        #badrows <- which(indx == 6) - 1
-        #print(contents[badrows[badrows!=0],])
+      if(min(rowfix) < 1) {
         rowfix <- which(indx == 9) - 1
         rowlen <- indx[which(indx == correct)]
         contents <- goodrows(rowlen,rowfix,e,correct,DatePattern,filetype)
-        }
-    } else if(length(rowfix) < 2) {
+      }
+    }
+    if(!is.POSIXct(contents[rowfix,1][[1]])) { #does this matter about how it's read in too? look for why it sometimes doesn't cast that way
+      #print(contents[rowfix,])
+      contents <- contents[-rowfix,]
+    }
+    #else if(length(rowfix) < 2) {
       #datetest <- tryCatch({
       #  is.POSIXct(contents[rowfix,1]$Time)
       #}, error = function(cond) {
       #  NA
       #})
-      if(!is.POSIXct(contents[rowfix,1][[1]])) {
-        #print(contents[rowfix,])
-        contents <- contents[-rowfix,]
-        }
     } #else {file_err <- 5}
   }
   if(any(indx < correct) & any(indx > correct)) {file_err <- 5}
