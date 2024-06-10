@@ -748,7 +748,7 @@ update_db <- function(d, outpath, myproject, fix=FALSE) {
   }
   files_import <- myfiles[which(!files_loc %in% filesdone)]
   write.csv(files_import, file.path(outpath,"files.csv"))
-  failed2 <- lapply(files_import, get_files_import, conn=d, outpath=outpath, myproject=myproject)
+  failed2 <- lapply(files_import, get_files_import, conn=d) #outpath=outpath, myproject=myproject)
   #faul <- which(!sapply(failed2[[1]], is.null))
   #if(length(faul) > 0) {
   #failed2 <- Map(`[`, failed2, faul)
