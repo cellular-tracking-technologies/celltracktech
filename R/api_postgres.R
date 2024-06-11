@@ -246,7 +246,12 @@ querygen <- function(mycont) {
 timeset <- function(g) {unname(sapply(g, function(h) ifelse(is.na(h), NA, paste(as.character(h), "UTC"))))}
 
 db_insert <- function(contents, filetype, conn, sensor, y, begin) {
-  if("Time" %in% names(contents)) {contents <- dplyr::filter(contents, Time < Sys.time() & Time > begin)}
+  timecols <- c("Time") #, "recorded at", "gps at", "RecordedAt", "recorded.at", "gps.at")
+  for (x in timecols) {
+    if(x %in% names(contents)) {
+      contents <- dplyr::filter(contents, (!!as.name(x)) < Sys.time() & (!!as.name(x)) > begin)
+    }
+  }
   contents <- data.frame(contents)
   if(!is.null(contents) & nrow(contents) > 0) {
     contents$station_id <- sensor
