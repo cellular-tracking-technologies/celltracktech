@@ -246,6 +246,8 @@ querygen <- function(mycont) {
 timeset <- function(g) {unname(sapply(g, function(h) ifelse(is.na(h), NA, paste(as.character(h), "UTC"))))}
 
 db_insert <- function(contents, filetype, conn, sensor, y, begin) {
+  if("Time" in names(contents)) {contents <- dplyr::filter(contents, Time < Sys.time() & Time > begin)}
+  contents <- data.frame(contents)
   if(!is.null(contents) & nrow(contents) > 0) {
     contents$station_id <- sensor
     contents$path <- y
@@ -656,17 +658,12 @@ file_handle <- function(e, filetype) {
         exactDatePattern = '^[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T, ][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?$'
         brokenrow <- grep(exactDatePattern, contents$Time, invert=TRUE) #find row that has a date embedded in a messed up string (i.e. interrupted rows)
         contents$Time[brokenrow]<- substring(contents$Time[brokenrow], regexpr(DatePattern, contents$Time[brokenrow]))
-        contents$Time <- as.POSIXct(contents$Time, tz="UTC")
-        contents <- dplyr::filter(contents, Time < Sys.time() & Time > begin)
-      } else {
-        contents <- dplyr::filter(contents, Time < Sys.time() & Time > begin)
-      }
+        contents$Time <- as.POSIXct(contents$Time, tz="UTC")}
       #print(contents)
       if(nrow(contents) > 0) {
         contents <- contents[!is.na(contents$Time),]
       }
     }
-    contents <- data.frame(contents)
     file_err <- ifelse(rowtest[[2]] > 0, rowtest[[2]], file_err)
     } else {file_err = 2}
     print(tail(contents))
