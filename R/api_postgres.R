@@ -246,34 +246,6 @@ querygen <- function(mycont) {
 timeset <- function(g) {unname(sapply(g, function(h) ifelse(is.na(h), NA, paste(as.character(h), "UTC"))))}
 
 db_insert <- function(contents, filetype, conn, sensor, y, begin) {
-  #print(filetype)
-  #print(str(contents))
-  #print(begin)
-  if("Time" %in% colnames(contents)) {
-    if(is.character(contents$Time)) { #does this just handle 1 broken date? if so, what happens when there are more broken rows?
-      DatePattern = '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T, ][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?'
-      exactDatePattern = '^[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T, ][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?$'
-      brokenrow <- grep(exactDatePattern, contents$Time, invert=TRUE) #find row that has a date embedded in a messed up string (i.e. interrupted rows)
-      contents[brokenrow,1]<- substring(contents[brokenrow,1], regexpr(DatePattern, contents[brokenrow,1]))
-      contents$Time <- as.POSIXct(contents$Time, tz="UTC")
-      contents <- dplyr::filter(contents, Time < Sys.time() & Time > begin)
-    } else {
-    contents <- dplyr::filter(contents, Time < Sys.time() & Time > begin)
-    }
-    #print(contents)
-    if(nrow(contents) > 0) {
-      contents <- contents[!is.na(contents$Time),]
-  }}
-
-
-
-  #contents[,unname(which(sapply(contents, is.POSIXct)))] <- ifelse(nrow(contents[,unname(which(sapply(contents, is.POSIXct)))]) > 1,
-  #                                                                 tibble::as_tibble(apply(contents[,unname(which(sapply(contents, is.POSIXct)))], 2,
-  #                                                                                 timeset)),
-  #  dplyr::bind_rows(apply(contents[,unname(which(sapply(contents, is.POSIXct)))], 2, timeset)))
-
-  contents <- data.frame(contents)
-
   if(!is.null(contents) & nrow(contents) > 0) {
     contents$station_id <- sensor
     contents$path <- y
@@ -586,6 +558,10 @@ badrow <- function(e, contents, filetype) {
   if(any(indx < correct) & any(indx > correct)) {file_err <- 5}
 return(list(contents,file_err))}
 
+timecheck <- function(contents, myrowfix) {
+  time <- ifelse(is.POSIXct(contents[,1][[1]]), as.POSIXct(myrowfix[1],tz="UTC"),myrowfix[1])
+return(time)}
+
 file_handle <- function(e, filetype) {
   file_err=0
   myrowfix <- c()
@@ -602,7 +578,7 @@ file_handle <- function(e, filetype) {
         myrowfix <- Correct_Colnames(contents)
         myrowfix[1] <- strsplit(Correct_Colnames(contents)[1],"[.]")[[1]][1]
         myrowfix[2] <- strsplit(Correct_Colnames(contents)[2],"[.]")[[1]][1]
-        myrowfix[4] <- strsplit(Correct_Colnames(contents)[3],"\\.\\.")[[1]][1]
+        myrowfix[3] <- strsplit(Correct_Colnames(contents)[3],"\\.\\.")[[1]][1] #were there files where this wasn't correctly split?
         myrowfix[4] <- strsplit(Correct_Colnames(contents)[4],"\\.\\.")[[1]][1]
         myrowfix[5] <- strsplit(Correct_Colnames(contents)[5],"\\.\\.")[[1]][1]
         if(nchar(myrowfix[5]) < 1) {myrowfix[5] <- NA}
@@ -627,12 +603,14 @@ file_handle <- function(e, filetype) {
     }
     rowtest <- badrow(e, contents, filetype)
     contents <- rowtest[[1]]
+
     if(filetype == "raw") {
       if (length(delete.columns) > 0) {
         if(ncol(contents) > 5) {
           names(contents) <- c("Time","RadioId","TagId","TagRSSI","NodeId","Validated")
           if(length(myrowfix) > 0) {
-            rowfix <- data.frame(as.POSIXct(myrowfix[1],tz="UTC"), as.integer(myrowfix[2]), myrowfix[3], myrowfix[4], myrowfix[5], as.integer(myrowfix[6]))
+            time <- timecheck(contents, myrowfix)
+            rowfix <- data.frame(time, as.integer(myrowfix[2]), myrowfix[3], myrowfix[4], myrowfix[5], as.integer(myrowfix[6]))
             names(rowfix) <- names(contents)
             contents <- rbind(contents, rowfix)
             }
@@ -649,7 +627,8 @@ file_handle <- function(e, filetype) {
         if(ncol(contents) > 8) {
           names(contents) <- c("recorded.at","gps.at","latitude","longitude","altitude","quality","mean.lat","mean.lng","n.fixes")
           if(length(myrowfix) > 6) {
-            rowfix <- data.frame(as.POSIXct(myrowfix[1], tz="UTC"), as.POSIXct(myrowfix[2], tz="UTC"), myrowfix[3], myrowfix[4], as.numeric(myrowfix[5]), as.numeric(myrowfix[6]), myrowfix[7], myrowfix[8], as.numeric(myrowfix[9]))
+            time <- timecheck(contents, myrowfix)
+            rowfix <- data.frame(time, as.POSIXct(myrowfix[2], tz="UTC"), myrowfix[3], myrowfix[4], as.numeric(myrowfix[5]), as.numeric(myrowfix[6]), myrowfix[7], myrowfix[8], as.numeric(myrowfix[9]))
             names(rowfix) <- names(contents)
             contents <- rbind(contents, rowfix)
           }}  else {
@@ -661,7 +640,8 @@ file_handle <- function(e, filetype) {
         if(ncol(contents) > 9) {
           names(contents) <- c("Time","RadioId","NodeId","NodeRssi","Battery","celsius","RecordedAt","firmware","SolarVolts","SolarCurrent","CumulativeSolarCurrent","latitude","longitude")
           if(length(myrowfix) > 0) {
-            rowfix <- data.frame(as.POSIXct(myrowfix[1], tz="UTC"), as.integer(myrowfix[2]), myrowfix[3], as.integer(myrowfix[4]), as.numeric(myrowfix[5]), as.numeric(myrowfix[6]), as.POSIXct(myrowfix[7], tz="UTC"), myrowfix[8], as.numeric(myrowfix[9]), as.numeric(myrowfix[10]), as.numeric(myrowfix[11]), as.numeric(myrowfix[12]), as.numeric(myrowfix[13]))
+            time <- timecheck(contents, myrowfix)
+            rowfix <- data.frame(time, as.integer(myrowfix[2]), myrowfix[3], as.integer(myrowfix[4]), as.numeric(myrowfix[5]), as.numeric(myrowfix[6]), as.POSIXct(myrowfix[7], tz="UTC"), myrowfix[8], as.numeric(myrowfix[9]), as.numeric(myrowfix[10]), as.numeric(myrowfix[11]), as.numeric(myrowfix[12]), as.numeric(myrowfix[13]))
             names(rowfix) <- names(contents)
             contents <- rbind(contents, rowfix)
           } else {
@@ -670,6 +650,23 @@ file_handle <- function(e, filetype) {
         }
       }
     }
+    if("Time" %in% colnames(contents)) {
+      if(is.character(contents$Time)) { #does this just handle 1 broken date? if so, what happens when there are more broken rows?
+        DatePattern = '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T, ][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?'
+        exactDatePattern = '^[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T, ][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?$'
+        brokenrow <- grep(exactDatePattern, contents$Time, invert=TRUE) #find row that has a date embedded in a messed up string (i.e. interrupted rows)
+        contents$Time[brokenrow]<- substring(contents$Time[brokenrow], regexpr(DatePattern, contents$Time[brokenrow]))
+        contents$Time <- as.POSIXct(contents$Time, tz="UTC")
+        contents <- dplyr::filter(contents, Time < Sys.time() & Time > begin)
+      } else {
+        contents <- dplyr::filter(contents, Time < Sys.time() & Time > begin)
+      }
+      #print(contents)
+      if(nrow(contents) > 0) {
+        contents <- contents[!is.na(contents$Time),]
+      }
+    }
+    contents <- data.frame(contents)
     file_err <- ifelse(rowtest[[2]] > 0, rowtest[[2]], file_err)
     } else {file_err = 2}
     print(tail(contents))
