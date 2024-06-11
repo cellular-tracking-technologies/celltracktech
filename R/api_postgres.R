@@ -261,10 +261,10 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
       contents$recorded_at <- as.character(contents$recorded_at)
       colnames(contents)[colnames(contents)=="gps.at"] <- "gps_at"
       contents$gps_at <- as.character(contents$gps_at)
-      if ("mean.lat" %in% colnames(contents)) {
-        colnames(contents)[colnames(contents)=="mean.lat"] <- "mean_lat"
-        colnames(contents)[colnames(contents)=="mean.lng"] <- "mean_lng"
-        colnames(contents)[colnames(contents)=="n.fixes"] <- "n_fixes"
+      if ("mean.lat" %in% colnames(contents) | "mean lat" %in% colnames(contents)) {
+        colnames(contents)[colnames(contents) %in% c("mean.lat", "mean lat")] <- "mean_lat"
+        colnames(contents)[colnames(contents) %in% c("mean.lng", "mean lng")] <- "mean_lng"
+        colnames(contents)[colnames(contents) %in% c("n.fixes", "n fixes")] <- "n_fixes"
       } else {
         contents$mean_lat <- NA
         contents$mean_lng <- NA
