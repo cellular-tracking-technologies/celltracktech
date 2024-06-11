@@ -652,20 +652,25 @@ file_handle <- function(e, filetype) {
         }
       }
     }
-    if("Time" %in% colnames(contents)) {
-      if(is.character(contents$Time)) { #does this just handle 1 broken date? if so, what happens when there are more broken rows?
+    timecols <- c("Time", "recorded at", "gps at", "RecordedAt", "recorded.at", "gps.at")
+    filetime <- which(names(contents) %in% timecols)
+    out <- lapply(filetime, function(x) {
+      timecol <- contents[,x][[1]]
+      if(is.character(timecol)) {
         DatePattern = '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T, ][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?'
         exactDatePattern = '^[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T, ][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?$'
-        brokenrow <- grep(exactDatePattern, contents$Time, invert=TRUE) #find row that has a date embedded in a messed up string (i.e. interrupted rows)
-        contents$Time[brokenrow]<- substring(contents$Time[brokenrow], regexpr(DatePattern, contents$Time[brokenrow]))
-        contents$Time <- as.POSIXct(contents$Time, tz="UTC")}
-      #print(contents)
-      if(nrow(contents) > 0) {
-        contents <- contents[!is.na(contents$Time),]
+        brokenrow <- grep(exactDatePattern, timecol, invert=TRUE) #find row that has a date embedded in a messed up string (i.e. interrupted rows)
+        timecol[brokenrow] <- substring(timecol[brokenrow], regexpr(DatePattern, timecol[brokenrow]))
+        newtimecol <- as.POSIXct(timecol, tz="UTC")
+      } else {
+        newtimecol <- timecol
       }
-    }
+    return(newtimecol)})
+    contents[filetime] <- out
+    if("Time" %in% colnames(contents) & nrow(contents) > 0) {contents <- contents[!is.na(contents$Time),]}
     file_err <- ifelse(rowtest[[2]] > 0, rowtest[[2]], file_err)
-    } else {file_err = 2}
+      #print(contents)
+  } else {file_err = 2}
     print(tail(contents))
 return(list(contents, file_err, myrowfix, contents[1,]))}
 
