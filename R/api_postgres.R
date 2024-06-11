@@ -665,6 +665,7 @@ file_handle <- function(e, filetype) {
         DatePattern = '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T, ][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?'
         exactDatePattern = '^[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T, ][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?$'
         brokenrow <- grep(exactDatePattern, timecol, invert=TRUE) #find row that has a date embedded in a messed up string (i.e. interrupted rows)
+        if(length(brokenrow) > 0) {file_err <- 6}
         timecol[brokenrow] <- substring(timecol[brokenrow], regexpr(DatePattern, timecol[brokenrow]))
         newtimecol <- as.POSIXct(timecol, tz="UTC")
       } else {
@@ -797,11 +798,11 @@ get_files_import <- function(e, errtpe=0, conn, fix=F) {
   #file_err <- fileimp[[2]]
   #print("inserting contents")
   if(fix) {
-    if(is.character(contents$Time)) {
-      DBI::dbExecute(conn, paste0("delete from ",filetype," where path = ", y))
-      DBI::dbExecute(conn, paste0("delete from data_file where path = ", y))
+    #if(is.character(contents$Time)) {
+    #  DBI::dbExecute(conn, paste0("delete from ",filetype," where path = ", y))
+    #  DBI::dbExecute(conn, paste0("delete from data_file where path = ", y))
       #z <- db_insert(contents, filetype, conn, sensor, y, begin)
-    } else if(errtpe > 0) {
+    if(errtpe > 0) {
       DBI::dbExecute(conn, paste0("delete from ",filetype," where path = ", y))
       DBI::dbExecute(conn, paste0("delete from data_file where path = ", y))
       #z <- db_insert(contents, filetype, conn, sensor, y, begin)
