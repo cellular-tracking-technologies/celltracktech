@@ -842,7 +842,7 @@ to_delete AS (
 )
 delete from nodes using to_delete where nodes.node_id = to_delete.node_id"))
 
-failed2 <- Map(get_files_import, myfiles, errors, MoreArgs=list(conn=d, fix=T))
+failed2 <- Map(get_files_import, myfiles, unname(errors), MoreArgs=list(conn=d, fix=T))
 }
 
 #x <- data.frame("2021-10-26 18:29:52", 1, "52345578", -91, NA, 1)
@@ -876,11 +876,11 @@ error_files <- function(dirin,dirout) {
     }
   return(testerr)})
   close(fileConn)
-  missingheader <- myfiles[which(filetest==1)]
-  emptyfile <- myfiles[which(filetest==2)]
-  longrow <- myfiles[which(filetest==3)]
-  shortrow <- myfiles[which(filetest==4)]
-  rowerr <- myfiles[which(filetest==5)]
+  missingheader <- names(which(filetest==1))
+  emptyfile <- names(which(filetest==2))
+  longrow <- names(which(filetest==3))
+  shortrow <- names(which(filetest==4))
+  rowerr <- names(which(filetest==5))
   dir.create(file.path(dirout, "missing_header"), showWarnings = FALSE)
   file.copy(missingheader, file.path(dirout, "missing_header"))
   dir.create(file.path(dirout, "empty"), showWarnings = FALSE)
