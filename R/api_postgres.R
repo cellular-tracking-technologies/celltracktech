@@ -803,8 +803,8 @@ get_files_import <- function(e, errtpe=0, conn, fix=F) {
     #  DBI::dbExecute(conn, paste0("delete from data_file where path = ", y))
       #z <- db_insert(contents, filetype, conn, sensor, y, begin)
     if(errtpe > 0) {
-      DBI::dbExecute(conn, paste0("delete from ",filetype," where path = ", y))
-      DBI::dbExecute(conn, paste0("delete from data_file where path = ", y))
+      DBI::dbExecute(conn, paste0("delete from ",filetype," where path = '", y, "'"))
+      DBI::dbExecute(conn, paste0("delete from data_file where path = '", y, "'"))
       #z <- db_insert(contents, filetype, conn, sensor, y, begin)
     }
   } else {
