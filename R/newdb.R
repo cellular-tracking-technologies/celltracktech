@@ -29,7 +29,7 @@ to_delete AS (
   WHERE  rnk > 1
 )
 
-delete from raw using to_delete where raw.time = to_delete.time and raw.node_id = to_delete.node_id and raw.tag_id =to_delete.tag_id") #2022-04-04 19:43:43-04 1933552D 377c59
+delete from raw using to_delete where raw.time = to_delete.time and raw.node_id = to_delete.upper and raw.tag_id =to_delete.tag_id") #2022-04-04 19:43:43-04 1933552D 377c59
 }
 
 #' Incorporate node data
