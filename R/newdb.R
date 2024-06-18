@@ -7,8 +7,8 @@
 
 db_cleanup <- function(conn) {
   DBI::dbExecute(conn, "WITH ordered AS (
-  SELECT id, time, tag_id, upper(node_id), tag_rssi,
-    rank() OVER (PARTITION BY time, tag_id, upper(node_id), tag_rssi  ORDER BY id) AS rnk
+  SELECT id, time, upper(tag_id) as tag, upper(node_id), tag_rssi,
+    rank() OVER (PARTITION BY time, upper(tag_id) as tag, upper(node_id), tag_rssi  ORDER BY id) AS rnk
   FROM raw where node_id is not null
 ),
 to_delete AS (
@@ -19,8 +19,8 @@ to_delete AS (
 delete from raw using to_delete where raw.id = to_delete.id")
 
 DBI::dbExecute(conn, "WITH ordered AS (
-  SELECT id, time, tag_id, upper(node_id), tag_rssi,
-    rank() OVER (PARTITION BY time, tag_id, upper(node_id)  ORDER BY id) AS rnk
+  SELECT id, time, upper(tag_id) as tag, upper(node_id),
+    rank() OVER (PARTITION BY time, upper(tag_id) as tag, upper(node_id)  ORDER BY id) AS rnk
   FROM raw where node_id is not null
 ),
 to_delete AS (
@@ -29,7 +29,7 @@ to_delete AS (
   WHERE  rnk > 1
 )
 
-delete from raw using to_delete where raw.time = to_delete.time and raw.node_id = to_delete.upper and raw.tag_id =to_delete.tag_id") #2022-04-04 19:43:43-04 1933552D 377c59
+delete from raw using to_delete where raw.time = to_delete.time and upper(raw.node_id) = to_delete.upper and upper(raw.tag_id) =to_delete.tag") #2022-04-04 19:43:43-04 1933552D 377c59
 }
 
 #' Incorporate node data
@@ -144,7 +144,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
   #nodes <- nodes[nodes$Time > as.POSIXct("2020-08-20"),]
     df <- df[order(df$Time),]
     df$RadioId <- 4 #https://bitbucket.org/cellulartrackingtechnologies/lifetag-system-report/src/master/beeps.py
-    df$TagId <- df$id
+    df$TagId <- toupper(df$id)
     df$id <- NULL
     df$TagRSSI <- as.integer(df$rssi)
     df <- df[!is.na(df$TagRSSI),]
