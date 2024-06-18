@@ -7,8 +7,8 @@
 
 db_cleanup <- function(conn) {
   DBI::dbExecute(conn, "WITH ordered AS (
-  SELECT id, time, upper(tag_id) as tag, upper(node_id), tag_rssi,
-    rank() OVER (PARTITION BY time, upper(tag_id) as tag, upper(node_id), tag_rssi  ORDER BY id) AS rnk
+  SELECT id, time, upper(tag_id), upper(node_id), tag_rssi,
+    rank() OVER (PARTITION BY time, upper(tag_id), upper(node_id), tag_rssi  ORDER BY id) AS rnk
   FROM raw where node_id is not null
 ),
 to_delete AS (
@@ -20,7 +20,7 @@ delete from raw using to_delete where raw.id = to_delete.id")
 
 DBI::dbExecute(conn, "WITH ordered AS (
   SELECT id, time, upper(tag_id) as tag, upper(node_id),
-    rank() OVER (PARTITION BY time, upper(tag_id) as tag, upper(node_id)  ORDER BY id) AS rnk
+    rank() OVER (PARTITION BY time, upper(tag_id), upper(node_id)  ORDER BY id) AS rnk
   FROM raw where node_id is not null
 ),
 to_delete AS (
