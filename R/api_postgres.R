@@ -677,7 +677,7 @@ file_handle <- function(e, filetype) {
     file_err <- ifelse(rowtest[[2]] > 0, rowtest[[2]], file_err)
       #print(contents)
   } else {file_err = 2}
-    print(tail(contents))
+    #print(tail(contents))
 return(list(contents, file_err, myrowfix, contents[1,]))}
 
 #' Download data
@@ -797,12 +797,18 @@ get_files_import <- function(e, errtpe=0, conn, fix=F) {
   contents <- file_handle(e, filetype)[[1]]
   #file_err <- fileimp[[2]]
   #print("inserting contents")
+  print(fix)
+  print(errtpe)
+  print(filetype)
+  print(y)
   if(fix) {
+    print("checking")
     #if(is.character(contents$Time)) {
     #  DBI::dbExecute(conn, paste0("delete from ",filetype," where path = ", y))
     #  DBI::dbExecute(conn, paste0("delete from data_file where path = ", y))
       #z <- db_insert(contents, filetype, conn, sensor, y, begin)
     if(errtpe > 0) {
+      print("deleting")
       DBI::dbExecute(conn, paste0("delete from ",filetype," where path = '", y, "'"))
       DBI::dbExecute(conn, paste0("delete from data_file where path = '", y, "'"))
       #z <- db_insert(contents, filetype, conn, sensor, y, begin)
@@ -830,7 +836,8 @@ patch <- function(d, outpath, myproject, dirout) {
 myfiles <- list.files(file.path(outpath, myproject), recursive = TRUE, full.names=TRUE)
 errors <- error_files(file.path(outpath, myproject), dirout)
 #files_loc <- sapply(strsplit(myfiles, "/"), tail, n=1)
-DBI::dbExecute(d,"UPDATE raw SET node_id=lower(node_id)")
+DBI::dbExecute(d,"UPDATE raw SET node_id=upper(node_id)")
+DBI::dbExecute(d,"UPDATE raw SET tag_id=upper(tag_id)")
 try(DBI::dbSendQuery(conn, "WITH ordered AS (SELECT upper(node_id),
     RANK() OVER (PARTITION BY upper(node_id)) AS rnk
   FROM nodes where node_id is not null
