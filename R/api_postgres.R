@@ -801,22 +801,8 @@ get_files_import <- function(e, errtpe=0, conn, fix=F) {
   print(errtpe)
   print(filetype)
   print(y)
-  if(fix) {
-    print("checking")
-    #if(is.character(contents$Time)) {
-    #  DBI::dbExecute(conn, paste0("delete from ",filetype," where path = ", y))
-    #  DBI::dbExecute(conn, paste0("delete from data_file where path = ", y))
-      #z <- db_insert(contents, filetype, conn, sensor, y, begin)
-    if(errtpe > 0) {
-      print("deleting")
-      DBI::dbExecute(conn, paste0("delete from ",filetype," where path = '", y, "'"))
-      DBI::dbExecute(conn, paste0("delete from data_file where path = '", y, "'"))
-      #z <- db_insert(contents, filetype, conn, sensor, y, begin)
-    }
-  } else {
-    print("inserting contents")
-    z <- db_insert(contents, filetype, conn, sensor, y, begin)
-  }
+  print("inserting contents")
+  z <- db_insert(contents, filetype, conn, sensor, y, begin)
   }
   if(!exists("z")) {z <- NULL}
 }
@@ -834,7 +820,7 @@ get_files_import <- function(e, errtpe=0, conn, fix=F) {
 
 patch <- function(d, outpath, myproject, dirout) {
 #myfiles <- list.files(file.path(outpath, myproject), recursive = TRUE, full.names=TRUE)
-errors <- error_files(file.path(outpath, myproject), dirout)
+errors <- error_files(file.path(outpath, myproject), dirout, d)
 #myfiles <- names(errors)
 #files_loc <- sapply(strsplit(myfiles, "/"), tail, n=1)
 DBI::dbExecute(d,"UPDATE raw SET node_id=upper(node_id)")
@@ -849,8 +835,7 @@ to_delete AS (
   WHERE  rnk > 1
 )
 delete from nodes using to_delete where nodes.node_id = to_delete.node_id"))
-
-failed2 <- Map(get_files_import, names(errors), unname(errors), MoreArgs=list(conn=d, fix=T))
+#failed2 <- Map(get_files_import, names(errors), unname(errors), MoreArgs=list(conn=d, fix=T))
 }
 
 #x <- data.frame("2021-10-26 18:29:52", 1, "52345578", -91, NA, 1)
@@ -866,7 +851,7 @@ failed2 <- Map(get_files_import, names(errors), unname(errors), MoreArgs=list(co
 #' @examples
 #' error_files("~/mydata", "~/errorfiles")
 
-error_files <- function(dirin,dirout) {
+error_files <- function(dirin,dirout,conn=NULL) {
   dir.create(file.path(dirout), showWarnings = FALSE)
   myfiles <- list.files(dirin, recursive = TRUE, full.names=TRUE)
   output <- file.path(dirout,"output.txt")
@@ -879,7 +864,14 @@ error_files <- function(dirin,dirout) {
       cat(c(testerr[[3]], e), file=fileConn, append=T)
       cat("\n", file = fileConn, append = TRUE)
       testerr <- testerr[[2]]
-    } else {
+      if(!is.null(myconn)) {
+        if(testerr > 0) {
+          print("deleting")
+          DBI::dbExecute(conn, paste0("delete from ",fileinfo$filetype," where path = '", fileinfo$y, "'"))
+          DBI::dbExecute(conn, paste0("delete from data_file where path = '", fileinfo$y, "'"))
+          #z <- db_insert(contents, filetype, conn, sensor, y, begin)
+        }
+    }} else {
       testerr <- 0
     }
   return(testerr)})
