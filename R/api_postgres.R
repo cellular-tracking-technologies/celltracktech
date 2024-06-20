@@ -833,8 +833,9 @@ get_files_import <- function(e, errtpe=0, conn, fix=F) {
 #' patch(dbConnect(RPostgres::Postgres(), dbname=db_name), "~/mydata", "My Project", "~/errfiles")
 
 patch <- function(d, outpath, myproject, dirout) {
-myfiles <- list.files(file.path(outpath, myproject), recursive = TRUE, full.names=TRUE)
+#myfiles <- list.files(file.path(outpath, myproject), recursive = TRUE, full.names=TRUE)
 errors <- error_files(file.path(outpath, myproject), dirout)
+#myfiles <- names(errors)
 #files_loc <- sapply(strsplit(myfiles, "/"), tail, n=1)
 DBI::dbExecute(d,"UPDATE raw SET node_id=upper(node_id)")
 DBI::dbExecute(d,"UPDATE raw SET tag_id=upper(tag_id)")
@@ -849,7 +850,7 @@ to_delete AS (
 )
 delete from nodes using to_delete where nodes.node_id = to_delete.node_id"))
 
-failed2 <- Map(get_files_import, myfiles, unname(errors), MoreArgs=list(conn=d, fix=T))
+failed2 <- Map(get_files_import, names(errors), unname(errors), MoreArgs=list(conn=d, fix=T))
 }
 
 #x <- data.frame("2021-10-26 18:29:52", 1, "52345578", -91, NA, 1)
