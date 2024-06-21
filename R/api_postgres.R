@@ -864,7 +864,7 @@ error_files <- function(dirin,dirout,conn=NULL) {
       cat(c(testerr[[3]], e), file=fileConn, append=T)
       cat("\n", file = fileConn, append = TRUE)
       testerr <- testerr[[2]]
-      if(!is.null(myconn)) {
+      if(!is.null(conn)) {
         if(testerr > 0) {
           print("deleting")
           DBI::dbExecute(conn, paste0("delete from ",fileinfo$filetype," where path = '", fileinfo$y, "'"))
