@@ -29,7 +29,10 @@ to_delete AS (
   WHERE  rnk > 1
 )
 
-delete from raw using to_delete where raw.time = to_delete.time and upper(raw.node_id) = to_delete.upper and upper(raw.tag_id) =to_delete.tag") #2022-04-04 19:43:43-04 1933552D 377c59
+delete from raw using to_delete where raw.time = to_delete.time and upper(raw.node_id) = to_delete.upper and upper(raw.tag_id) =to_delete.tag")
+
+DBI::dbExecute(conn, "delete from raw where tag_id is null")
+#2022-04-04 19:43:43-04 1933552D 377c59
 }
 
 #' Incorporate node data
@@ -88,17 +91,17 @@ load_node_data <- function(e, conn, outpath, myproject) {
   #lapply(runs[lengths(runs) > 1], range)
   df <- tryCatch({
     if (file.size(e) > 0) {
-        read.csv(e,header=TRUE,as.is=TRUE, na.strings=c("NA", ""), colClasses=c("id"="character"), skipNul = TRUE)
+        read_csv(e,na=c("NA", ""), skip_empty_rows = TRUE)
     }}, error = function(err) {
         # error handler picks up where error was generated
         print("ignoring file", e, "- no data")
         return(NULL)
-    }, warning = function(w) {
-
-      x <- read.csv(e,header=TRUE,as.is=TRUE, na.strings=c("NA", ""), skipNul = TRUE)
-      x <- rbind(x,Correct_Colnames(x))
-      colnames(x) <- c("time", "id", "rssi")
-      return(x)
+    }, error = function(w) {
+      print("error in file")
+      #x <- read.csv(e,header=TRUE,as.is=TRUE, na.strings=c("NA", ""), skipNul = TRUE) might need to reimplement this...
+      #x <- rbind(x,Correct_Colnames(x))
+      #colnames(x) <- c("time", "id", "rssi")
+      #return(x)
     })
   badlines <- grep("[^ -~]", df$id)
   if (length(badlines) > 0) {
@@ -138,7 +141,8 @@ load_node_data <- function(e, conn, outpath, myproject) {
   if(!is.null(df)) {
     df$NodeId <- tolower(file[1])
     time = "UTC"
-    df$Time <- as.POSIXct(df$time,format="%Y-%m-%dT%H:%M:%SZ",tz = time, optional=TRUE)
+    df$Time <- df$time
+    if(is.character(df$time)) {df$Time <- as.POSIXct(df$time,format="%Y-%m-%dT%H:%M:%SZ",tz = time, optional=TRUE)}
     df <- df[!is.na(df$Time),]
     df$time <- NULL
   #nodes <- nodes[nodes$Time > as.POSIXct("2020-08-20"),]
@@ -153,5 +157,17 @@ load_node_data <- function(e, conn, outpath, myproject) {
     validated <- which(nchar(df$TagId) == 10)
     df$Validated[validated] <- 1
     df$TagId[validated] <- substr(df$TagId[validated], 1, 8)
+
+    start <- min(df$Time, na.rm=T)
+    end <- max(df$Time, na.rm=T)
+    test <- dbGetQuery(conn, paste0("select * from raw where time > '", start,"' and time < '",end,"'"))
+    test$Time <- test$time
+    test$TagId <- test$tag_id
+    test$RadioId <- test$radio_id
+    test$NodeId <- test$node_id
+    test$TagRSSI <- test$tag_rssi
+    test$Validated <- test$validated
+    test <- test[,colnames(df)]
+    df <- dplyr::anti_join(df,test)
     z <- db_insert(df, filetype, conn, sensor, y, begin)}
 }

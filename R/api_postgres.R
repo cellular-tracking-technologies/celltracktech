@@ -282,6 +282,7 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
     #}
     } else if (filetype == "raw") {
       #print(names(contents))
+      contents <- contents[!is.na(contents$TagId),]
       if (!(any(tolower(names(contents))=="validated"))) {contents$validated <- NA}
 
       contents$RadioId <- as.integer(contents$RadioId)
