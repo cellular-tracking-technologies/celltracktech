@@ -495,7 +495,7 @@ get_data <- function(thisproject, outpath, f=NULL, my_station, beginning, ending
       write(contents, file=gzfile(file.path(outpath, basename, sensor, filetype, y)))
       e <- file.path(outpath, basename, sensor, filetype, y)
       if(!is.null(f) & filetype %in% c("raw", "node_health", "gps")) {
-        contents <- file_hand
+        contents <- file_handle(e, filetype)[[1]]
         print(begin)
         z <- db_insert(contents, filetype, f, sensor, y, begin)
       }
