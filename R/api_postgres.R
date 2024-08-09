@@ -487,15 +487,15 @@ get_data <- function(thisproject, outpath, f=NULL, my_station, beginning, ending
     } else {
       contents <- httr::content(contents, type="text")
     }
-    if (!is.null(contents)) {
+    if (!is.null(contents) & filetype %in% c("raw", "node_health", "gps", "ble", "blu")) {
       dir.create(file.path(outpath, basename, sensor), showWarnings = FALSE)
       dir.create(file.path(outpath, basename, sensor, filetype), showWarnings = FALSE)
-      print(paste("downloading",y,"to",file.path(outpath, basename, sensor, filetype)))
-      print(x)
+      #print(paste("downloading",y,"to",file.path(outpath, basename, sensor, filetype)))
+      #print(x)
       write(contents, file=gzfile(file.path(outpath, basename, sensor, filetype, y)))
       e <- file.path(outpath, basename, sensor, filetype, y)
       if(!is.null(f) & filetype %in% c("raw", "node_health", "gps")) {
-        contents <- file_handle(e, filetype)[[1]]
+        contents <- file_hand
         print(begin)
         z <- db_insert(contents, filetype, f, sensor, y, begin)
       }
@@ -573,6 +573,7 @@ timecheck <- function(contents, myrowfix) {
 return(time)}
 
 file_handle <- function(e, filetype) {
+  print(paste("checking file for errors:", e))
   file_err=0
   myrowfix <- c()
   contents <- tryCatch({
