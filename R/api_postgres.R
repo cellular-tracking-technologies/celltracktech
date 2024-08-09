@@ -480,7 +480,7 @@ get_data <- function(thisproject, outpath, f=NULL, my_station, beginning, ending
       filetype <- "raw"
     }
 
-    if (filetype != "log" & filetype != "sensorgnome") {
+    if (filetype %in% c("raw", "node_health", "gps")) {
       print(paste("downloading",y,"to",file.path(outpath, basename, sensor, filetype)))
       print(x)
       contents = downloadFiles(file_id = x)
@@ -507,6 +507,7 @@ get_data <- function(thisproject, outpath, f=NULL, my_station, beginning, ending
   return(z)}
 
 failed <- Map(get_files, ids, file_names)
+print("done getting files")
 return(failed)}
 
 goodrows <- function(rowlen,rowfix,e,correct,DatePattern,filetype) {
