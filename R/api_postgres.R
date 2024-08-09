@@ -43,7 +43,7 @@ host <- 'https://api.internetofwildlife.com/'
 project <- '/station/api/projects'
 stations <- '/station/api/stations/'
 files <- '/station/api/file-list'
-file_types <- c("data", "node-data", "gps", "log", "telemetry", "sensorgnome", "ble")
+file_types <- c("data", "node-data", "gps", "log", "telemetry", "sensorgnome", "ble", "blu")
 
 project_list <- function(my_token, myproject=NULL) {
   projects <- httr::content(httr::POST(host, path = project, body = list(token=my_token), encode="json"))
