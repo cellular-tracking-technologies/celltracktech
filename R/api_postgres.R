@@ -359,6 +359,9 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
       #    contents <- me
         #}
       #}
+
+      #ONLY SUPPORTS V2 NODES FOR NOW FOR DB
+      #contents <- contents[,1:13]
     } else {nodeids <- c()}
     if (filetype %in% c("raw", "node_health", "gps")) {
       #print(str(contents))
@@ -519,7 +522,7 @@ badrow <- function(e, contents, filetype) {
   if(filetype == "raw") {
   correct <- ifelse(ncol(contents) > 5, 6, 5)
   } else if (filetype == "node_health") {
-  correct <- ifelse(ncol(contents) > 9, 13, 6)
+  correct <- ifelse(ncol(contents) > 9, ifelse(ncol(contents) > 13, 19, 13), 6)
   } else if (filetype == "gps") {
     indx <- count.fields(e, sep=",")
     correct <- ifelse(any(indx == 9), 9, 6)
@@ -645,14 +648,14 @@ file_handle <- function(e, filetype) {
       }
     } else if(filetype == "node_health") {
       if (length(delete.columns) > 0) {
-        if(ncol(contents) > 9) {
+        if(ncol(contents) > 9 & ncol(contents) < 14) {
           names(contents) <- c("Time","RadioId","NodeId","NodeRssi","Battery","celsius","RecordedAt","firmware","SolarVolts","SolarCurrent","CumulativeSolarCurrent","latitude","longitude")
           if(length(myrowfix) > 0) {
             time <- timecheck(contents, myrowfix)
             rowfix <- data.frame(time, as.integer(myrowfix[2]), myrowfix[3], as.integer(myrowfix[4]), as.numeric(myrowfix[5]), as.numeric(myrowfix[6]), as.POSIXct(myrowfix[7], tz="UTC"), myrowfix[8], as.numeric(myrowfix[9]), as.numeric(myrowfix[10]), as.numeric(myrowfix[11]), as.numeric(myrowfix[12]), as.numeric(myrowfix[13]))
             names(rowfix) <- names(contents)
             contents <- rbind(contents, rowfix)
-          } else {
+          }} else if(ncol(contents) < 9) {
             names(contents) <- c("Time","RadioId","NodeId","NodeRssi","Battery","celsius")
           }
         }
