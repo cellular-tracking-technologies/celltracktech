@@ -660,7 +660,6 @@ file_handle <- function(e, filetype) {
           }
         }
       }
-    }
     timecols <- c("Time", "recorded at", "gps at", "RecordedAt", "recorded.at", "gps.at")
     filetime <- which(names(contents) %in% timecols)
     out <- lapply(filetime, function(x) {
