@@ -479,17 +479,15 @@ get_data <- function(thisproject, outpath, f=NULL, my_station, beginning, ending
     } else if (filetype == "data") {
       filetype <- "raw"
     }
-
-    if (filetype %in% c("raw", "node_health", "gps")) {
-      print(paste("downloading",y,"to",file.path(outpath, basename, sensor, filetype)))
-      print(x)
-      contents = downloadFiles(file_id = x)
-      if (filetype == "raw") {
-        contents <- httr::content(contents, type="text", col_types = list(NodeId = 'c'))
-      } else {
-        contents <- httr::content(contents, type="text")
-      }
-      if (!is.null(contents)) {
+    print(paste("downloading",y,"to",file.path(outpath, basename, sensor, filetype)))
+    print(x)
+    contents = downloadFiles(file_id = x)
+    if (filetype == "raw") {
+      contents <- httr::content(contents, type="text", col_types = list(NodeId = 'c'))
+    } else {
+      contents <- httr::content(contents, type="text")
+    }
+    if (!is.null(contents)) {
       dir.create(file.path(outpath, basename, sensor), showWarnings = FALSE)
       dir.create(file.path(outpath, basename, sensor, filetype), showWarnings = FALSE)
       print(paste("downloading",y,"to",file.path(outpath, basename, sensor, filetype)))
@@ -497,11 +495,11 @@ get_data <- function(thisproject, outpath, f=NULL, my_station, beginning, ending
       write(contents, file=gzfile(file.path(outpath, basename, sensor, filetype, y)))
       e <- file.path(outpath, basename, sensor, filetype, y)
       contents <- file_handle(e, filetype)[[1]]
-      if(!is.null(f)) {
+      if(!is.null(f) & filetype %in% c("raw", "node_health", "gps")) {
         print(begin)
         z <- db_insert(contents, filetype, f, sensor, y, begin)
       }
-      }
+    }
     }
     if(!exists("z")) {z <- NULL}
   return(z)}
