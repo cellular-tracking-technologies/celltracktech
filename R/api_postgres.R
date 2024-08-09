@@ -500,9 +500,9 @@ get_data <- function(thisproject, outpath, f=NULL, my_station, beginning, ending
         z <- db_insert(contents, filetype, f, sensor, y, begin)
       }
     }
-    }
     if(!exists("z")) {z <- NULL}
-  return(z)}
+    return(z)
+    }
 
 failed <- Map(get_files, ids, file_names)
 print("done getting files")
