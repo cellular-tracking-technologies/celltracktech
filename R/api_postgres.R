@@ -361,7 +361,7 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
         contents$Latitude <- NA
         contents$Longitude <- NA
       }
-      nodeids <- unique(contents$NodeId)
+      nodeids <- toupper(unique(contents$NodeId))
       insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "nodes (node_id)", " VALUES ($1)
                                            ON CONFLICT DO NOTHING", sep = ""))
       DBI::dbBind(insertnew, params = list(unique(nodeids)))
@@ -407,7 +407,7 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
               # } else {
               DBI::dbWriteTable(conn, filetype, contents, append = TRUE)
               insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "data_file (path)", " VALUES ($1)
-                                         ON CONFLICT DO NOTHING", sep = ""))
+                                         ON CONFLICT DO NOTHING", sep = ""))  #CTT-FC16AD87C466-node-health.2022-07-15_104908.csv.gz
               DBI::dbBind(insertnew, params = list(y))
               DBI::dbClearResult(insertnew)
               return(NULL)
@@ -419,6 +419,10 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
                                          ON CONFLICT DO NOTHING", sep = "")
               insertnew <- DBI::dbSendQuery(conn, myquery)
               DBI::dbBind(insertnew, params = unname(contents))
+              DBI::dbClearResult(insertnew)
+              insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "data_file (path)", " VALUES ($1)
+                                         ON CONFLICT DO NOTHING", sep = ""))  #CTT-FC16AD87C466-node-health.2022-07-15_104908.csv.gz
+              DBI::dbBind(insertnew, params = list(y))
               DBI::dbClearResult(insertnew)
             }
           )
