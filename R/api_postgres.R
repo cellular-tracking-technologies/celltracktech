@@ -513,8 +513,8 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     } else if (filetype == "data") {
       filetype <- "raw"
     }
-    print(paste("downloading", y, "to", file.path(outpath, basename, sensor, filetype)))
-    print(x)
+    #print(paste("downloading", y, "to", file.path(outpath, basename, sensor, filetype)))
+    #print(x)
     contents <- downloadFiles(file_id = x)
     if (filetype == "raw") {
       contents <- httr::content(contents, type = "text", col_types = list(NodeId = "c"))
@@ -524,8 +524,8 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     if (!is.null(contents) & filetype %in% c("raw", "node_health", "gps", "ble", "blu")) {
       dir.create(file.path(outpath, basename, sensor), showWarnings = FALSE)
       dir.create(file.path(outpath, basename, sensor, filetype), showWarnings = FALSE)
-      # print(paste("downloading",y,"to",file.path(outpath, basename, sensor, filetype)))
-      # print(x)
+      print(paste("downloading",y,"to",file.path(outpath, basename, sensor, filetype)))
+      print(x)
       write(contents, file = gzfile(file.path(outpath, basename, sensor, filetype, y)))
       e <- file.path(outpath, basename, sensor, filetype, y)
       if (!is.null(f) & filetype %in% c("raw", "node_health", "gps")) {
