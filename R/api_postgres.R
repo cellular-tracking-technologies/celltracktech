@@ -500,8 +500,8 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     } else {
       begin <- as.POSIXct(my_stations[["stations"]][[faul]]$`deploy-at`, format = "%Y-%m-%dT%H:%M:%OS", tz = "UTC", optional = TRUE)
     }
-    print(paste("look here", faul))
-    print(my_stations[["stations"]])
+    #print(paste("look here", faul))
+    #print(my_stations[["stations"]])
     filenameinfo <- sensorid[2]
     file_info <- unlist(strsplit(filenameinfo, "\\."))[1]
     filetype <- ifelse(is.na(as.integer(file_info)), file_info, "sensorgnome")
@@ -522,7 +522,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     } else {
       contents <- httr::content(contents, type = "text")
     }
-    if (!is.null(contents) & filetype %in% c("raw", "node_health", "gps", "ble", "blu")) {
+    if (!is.null(contents)) { #& filetype %in% c("raw", "node_health", "gps", "ble", "blu")) {
       dir.create(file.path(outpath, basename, sensor), showWarnings = FALSE)
       dir.create(file.path(outpath, basename, sensor, filetype), showWarnings = FALSE)
       print(paste("downloading",y,"to",file.path(outpath, basename, sensor, filetype)))
