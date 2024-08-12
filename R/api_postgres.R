@@ -742,6 +742,7 @@ file_handle <- function(e, filetype) {
           file_err <- 6
         }
         timecol[brokenrow] <- substring(timecol[brokenrow], regexpr(DatePattern, timecol[brokenrow]))
+        timecol[brokenrow[which(regexpr(DatePattern, timecol[brokenrow]) < 0)]] <- NA
         newtimecol <- as.POSIXct(timecol, tz = "UTC")
       } else {
         newtimecol <- timecol
