@@ -745,10 +745,11 @@ file_handle <- function(e, filetype) {
       contents <- contents[!is.na(contents$Time), ]
     }
     file_err <- ifelse(rowtest[[2]] > 0, rowtest[[2]], file_err)
+    if(file_err < 1) {
+      if(filetype == 'gps' & all(is.na(contents[,2]))) {file_err <- 7}
+    }
     # print(contents)
-  } else {
-    file_err <- 2
-  }
+  } else {file_err <- 2}
   # print(tail(contents))
   return(list(contents, file_err, myrowfix, contents[1, ]))
 }
@@ -822,7 +823,7 @@ update_db <- function(d, outpath, myproject, fix = FALSE) {
   }
   files_import <- myfiles[which(!files_loc %in% filesdone)]
   write.csv(files_import, file.path(outpath, "files.csv"))
-  failed2 <- lapply(files_import, get_files_import, conn = d) # outpath=outpath, myproject=myproject)
+  failed2 <- lapply(files_import, get_files_import, conn = d, outpath=outpath) # outpath=outpath, myproject=myproject)
   # faul <- which(!sapply(failed2[[1]], is.null))
   # if(length(faul) > 0) {
   # failed2 <- Map(`[`, failed2, faul)
@@ -853,7 +854,7 @@ get_file_info <- function(e) {
   return(thisfile)
 }
 
-get_files_import <- function(e, errtpe = 0, conn, fix = F) {
+get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
   # e <- file.path(outpath, myproject, e)
   print(e)
   out <- get_file_info(e)
@@ -868,15 +869,23 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F) {
 
   if (filetype %in% c("raw", "node_health", "gps")) {
     # print("attempting import")
-    contents <- file_handle(e, filetype)[[1]]
+    outtest <- file_handle(e, filetype)
+    contents <- outtest[[1]]
+    errtype <- outtest[[2]]
     # file_err <- fileimp[[2]]
     # print("inserting contents")
     print(fix)
     print(errtpe)
     print(filetype)
     print(y)
+    if (err_type < 7) {
     print("inserting contents")
     z <- db_insert(contents, filetype, conn, sensor, y, begin)
+    } else {
+      dir.create(file.path(outpath, "error_files"), showWarnings = FALSE)
+      file.copy(e, file.path(outpath, "error_files"))
+      file.remove(e)
+    }
   }
   if (!exists("z")) {
     z <- NULL
