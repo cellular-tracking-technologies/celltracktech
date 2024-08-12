@@ -629,7 +629,7 @@ file_handle <- function(e, filetype) {
   )
 
   if (filetype == "raw" & ncol(contents) > 6) {
-    contents <- NULL
+    contents <- contents[,1:6]
   }
 
   if (!is.null(contents) & nrow(contents > 0) & filetype %in% c("raw", "node_health", "gps")) {
