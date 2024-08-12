@@ -754,7 +754,7 @@ file_handle <- function(e, filetype) {
       contents <- contents[!is.na(contents$Time), ]
     }
     file_err <- ifelse(rowtest[[2]] > 0, rowtest[[2]], file_err)
-    if(file_err < 1) {
+    if(file_err < 5) {
       if(filetype == 'gps' & all(is.na(contents[,2]))) {file_err <- 7}
     }
     # print(contents)
@@ -887,7 +887,7 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
     print(errtpe)
     #print(filetype)
     print(y)
-    if (errtype < 7 | errtype == 2) {
+    if (errtype < 7 & errtype != 2) {
     print("inserting contents")
     z <- db_insert(contents, filetype, conn, sensor, y, begin)
     } else {
