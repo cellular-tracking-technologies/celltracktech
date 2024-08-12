@@ -878,7 +878,7 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
     print(errtpe)
     print(filetype)
     print(y)
-    if (err_type < 7) {
+    if (errtype < 7) {
     print("inserting contents")
     z <- db_insert(contents, filetype, conn, sensor, y, begin)
     } else {
