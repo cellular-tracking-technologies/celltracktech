@@ -619,6 +619,7 @@ file_handle <- function(e, filetype) {
   print(paste("checking file for errors:", e))
   file_err <- 0
   myrowfix <- c()
+  ignore <- FALSE
   contents <- tryCatch(
     {
       readr::read_csv(e, col_names = TRUE)
@@ -630,6 +631,7 @@ file_handle <- function(e, filetype) {
 
   if (filetype == "raw" & ncol(contents) > 6) {
     contents <- contents[,1:6]
+    ignore <- TRUE
   }
 
   if (!is.null(contents) & nrow(contents > 0) & filetype %in% c("raw", "node_health", "gps")) {
@@ -670,8 +672,14 @@ file_handle <- function(e, filetype) {
       )
       # contents <- newcontents
     }
-    rowtest <- badrow(e, contents, filetype)
-    contents <- rowtest[[1]]
+
+    if(!ignore){
+      rowtest <- badrow(e, contents, filetype)
+      contents <- rowtest[[1]]
+    } else {
+      rowtest <- list(contents,0)
+      myrowfix <- c()
+    }
 
     if (filetype == "raw") {
       if (length(delete.columns) > 0) {
