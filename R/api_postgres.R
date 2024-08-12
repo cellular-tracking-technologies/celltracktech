@@ -678,7 +678,7 @@ file_handle <- function(e, filetype) {
       contents <- rowtest[[1]]
     } else {
       rowtest <- list(contents,0)
-      myrowfix <- c()
+      #myrowfix <- c()
     }
 
     if (filetype == "raw") {
