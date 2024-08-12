@@ -632,7 +632,7 @@ file_handle <- function(e, filetype) {
     contents <- NULL
   }
 
-  if (!is.null(contents) & filetype %in% c("raw", "node_health", "gps")) {
+  if (!is.null(contents) & nrow(contents > 0) & filetype %in% c("raw", "node_health", "gps")) {
     delete.columns <- grep("[[:digit:]]", colnames(contents), perl = T)
     if (length(delete.columns) > 0) {
       file_err <- 1
@@ -878,7 +878,7 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
     print(errtpe)
     print(filetype)
     print(y)
-    if (errtype < 7) {
+    if (errtype < 7 | errtype == 2) {
     print("inserting contents")
     z <- db_insert(contents, filetype, conn, sensor, y, begin)
     } else {
