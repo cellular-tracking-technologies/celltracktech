@@ -515,6 +515,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     }
     #print(paste("downloading", y, "to", file.path(outpath, basename, sensor, filetype)))
     #print(x)
+    print(paste(x,y))
     contents <- downloadFiles(file_id = x)
     if (filetype == "raw") {
       contents <- httr::content(contents, type = "text", col_types = list(NodeId = "c"))
