@@ -856,7 +856,7 @@ get_file_info <- function(e) {
 
 get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
   # e <- file.path(outpath, myproject, e)
-  print(e)
+  print(paste("attempting file import", e))
   out <- get_file_info(e)
   filetype <- out$filetype
   sensor <- out$sensor
@@ -874,9 +874,9 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
     errtype <- outtest[[2]]
     # file_err <- fileimp[[2]]
     # print("inserting contents")
-    print(fix)
+    #print(fix)
     print(errtpe)
-    print(filetype)
+    #print(filetype)
     print(y)
     if (errtype < 7 | errtype == 2) {
     print("inserting contents")
