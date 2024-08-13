@@ -37,7 +37,7 @@ to_delete AS (
   WHERE  rnk > 1
 )
 
-delete from raw using to_delete where raw.time = to_delete.time and upper(raw.node_id) = to_delete.upper and upper(raw.tag_id) =to_delete.tag"
+delete from raw using to_delete where raw.time = to_delete.time and upper(raw.node_id) = to_delete.upper and upper(raw.tag_id) =to_delete.tag")
 
 DBI::dbExecute(conn, "delete from raw where tag_id is null")
 #2022-04-04 19:43:43-04 1933552D 377c59
