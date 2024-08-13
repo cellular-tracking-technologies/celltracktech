@@ -18,17 +18,13 @@ to_delete AS (
 )
 delete from raw using to_delete where raw.id = to_delete.id")
 
-DBI::dbExecute(conn, "WITH ordered AS (
-  SELECT id, time, upper(node_id),
-    rank() OVER (PARTITION BY time, upper(node_id) ORDER BY id) AS rnk
-  FROM node_health where node_id is not null
-),
-to_delete AS (
-  SELECT *
-  FROM   ordered
-  WHERE  rnk > 1
-)
-delete from node_health using to_delete where node_health.id = to_delete.id")
+DBI::dbExecute("DELETE FROM node_health T1
+USING node_health T2
+WHERE  T1.ctid < T2.ctid
+AND  upper(T1.node_id) = upper(T2.node_id)
+AND  T1.time = T2.time
+AND  T1.radio_id = T2.radio_id
+AND T1.node_id is not null")
 
 DBI::dbExecute(conn, "WITH ordered AS (
   SELECT id, time, upper(tag_id) as tag, upper(node_id),
