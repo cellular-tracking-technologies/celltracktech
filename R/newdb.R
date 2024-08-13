@@ -37,10 +37,18 @@ to_delete AS (
   WHERE  rnk > 1
 )
 
-delete from raw using to_delete where raw.time = to_delete.time and upper(raw.node_id) = to_delete.upper and upper(raw.tag_id) =to_delete.tag")
+delete from raw using to_delete where raw.time = to_delete.time and upper(raw.node_id) = to_delete.upper and upper(raw.tag_id) =to_delete.tag"
 
 DBI::dbExecute(conn, "delete from raw where tag_id is null")
 #2022-04-04 19:43:43-04 1933552D 377c59
+
+nodes <- DBI::dbReadTable(conn, "nodes")
+badnodes <- toupper(nodes$node_id[which(nchar(nodes$node_id) != 6)])
+#sapply(badnodes, function(y) delnodes(conn, y))
+badnodestr <- paste("'",badnodes, "'", sep="",collapse = ",") #test this...
+DBI::dbExecute(conn, paste0("DELETE FROM raw where upper(node_id) in (",badnodestr,")"))
+DBI::dbExecute(conn, paste0("DELETE FROM node_health where upper(node_id) =",badnodestr,")"))
+DBI::dbExecute(conn, paste0("delete from nodes where node_id in (", badnodestr, ")"))
 }
 
 #' Incorporate node data
