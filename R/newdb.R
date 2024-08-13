@@ -21,7 +21,7 @@ delete from raw using to_delete where raw.id = to_delete.id")
 DBI::dbExecute(conn, "WITH ordered AS (
   SELECT id, time, upper(node_id),
     rank() OVER (PARTITION BY time, upper(node_id) ORDER BY id) AS rnk
-  FROM raw where node_id is not null
+  FROM node_health where node_id is not null
 ),
 to_delete AS (
   SELECT *
