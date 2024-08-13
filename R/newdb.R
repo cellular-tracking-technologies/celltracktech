@@ -28,7 +28,7 @@ to_delete AS (
   FROM   ordered
   WHERE  rnk > 1
 )
-delete from node_health using to_delete where raw.id = to_delete.id")
+delete from node_health using to_delete where node_health.id = to_delete.id")
 
 DBI::dbExecute(conn, "WITH ordered AS (
   SELECT id, time, upper(tag_id) as tag, upper(node_id),
