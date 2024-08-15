@@ -699,6 +699,7 @@ file_handle <- function(e, filetype) {
           names(contents) <- c("Time", "RadioId", "TagId", "TagRSSI", "NodeId")
         }
       }
+      contents <- contents[-which(nchar(contents$NodeId) != 6 & !is.na(contents$NodeId)),]
       # correct <- ifelse(v > 2, 7, 6)
       # rowtest <- badrow(e, correct, contents)
       # contents <- rowtest[[1]]
@@ -733,6 +734,7 @@ file_handle <- function(e, filetype) {
           names(contents) <- c("Time", "RadioId", "NodeId", "NodeRssi", "Battery", "celsius")
         }
       }
+      contents <- contents[-which(nchar(contents$NodeId) != 6),]
     }
     timecols <- c("Time", "recorded at", "gps at", "RecordedAt", "recorded.at", "gps.at")
     filetime <- which(names(contents) %in% timecols)
@@ -757,6 +759,7 @@ file_handle <- function(e, filetype) {
     if ("Time" %in% colnames(contents) & nrow(contents) > 0) {
       contents <- contents[!is.na(contents$Time), ]
     }
+
     file_err <- ifelse(rowtest[[2]] > 0, rowtest[[2]], file_err)
     if(file_err < 5) {
       if(filetype == 'gps' & all(is.na(contents[,2]))) {file_err <- 7}
