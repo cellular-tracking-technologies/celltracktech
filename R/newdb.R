@@ -47,7 +47,7 @@ badnodes <- toupper(nodes$node_id[which(nchar(nodes$node_id) != 6)])
 #sapply(badnodes, function(y) delnodes(conn, y))
 badnodestr <- paste("'",badnodes, "'", sep="",collapse = ",") #test this...
 DBI::dbExecute(conn, paste0("DELETE FROM raw where upper(node_id) in (",badnodestr,")"))
-DBI::dbExecute(conn, paste0("DELETE FROM node_health where upper(node_id) in ",badnodestr,")"))
+DBI::dbExecute(conn, paste0("DELETE FROM node_health where upper(node_id) in (",badnodestr,")"))
 DBI::dbExecute(conn, paste0("delete from nodes where upper(node_id) in (", badnodestr, ")"))
 }
 
