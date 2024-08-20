@@ -607,7 +607,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
           write.csv(contents, file = gzfile(file.path(outpath, basename, sensor, filetype, y)))
         }
       e <- file.path(outpath, basename, sensor, filetype, y)
-      if (!is.null(f) {
+      if (!is.null(f)) {
         if(filetype %in% c("raw", "node_health", "gps", "blu")) {
         contents <- file_handle(e, filetype)[[1]]
         print(begin)
@@ -714,7 +714,7 @@ file_handle <- function(e, filetype) {
     ignore <- TRUE
   }
 
-  if (!is.null(contents) & nrow(contents > 0) {
+  if (!is.null(contents) & nrow(contents > 0)) {
     if(filetype %in% c("raw", "node_health", "gps")) {
     delete.columns <- grep("[[:digit:]]", colnames(contents), perl = T)
     if (length(delete.columns) > 0) {
