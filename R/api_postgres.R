@@ -592,10 +592,10 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     contents <- downloadFiles(file_id = x)
     if (filetype == "raw") {
       contents <- httr::content(contents, type = "text", col_types = list(NodeId = "c"))
+    } else if(filetype == "blu") {
+      contents <- httr::content(contents)
     } else {
       contents <- httr::content(contents, type = "text")
-      contents1 <- httr::content(contents)
-      if(nrow(contents1) > nrow(contents)) {contents <- contents1}
     }
     if (!is.null(contents)) { #& filetype %in% c("raw", "node_health", "gps", "ble", "blu")) {
       dir.create(file.path(outpath, basename, sensor), showWarnings = FALSE)
