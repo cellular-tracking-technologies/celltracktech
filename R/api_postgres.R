@@ -206,6 +206,24 @@ create_db <- function(conn) {
     station_id TEXT
   )")
 
+  DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS blu
+  (
+    id	SERIAL PRIMARY KEY,
+    path  TEXT NOT NULL,
+    radio_id smallint NOT NULL,
+    usb_port smallint NOT NULL,
+    blu_radio_id smallint NOT NULL,
+    tag_id TEXT,
+    node_id TEXT,
+    tag_rssi smallint,
+    sync integer,
+    product smallint,
+    revision smallint,
+    payload text,
+    time TIMESTAMP with time zone NOT NULL,
+    station_id TEXT
+  )")
+
   DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS node_health
   (
     PRIMARY KEY (radio_id, node_id, time, station_id),
@@ -379,6 +397,57 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
 
       # ONLY SUPPORTS V2 NODES FOR NOW FOR DB
       # contents <- contents[,1:13]
+    } else if (filetype == "blu") {
+      # print(names(contents))
+      contents <- contents[!is.na(contents$TagId), ]
+      contents$RadioId <- as.integer(contents$RadioId)
+      contents$TagRSSI <- as.integer(contents$TagRSSI)
+      names(contents) <- sapply(names(contents), function(x) gsub("([[:lower:]])([[:upper:]])", "\\1_\\2", x))
+      names(contents) <- tolower(names(contents))
+      # if(is.na(sensor)) {
+      #  mmy <- paste0("select * from raw where time between '", min(contents$time),"' and '", max(contents$time), "'")
+      #  sametime <- dbGetQuery(conn, mmy)
+      #  sametime$id <- NULL
+      #  contents <- rbind(sametime, contents)
+      # }
+
+      if (length(which(!is.na(contents$node_id))) > 0) { # if there is anything beside NA nodes
+        nodeids <- contents$node_id[which(!is.na(contents$node_id))]
+        insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "nodes (node_id)", " VALUES ($1)
+                                           ON CONFLICT DO NOTHING", sep = ""))
+        DBI::dbBind(insertnew, params = list(unique(nodeids)))
+        DBI::dbClearResult(insertnew)
+
+        nodecheck <- contents[!is.na(contents$node_id), ]
+        nodecheck <- nodecheck[!duplicated(nodecheck[c("time", "tag_id", "node_id", "tag_rssi")]), ]
+        badrec <- nodecheck[duplicated(nodecheck[c("time", "tag_id", "node_id")]), ]
+        if (nrow(badrec) > 0) {
+          nodecheck$id <- paste(nodecheck$time, nodecheck$tag_id, nodecheck$node_id)
+          badrec$id <- paste(badrec$time, badrec$tag_id, badrec$node_id)
+          nodecheck <- nodecheck[!nodecheck$id %in% badrec$id, ]
+          nodecheck$id <- NULL
+        }
+        # print(nrow(nodecheck))
+        contents <- rbind(nodecheck, contents[is.na(contents$node_id), ])
+
+        if (is.na(sensor)) {
+          contents <- contents[is.na(contents$station_id), ]
+        }
+      }
+
+      if (length(which(nchar(contents$tag_id) != 8)) > 0) { # if there are tag ids greater than 8...
+        contents <- contents[-which(nchar(contents$tag_id) != 8), ] # drop rows where TagId not 8 characters
+      }
+
+      # if(fix=TRUE) {
+      #  query <- querygen(contents[1,])
+      #  res <- DBI::dbGetQuery(conn, paste0("select * from raw where ", query))
+      #  if(nrow(res) > 0) {
+      #    me <- data.frame(matrix(ncol=ncol(contents), nrow=0))
+      #    names(me) <- names(contents)
+      #    contents <- me
+      #  }
+      # }
     } else {
       nodeids <- c()
     }
@@ -538,10 +607,12 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
           write.csv(contents, file = gzfile(file.path(outpath, basename, sensor, filetype, y)))
         }
       e <- file.path(outpath, basename, sensor, filetype, y)
-      if (!is.null(f) & filetype %in% c("raw", "node_health", "gps")) {
+      if (!is.null(f) {
+        if(filetype %in% c("raw", "node_health", "gps", "blu")) {
         contents <- file_handle(e, filetype)[[1]]
         print(begin)
         z <- db_insert(contents, filetype, f, sensor, y, begin)
+        }
       }
     }
     if (!exists("z")) {
@@ -643,7 +714,8 @@ file_handle <- function(e, filetype) {
     ignore <- TRUE
   }
 
-  if (!is.null(contents) & nrow(contents > 0) & filetype %in% c("raw", "node_health", "gps")) {
+  if (!is.null(contents) & nrow(contents > 0) {
+    if(filetype %in% c("raw", "node_health", "gps")) {
     delete.columns <- grep("[[:digit:]]", colnames(contents), perl = T)
     if (length(delete.columns) > 0) {
       file_err <- 1
@@ -740,6 +812,8 @@ file_handle <- function(e, filetype) {
         }
       }
       contents <- contents[-which(nchar(contents$NodeId) != 6),]
+    }} else if(filetype=="blu") {
+      rowtest <- list(contents,0)
     }
     timecols <- c("Time", "recorded at", "gps at", "RecordedAt", "recorded.at", "gps.at")
     filetime <- which(names(contents) %in% timecols)
