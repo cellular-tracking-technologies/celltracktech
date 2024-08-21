@@ -604,7 +604,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
       print(x)
       if(is.character(contents)) {write(contents, file = gzfile(file.path(outpath, basename, sensor, filetype, y)))
       } else {
-          write.csv(contents, file = gzfile(file.path(outpath, basename, sensor, filetype, y)))
+          write.csv(contents, file = gzfile(file.path(outpath, basename, sensor, filetype, y)), row.names = F)
         }
       e <- file.path(outpath, basename, sensor, filetype, y)
       if (!is.null(f)) {
@@ -954,6 +954,8 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
   print(paste("attempting file import", e))
   out <- get_file_info(e)
   filetype <- out$filetype
+
+  if (filetype %in% c("raw", "node_health", "gps", "blu")) {
   sensor <- out$sensor
   y <- out$y
   i <- DBI::dbReadTable(conn, "ctt_project_station")
@@ -961,8 +963,6 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
   if (length(begin) == 0) {
     begin <- as.POSIXct("2018-01-01")
   }
-
-  if (filetype %in% c("raw", "node_health", "gps")) {
     # print("attempting import")
     outtest <- file_handle(e, filetype)
     contents <- outtest[[1]]
