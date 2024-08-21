@@ -402,6 +402,12 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
       contents <- contents[!is.na(contents$TagId), ]
       contents$RadioId <- as.integer(contents$RadioId)
       contents$TagRSSI <- as.integer(contents$TagRSSI)
+      contents$UsbPort <- as.integer(contents$UsbPort)
+      contents$BluRadioId <- as.integer(contents$BluRadioId)
+      contents$Sync <- as.integer(contents$Sync)
+      contents$Product <- as.integer(contents$Product)
+      contents$Revision <- as.integer(contents$Revision)
+      contents$Payload <- as.character(contents$Payload)
       names(contents) <- sapply(names(contents), function(x) gsub("([[:lower:]])([[:upper:]])", "\\1_\\2", x))
       names(contents) <- tolower(names(contents))
       # if(is.na(sensor)) {
@@ -424,14 +430,14 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
         if (nrow(badrec) > 0) {
           nodecheck$id <- paste(nodecheck$time, nodecheck$tag_id, nodecheck$node_id)
           badrec$id <- paste(badrec$time, badrec$tag_id, badrec$node_id)
-          nodecheck <- nodecheck[!nodecheck$id %in% badrec$id, ]
+          #nodecheck <- nodecheck[!nodecheck$id %in% badrec$id, ]
           nodecheck$id <- NULL
         }
         # print(nrow(nodecheck))
         contents <- rbind(nodecheck, contents[is.na(contents$node_id), ])
 
         if (is.na(sensor)) {
-          contents <- contents[is.na(contents$station_id), ]
+          contents <- contents[is.na(contents$station_id), ] #this is for bringing in raw node files
         }
       }
 
@@ -512,11 +518,11 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
 
 get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, ending) {
   # print("getting your file list")
-  myfiles <- list.files(outpath, recursive = TRUE)
-  files_loc <- sapply(strsplit(myfiles, "/"), tail, n = 1)
-  basename <- thisproject$name
+  projbasename <- thisproject$name
   id <- thisproject[["id"]]
-  dir.create(file.path(outpath, basename), showWarnings = FALSE)
+  dir.create(file.path(outpath, projbasename), showWarnings = FALSE)
+  myfiles <- list.files(file.path(outpath, projbasename), recursive = TRUE)
+  files_loc <- sapply(strsplit(myfiles, "/"), tail, n = 1)
   my_stations <- getStations(project_id = id)
   if (!is.null(my_station)) {
     my_stations[["stations"]] <- list(my_stations[[1]][[which(sapply(my_stations[[1]], function(x) x[["station"]][["id"]] == my_station))]])
@@ -598,15 +604,15 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
       contents <- httr::content(contents, type = "text")
     }
     if (!is.null(contents)) { #& filetype %in% c("raw", "node_health", "gps", "ble", "blu")) {
-      dir.create(file.path(outpath, basename, sensor), showWarnings = FALSE)
-      dir.create(file.path(outpath, basename, sensor, filetype), showWarnings = FALSE)
-      print(paste("downloading",y,"to",file.path(outpath, basename, sensor, filetype)))
+      dir.create(file.path(outpath, projbasename, sensor), showWarnings = FALSE)
+      dir.create(file.path(outpath, projbasename, sensor, filetype), showWarnings = FALSE)
+      print(paste("downloading",y,"to",file.path(outpath, projbasename, sensor, filetype)))
       print(x)
-      if(is.character(contents)) {write(contents, file = gzfile(file.path(outpath, basename, sensor, filetype, y)))
+      if(is.character(contents)) {write(contents, file = gzfile(file.path(outpath, projbasename, sensor, filetype, y)))
       } else {
-          write.csv(contents, file = gzfile(file.path(outpath, basename, sensor, filetype, y)), row.names = F)
+          write.csv(contents, file = gzfile(file.path(outpath, projbasename, sensor, filetype, y)), row.names = F)
         }
-      e <- file.path(outpath, basename, sensor, filetype, y)
+      e <- file.path(outpath, projbasename, sensor, filetype, y)
       if (!is.null(f)) {
         if(filetype %in% c("raw", "node_health", "gps", "blu")) {
         contents <- file_handle(e, filetype)[[1]]
