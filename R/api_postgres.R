@@ -520,8 +520,8 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
   # print("getting your file list")
   projbasename <- thisproject$name
   id <- thisproject[["id"]]
+  myfiles <- list.files(file.path(outpath), recursive = TRUE)
   dir.create(file.path(outpath, projbasename), showWarnings = FALSE)
-  myfiles <- list.files(file.path(outpath, projbasename), recursive = TRUE)
   files_loc <- sapply(strsplit(myfiles, "/"), tail, n = 1)
   my_stations <- getStations(project_id = id)
   if (!is.null(my_station)) {
@@ -924,6 +924,8 @@ update_db <- function(d, outpath, myproject, fix = FALSE) {
     filesdone <- allnode$path
   }
   files_import <- myfiles[which(!files_loc %in% filesdone)]
+  files_import <- files_import[unname(sapply(files_import, function(x) get_file_info(x)[[1]])) %in% c("gps", "node_health", "raw", "blu")]
+  #files_import <- files_import[unname(sapply(files_import, function(x) get_file_info(x)[[2]])) == "FC16AD87C466"][1:10]
   write.csv(files_import, file.path(outpath, "files.csv"))
   failed2 <- lapply(files_import, get_files_import, conn = d, outpath=outpath) # outpath=outpath, myproject=myproject)
   # faul <- which(!sapply(failed2[[1]], is.null))
