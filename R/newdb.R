@@ -6,6 +6,8 @@
 #' @export
 
 db_cleanup <- function(conn) {
+
+  print("getting rid of duplicate records")
   DBI::dbExecute(conn, "WITH ordered AS (
   SELECT id, time, upper(tag_id), upper(node_id), tag_rssi,
     rank() OVER (PARTITION BY time, upper(tag_id), upper(node_id), tag_rssi  ORDER BY id) AS rnk
@@ -18,6 +20,7 @@ to_delete AS (
 )
 delete from raw using to_delete where raw.id = to_delete.id")
 
+print("getting rid of duplicate node health records")
 DBI::dbExecute(conn, "DELETE FROM node_health T1
 USING node_health T2
 WHERE T1.node_id is not null
@@ -26,6 +29,7 @@ AND  upper(T1.node_id) = upper(T2.node_id)
 AND  T1.time = T2.time
 AND  T1.radio_id = T2.radio_id")
 
+print("getting rid of bad records")
 DBI::dbExecute(conn, "WITH ordered AS (
   SELECT id, time, upper(tag_id) as tag, upper(node_id),
     rank() OVER (PARTITION BY time, upper(tag_id), upper(node_id)  ORDER BY id) AS rnk
@@ -39,9 +43,11 @@ to_delete AS (
 
 delete from raw using to_delete where raw.time = to_delete.time and upper(raw.node_id) = to_delete.upper and upper(raw.tag_id) =to_delete.tag")
 
+print("getting rid of null tags")
 DBI::dbExecute(conn, "delete from raw where tag_id is null")
 #2022-04-04 19:43:43-04 1933552D 377c59
 
+print("getting rid of bad nodes")
 nodes <- DBI::dbReadTable(conn, "nodes")
 badnodes <- toupper(nodes$node_id[(nchar(nodes$node_id) != 6 & nchar(nodes$node_id) != 8)])
 #sapply(badnodes, function(y) delnodes(conn, y))
@@ -51,9 +57,12 @@ DBI::dbExecute(conn, paste0("DELETE FROM node_health where upper(node_id) in (",
 DBI::dbExecute(conn, paste0("delete from nodes where upper(node_id) in (", badnodestr, ")"))
 DBI::dbExecute(conn, paste0("delete from blu where upper(node_id) in (", badnodestr, ")"))
 #DBI::dbExecute(conn, "update nodes set node_id = upper(node_id)")
+
+print("updating node IDs to upper case")
 DBI::dbExecute(conn, "update raw set node_id = upper(node_id)")
 DBI::dbExecute(conn, "update node_health set node_id = upper(node_id)")
 
+print("filling in missing files")
 res <- DBI::dbGetQuery(d, "select distinct path from gps")
 res2 <- DBI::dbGetQuery(d, "select distinct path from raw")
 res1 <- DBI::dbGetQuery(d, "select distinct path from node_health")
