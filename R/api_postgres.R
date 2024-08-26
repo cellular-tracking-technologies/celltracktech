@@ -820,6 +820,7 @@ file_handle <- function(e, filetype) {
       contents <- contents[-which(nchar(contents$NodeId) != 6),]
     }} else if(filetype=="blu") {
       rowtest <- list(contents,0)
+      contents <- contents[-which(nchar(contents$NodeId) != 8 & !is.na(contents$NodeId)),]
     }
     timecols <- c("Time", "recorded at", "gps at", "RecordedAt", "recorded.at", "gps.at")
     filetime <- which(names(contents) %in% timecols)
