@@ -43,15 +43,28 @@ DBI::dbExecute(conn, "delete from raw where tag_id is null")
 #2022-04-04 19:43:43-04 1933552D 377c59
 
 nodes <- DBI::dbReadTable(conn, "nodes")
-badnodes <- toupper(nodes$node_id[which(nchar(nodes$node_id) != 6 & nchar(nodes$node_id) != 8)])
+badnodes <- toupper(nodes$node_id[(nchar(nodes$node_id) != 6 & nchar(nodes$node_id) != 8)])
 #sapply(badnodes, function(y) delnodes(conn, y))
 badnodestr <- paste("'",badnodes, "'", sep="",collapse = ",") #test this...
 DBI::dbExecute(conn, paste0("DELETE FROM raw where upper(node_id) in (",badnodestr,")"))
 DBI::dbExecute(conn, paste0("DELETE FROM node_health where upper(node_id) in (",badnodestr,")"))
 DBI::dbExecute(conn, paste0("delete from nodes where upper(node_id) in (", badnodestr, ")"))
 DBI::dbExecute(conn, paste0("delete from blu where upper(node_id) in (", badnodestr, ")"))
-DBI::dbExecute(conn, "update nodes set node_id = upper(node_id)")
+#DBI::dbExecute(conn, "update nodes set node_id = upper(node_id)")
 DBI::dbExecute(conn, "update raw set node_id = upper(node_id)")
+DBI::dbExecute(conn, "update node_health set node_id = upper(node_id)")
+
+res <- DBI::dbGetQuery(d, "select distinct path from gps")
+res2 <- DBI::dbGetQuery(d, "select distinct path from raw")
+res1 <- DBI::dbGetQuery(d, "select distinct path from node_health")
+filesdone <- c(res$path, res1$path, res2$path)
+allnode <- DBI::dbReadTable(d, "data_file")
+filesin <- allnode$path
+
+filesdone <- filesdone[!filesdone %in% filesin]
+insertnew <- DBI::dbSendQuery(conn, paste("INSERT OR IGNORE INTO ", "data_file (path)", " VALUES ($)", sep = ""))
+DBI::dbBind(insertnew, params = list(unique(filesdone)))
+DBI::dbClearResult(insertnew)
 }
 
 #' Incorporate node data
