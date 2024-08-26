@@ -43,7 +43,7 @@ DBI::dbExecute(conn, "delete from raw where tag_id is null")
 #2022-04-04 19:43:43-04 1933552D 377c59
 
 nodes <- DBI::dbReadTable(conn, "nodes")
-badnodes <- toupper(nodes$node_id[which(nchar(nodes$node_id) != 6)])
+badnodes <- toupper(nodes$node_id[which(nchar(nodes$node_id) != 6 & nchar(nodes$node_id) != 8)])
 #sapply(badnodes, function(y) delnodes(conn, y))
 badnodestr <- paste("'",badnodes, "'", sep="",collapse = ",") #test this...
 DBI::dbExecute(conn, paste0("DELETE FROM raw where upper(node_id) in (",badnodestr,")"))
