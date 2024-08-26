@@ -50,6 +50,8 @@ DBI::dbExecute(conn, paste0("DELETE FROM raw where upper(node_id) in (",badnodes
 DBI::dbExecute(conn, paste0("DELETE FROM node_health where upper(node_id) in (",badnodestr,")"))
 DBI::dbExecute(conn, paste0("delete from nodes where upper(node_id) in (", badnodestr, ")"))
 DBI::dbExecute(conn, paste0("delete from blu where upper(node_id) in (", badnodestr, ")"))
+DBI::dbExecute(conn, "update nodes set node_id = upper(node_id)")
+DBI::dbExecute(conn, "update raw set node_id = upper(node_id)")
 }
 
 #' Incorporate node data
