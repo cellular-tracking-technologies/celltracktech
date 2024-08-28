@@ -30,12 +30,6 @@ AND  T1.time = T2.time
 AND  T1.radio_id = T2.radio_id")
 
 print(Sys.time() - start)
-print("getting rid of duplicate nodes")
-DBI::dbExecute(conn, "DELETE FROM nodes T1
-USING nodes T2
-WHERE upper(T1.node_id) = upper(T2.node_id)")
-
-print(Sys.time() - start)
 print("getting rid of bad records")
 DBI::dbExecute(conn, "WITH ordered AS (
   SELECT id, time, upper(tag_id) as tag, upper(node_id),
@@ -59,6 +53,7 @@ print(Sys.time() - start)
 print("getting rid of bad nodes")
 nodes <- DBI::dbReadTable(conn, "nodes")
 badnodes <- toupper(nodes$node_id[(nchar(nodes$node_id) != 6 & nchar(nodes$node_id) != 8)])
+goodnodes <- toupper(nodes$node_id[!(nchar(nodes$node_id) != 6 & nchar(nodes$node_id) != 8)])
 sapply(badnodes, function(y) delnodes(conn, y))
 badnodestr <- paste("'",badnodes, "'", sep="",collapse = ",") #test this...
 DBI::dbExecute(conn, paste0("DELETE FROM raw where upper(node_id) in (",badnodestr,")"))
@@ -68,9 +63,19 @@ DBI::dbExecute(conn, paste0("delete from blu where upper(node_id) in (", badnode
 
 print(Sys.time() - start)
 print("updating node IDs to upper case")
-DBI::dbExecute(conn, "update nodes set node_id = upper(node_id)")
+insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "nodes (node_id)", " VALUES ($1)
+                                           ON CONFLICT DO NOTHING", sep = ""))
+DBI::dbBind(insertnew, params = list(goodnodes))
+DBI::dbClearResult(insertnew)
+#DBI::dbExecute(conn, "update nodes set node_id = upper(node_id)")
 DBI::dbExecute(conn, "update raw set node_id = upper(node_id)")
 DBI::dbExecute(conn, "update node_health set node_id = upper(node_id)")
+
+print(Sys.time() - start)
+print("getting rid of duplicate nodes")
+DBI::dbExecute(conn, "DELETE FROM nodes T1
+USING nodes T2
+WHERE upper(T1.node_id) = upper(T2.node_id)")
 
 print(Sys.time() - start)
 print("filling in missing files")
