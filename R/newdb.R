@@ -80,11 +80,11 @@ and T1.node_id = lower(T2.node_id)")
 
 print(Sys.time() - start)
 print("filling in missing files")
-res <- DBI::dbGetQuery(d, "select distinct path from gps")
-res2 <- DBI::dbGetQuery(d, "select distinct path from raw")
-res1 <- DBI::dbGetQuery(d, "select distinct path from node_health")
+res <- DBI::dbGetQuery(conn, "select distinct path from gps")
+res2 <- DBI::dbGetQuery(conn, "select distinct path from raw")
+res1 <- DBI::dbGetQuery(conn, "select distinct path from node_health")
 filesdone <- c(res$path, res1$path, res2$path)
-allnode <- DBI::dbReadTable(d, "data_file")
+allnode <- DBI::dbReadTable(conn, "data_file")
 filesin <- allnode$path
 
 filesdone <- filesdone[!filesdone %in% filesin]
