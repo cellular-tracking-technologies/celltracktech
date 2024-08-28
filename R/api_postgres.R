@@ -380,6 +380,7 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
         contents$Longitude <- NA
       }
       nodeids <- toupper(unique(contents$NodeId))
+      contents$NodeId <- toupper(contents$NodeId)
       insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "nodes (node_id)", " VALUES ($1)
                                            ON CONFLICT DO NOTHING", sep = ""))
       DBI::dbBind(insertnew, params = list(unique(nodeids)))
