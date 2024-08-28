@@ -72,10 +72,11 @@ DBI::dbExecute(conn, "update raw set node_id = upper(node_id)")
 DBI::dbExecute(conn, "update node_health set node_id = upper(node_id)")
 
 print(Sys.time() - start)
-print("getting rid of duplicate nodes")
+print("getting rid of duplicate lowercase nodes")
 DBI::dbExecute(conn, "DELETE FROM nodes T1
 USING nodes T2
-WHERE upper(T1.node_id) = upper(T2.node_id)")
+WHERE (T1.node_id ~ '[a-z]') is true
+and T1.node_id = lower(T2.node_id)")
 
 print(Sys.time() - start)
 print("filling in missing files")
