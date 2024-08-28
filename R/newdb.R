@@ -90,6 +90,8 @@ filesdone <- filesdone[!filesdone %in% filesin]
 insertnew <- DBI::dbSendQuery(conn, paste("INSERT OR IGNORE INTO ", "data_file (path)", " VALUES ($)", sep = ""))
 DBI::dbBind(insertnew, params = list(unique(filesdone)))
 DBI::dbClearResult(insertnew)
+print("done")
+print(Sys.time() - start)
 }
 
 #' Incorporate node data
