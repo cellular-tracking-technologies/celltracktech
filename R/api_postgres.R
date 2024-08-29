@@ -323,6 +323,7 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
 
       contents$RadioId <- as.integer(contents$RadioId)
       contents$TagRSSI <- as.integer(contents$TagRSSI)
+      contents$NodeId <- toupper(contents$NodeId)
       names(contents) <- sapply(names(contents), function(x) gsub("([[:lower:]])([[:upper:]])", "\\1_\\2", x))
       names(contents) <- tolower(names(contents))
       # if(is.na(sensor)) {

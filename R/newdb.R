@@ -75,8 +75,7 @@ print(Sys.time() - start)
 print("getting rid of duplicate lowercase nodes")
 DBI::dbExecute(conn, "DELETE FROM nodes T1
 USING nodes T2
-WHERE (T1.node_id ~ '[a-z]') is true
-and T1.node_id = lower(T2.node_id)")
+WHERE (T1.node_id ~ '[a-z]') is true")
 
 print(Sys.time() - start)
 print("filling in missing files")
