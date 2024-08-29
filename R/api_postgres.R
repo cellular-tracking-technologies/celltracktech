@@ -784,7 +784,7 @@ file_handle <- function(e, filetype) {
           names(contents) <- c("Time", "RadioId", "TagId", "TagRSSI", "NodeId")
         }
       }
-      contents1 <- contents[(nchar(contents$NodeId) == 6 | is.na(contents$NodeId)),]
+      contents <- contents[(nchar(contents$NodeId) == 6 | is.na(contents$NodeId)),]
       # correct <- ifelse(v > 2, 7, 6)
       # rowtest <- badrow(e, correct, contents)
       # contents <- rowtest[[1]]
