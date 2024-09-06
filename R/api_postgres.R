@@ -210,7 +210,7 @@ create_db <- function(conn) {
   (
     id	SERIAL PRIMARY KEY,
     path  TEXT NOT NULL,
-    radio_id smallint NOT NULL,
+    radio_id smallint,
     usb_port smallint,
     blu_radio_id smallint,
     tag_id TEXT,
