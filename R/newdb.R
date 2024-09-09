@@ -87,7 +87,7 @@ allnode <- DBI::dbReadTable(conn, "data_file")
 filesin <- allnode$path
 
 filesdone <- filesdone[!filesdone %in% filesin]
-insertnew <- DBI::dbSendQuery(conn, paste("INSERT OR IGNORE INTO ", "data_file (path)", " VALUES ($)", sep = ""))
+insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "data_file (path)", " VALUES ($) ON CONFLICT DO NOTHING", sep = ""))
 DBI::dbBind(insertnew, params = list(unique(filesdone)))
 DBI::dbClearResult(insertnew)
 print("done")
