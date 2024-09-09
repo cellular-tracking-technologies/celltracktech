@@ -8,11 +8,4 @@
 - Close any open connection to your database (e.g. R, PGAdmin etc.)
 - Run `dropdb <your database name>` in your terminal
 - Create a new blank database with the desired name
-- Run the following in your R script:
-```
-my_token <- "your API token"
-outpath <- "where your files are or will be downloaded"
-conn <- DBI::dbConnect(RPostgres::Postgres(), dbname="your database name")
-get_my_data(my_token, outpath, conn=conn, myproject="your project name")
-update_db(conn, outpath, myproject="your project name")
-```
+- Run your modified version of the example script on the GitHub repository description
