@@ -155,7 +155,7 @@ downloadFiles <- function(file_id) {
   return(response)
 }
 
-#' Create database
+#' Create Postgres database
 #'
 #' This function allows you to create a blank version of the CTT designed database
 #' @param conn the connection to your local database
@@ -265,6 +265,113 @@ create_db <- function(conn) {
   )")
 }
 
+create_duck <- function(conn) {
+  DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS ctt_project
+  (
+    id	smallint PRIMARY KEY,
+    name	TEXT NOT NULL UNIQUE
+  )")
+  #
+
+  DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS nodes
+  (
+    node_id TEXT NOT NULL PRIMARY KEY
+  )")
+
+  DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS data_file
+  (
+    path TEXT PRIMARY KEY
+  )")
+
+  DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS ctt_project_station
+  (
+    db_id	smallint PRIMARY KEY,
+    project_id smallint NOT NULL,
+    station_id	TEXT NOT NULL,
+    deploy_at	TIMESTAMP with time zone,
+    end_at	TIMESTAMP with time zone,
+    FOREIGN KEY (project_id)
+      REFERENCES ctt_project (id)
+        ON DELETE NO ACTION
+        ON UPDATE NO ACTION
+  )")
+
+  DBI::dbExecute(conn, "
+  CREATE SEQUENCE IF NOT EXISTS seq_id START 1;
+  CREATE TABLE IF NOT EXISTS raw
+  (
+    id integer primary key default nextval('seq_id'),
+    path  TEXT NOT NULL,
+    radio_id smallint NOT NULL,
+    tag_id TEXT,
+    node_id TEXT,
+    tag_rssi smallint,
+    validated smallint,
+    time TIMESTAMP with time zone NOT NULL,
+    station_id TEXT
+  )")
+
+  DBI::dbExecute(conn, "
+  CREATE SEQUENCE IF NOT EXISTS seq_idb START 1;
+  CREATE TABLE IF NOT EXISTS blu
+  (
+    id integer primary key default nextval('seq_idb'),
+    path  TEXT NOT NULL,
+    radio_id smallint,
+    usb_port smallint,
+    blu_radio_id smallint,
+    tag_id TEXT,
+    node_id TEXT,
+    tag_rssi smallint,
+    sync integer,
+    product smallint,
+    revision smallint,
+    payload text,
+    time TIMESTAMP with time zone NOT NULL,
+    station_id TEXT
+  )")
+
+  DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS node_health
+  (
+    PRIMARY KEY (radio_id, node_id, time, station_id),
+    time TIMESTAMP with time zone NOT NULL,
+    radio_id smallint,
+    node_id TEXT,
+    node_rssi smallint,
+    battery NUMERIC(3,2),
+    celsius smallint,
+    recorded_at TIMESTAMP with time zone,
+    firmware TEXT,
+    solar_volts NUMERIC(4,2),
+    solar_current smallint,
+    cumulative_solar_current integer,
+    latitude NUMERIC(8,6),
+    longitude NUMERIC(9,6),
+    station_id TEXT,
+    path  TEXT NOT NULL,
+    FOREIGN KEY (node_id)
+      REFERENCES nodes (node_id)
+        ON DELETE NO ACTION
+        ON UPDATE NO ACTION
+  )")
+
+  DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS gps
+  (
+    path  TEXT NOT NULL,
+    latitude NUMERIC(8,6),
+    longitude NUMERIC(9,6),
+    altitude NUMERIC(6,1),
+    quality smallint,
+    gps_at TIMESTAMP with time zone,
+    recorded_at TIMESTAMP with time zone,
+    station_id TEXT,
+    mean_lat NUMERIC(8,6),
+    mean_lng NUMERIC(9,6),
+    n_fixes smallint,
+    PRIMARY KEY (gps_at, station_id)
+  )")
+}
+
 querygen <- function(mycont) {
   pieces <- paste(names(mycont), mycont, sep = " = ")
   na <- grep(" = NA", pieces)
@@ -279,7 +386,7 @@ timeset <- function(g) {
   unname(sapply(g, function(h) ifelse(is.na(h), NA, paste(as.character(h), "UTC"))))
 }
 
-dp_prep <- function(contents, filetype, sensor,y,begin) {
+db_prep <- function(contents, filetype, sensor,y,begin) {
   timecols <- c("Time") # , "recorded at", "gps at", "RecordedAt", "recorded.at", "gps.at")
   for (x in timecols) {
     if (x %in% names(contents)) {
@@ -448,7 +555,7 @@ dp_prep <- function(contents, filetype, sensor,y,begin) {
   return(contents)}
 
 db_insert <- function(contents, filetype, conn, y) {
-  if(any(colnames(contents)) == "node_id") {
+  if(any(colnames(contents) == "node_id")) {
     if (length(which(!is.na(contents$node_id))) > 0) {
       nodeids <- contents$node_id[which(!is.na(contents$node_id))]
       insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "nodes (node_id)", " VALUES ($1)
@@ -862,10 +969,14 @@ file_handle <- function(e, filetype) {
 #' get_my_data(token, "~/mydata", myproject = "Project Name from CTT Account")
 get_my_data <- function(my_token, outpath, db_name = NULL, myproject = NULL, mystation = NULL, begin = NULL, end = NULL) {
   projects <- project_list(my_token, myproject)
-  if (!is.null(db_name)) {
+  if (!is.null(db_name) & length(grep("postgresql", format(db_name))) > 0) {
     create_db(db_name) # EDIT TO TAKE NEW create_db() when you switch back!
-    sapply(projects, pop_proj, conn = conn)
+    #sapply(projects, pop_proj, conn = conn)
     failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end)
+  } else if(!is.null(db_name) & length(grep("duckdb", format(db_name))) > 0) {
+    create_duck(db_name)
+    failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end)
+    #sapply(projects, pop_proj, conn = conn)
   } else {
     failed <- lapply(projects, get_data, outpath = outpath, my_station = mystation, beginning = begin, ending = end)
   }
