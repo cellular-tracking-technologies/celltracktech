@@ -801,6 +801,7 @@ timecheck <- function(contents, myrowfix) {
 
 file_handle <- function(e, filetype) {
   print(paste("checking file for errors:", e))
+  #print(filetype)
   file_err <- 0
   myrowfix <- c()
   ignore <- FALSE
@@ -971,12 +972,12 @@ get_my_data <- function(my_token, outpath, db_name = NULL, myproject = NULL, mys
   projects <- project_list(my_token, myproject)
   if (!is.null(db_name) & length(grep("postgresql", format(db_name))) > 0) {
     create_db(db_name) # EDIT TO TAKE NEW create_db() when you switch back!
-    #sapply(projects, pop_proj, conn = conn)
+    sapply(projects, pop_proj, conn = db_name)
     failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end)
   } else if(!is.null(db_name) & length(grep("duckdb", format(db_name))) > 0) {
     create_duck(db_name)
     failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end)
-    #sapply(projects, pop_proj, conn = conn)
+    sapply(projects, pop_proj, conn = db_name)
   } else {
     failed <- lapply(projects, get_data, outpath = outpath, my_station = mystation, beginning = begin, ending = end)
   }
