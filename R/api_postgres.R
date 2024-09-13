@@ -279,7 +279,7 @@ timeset <- function(g) {
   unname(sapply(g, function(h) ifelse(is.na(h), NA, paste(as.character(h), "UTC"))))
 }
 
-db_insert <- function(contents, filetype, conn, sensor, y, begin) {
+dp_prep <- function(contents, filetype, sensor,y,begin) {
   timecols <- c("Time") # , "recorded at", "gps at", "RecordedAt", "recorded.at", "gps.at")
   for (x in timecols) {
     if (x %in% names(contents)) {
@@ -334,11 +334,6 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
       # }
 
       if (length(which(!is.na(contents$node_id))) > 0) { # if there is anything beside NA nodes
-        nodeids <- contents$node_id[which(!is.na(contents$node_id))]
-        insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "nodes (node_id)", " VALUES ($1)
-                                           ON CONFLICT DO NOTHING", sep = ""))
-        DBI::dbBind(insertnew, params = list(unique(nodeids)))
-        DBI::dbClearResult(insertnew)
         nodecheck <- contents[!is.na(contents$node_id), ]
         nodecheck <- nodecheck[!duplicated(nodecheck[c("time", "tag_id", "node_id", "tag_rssi")]), ]
         badrec <- nodecheck[duplicated(nodecheck[c("time", "tag_id", "node_id")]), ]
@@ -381,11 +376,6 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
         contents$Longitude <- NA
       }
       nodeids <- toupper(unique(contents$NodeId))
-      contents$NodeId <- toupper(contents$NodeId)
-      insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "nodes (node_id)", " VALUES ($1)
-                                           ON CONFLICT DO NOTHING", sep = ""))
-      DBI::dbBind(insertnew, params = list(unique(nodeids)))
-      DBI::dbClearResult(insertnew)
       names(contents) <- sapply(names(contents), function(x) gsub("([[:lower:]])([[:upper:]])", "\\1_\\2", x))
       # if(fix=TRUE) {
       #  query <- querygen(contents[1,])
@@ -420,12 +410,6 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
       # }
 
       if (length(which(!is.na(contents$node_id))) > 0) { # if there is anything beside NA nodes
-        nodeids <- contents$node_id[which(!is.na(contents$node_id))]
-        insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "nodes (node_id)", " VALUES ($1)
-                                           ON CONFLICT DO NOTHING", sep = ""))
-        DBI::dbBind(insertnew, params = list(unique(nodeids)))
-        DBI::dbClearResult(insertnew)
-
         nodecheck <- contents[!is.na(contents$node_id), ]
         nodecheck <- nodecheck[!duplicated(nodecheck[c("time", "tag_id", "node_id", "tag_rssi")]), ]
         badrec <- nodecheck[duplicated(nodecheck[c("time", "tag_id", "node_id")]), ]
@@ -459,36 +443,42 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
     } else {
       nodeids <- c()
     }
-    if (filetype %in% c("raw", "node_health", "gps", "blu")) {
-      # print(str(contents))
-      # print(dbListFields(conn, filetype))
-      if (filetype %in% c("raw", "blu")) {
+  }
+  if (any(row.names(contents) == "NA")) {contents <- contents[-which(row.names(contents) == "NA"), ]}
+  return(contents)}
+
+db_insert <- function(contents, filetype, conn, y) {
+  if(any(colnames(contents)) == "node_id") {
+    if (length(which(!is.na(contents$node_id))) > 0) {
+      nodeids <- contents$node_id[which(!is.na(contents$node_id))]
+      insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "nodes (node_id)", " VALUES ($1)
+                                           ON CONFLICT DO NOTHING", sep = ""))
+      DBI::dbBind(insertnew, params = list(unique(nodeids)))
+      DBI::dbClearResult(insertnew)
+    }
+  } else {
+    nodeids <- c()
+  }
+  if (filetype %in% c("raw", "node_health", "gps", "blu")) {
+    if (filetype %in% c("raw", "blu")) {
         vars <- paste(DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))], sep = "", collapse = ",")
         vals <- paste(seq_along(1:(length(DBI::dbListFields(conn, filetype)) - 1)), sep = "", collapse = ", $")
         contents <- contents[, DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]]
-      } else {
+    } else {
         vars <- paste(DBI::dbListFields(conn, filetype), sep = "", collapse = ",")
         vals <- paste(seq_along(1:length(DBI::dbListFields(conn, filetype))), sep = "", collapse = ", $")
         names(contents) <- tolower(names(contents))
         contents <- contents[, DBI::dbListFields(conn, filetype)]
-      }
-      h <- tryCatch(
+    }
+    h <- tryCatch(
         {
-          tryCatch(
-            {
-              if (any(row.names(contents) == "NA")) {
-                contents <- contents[-which(row.names(contents) == "NA"), ]
-              }
-              # if(fixthis = TRUE) {
-              # fill out here
-              # } else {
+          tryCatch({
               DBI::dbWriteTable(conn, filetype, contents, append = TRUE)
               insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "data_file (path)", " VALUES ($1)
                                          ON CONFLICT DO NOTHING", sep = ""))  #CTT-FC16AD87C466-node-health.2022-07-15_104908.csv.gz
               DBI::dbBind(insertnew, params = list(y))
               DBI::dbClearResult(insertnew)
               return(NULL)
-              # }
             },
             error = function(err) {
               # error handler picks up where error was generated, in Bob's script it breaks if header is missing
@@ -506,12 +496,10 @@ db_insert <- function(contents, filetype, conn, sensor, y, begin) {
         },
         error = function(err) {
           print("could not insert")
-          # if(!is.null(readin)) {file.copy(readin, "~/Documents/data/weird_files/fail_insert")}
           return(list(err, contents, y))
         }
       )
     }
-  }
   if (!exists("h")) {
     h <- NULL
   }
@@ -619,7 +607,8 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
         if(filetype %in% c("raw", "node_health", "gps", "blu")) {
         contents <- file_handle(e, filetype)[[1]]
         print(begin)
-        z <- db_insert(contents, filetype, f, sensor, y, begin)
+        contents <- db_prep(contents, filetype, sensor, y, begin)
+        z <- db_insert(contents, filetype, f, y)
         }
       }
     }
@@ -986,7 +975,8 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
     print(y)
     if (errtype < 7 & errtype != 2) {
     print("inserting contents")
-    z <- db_insert(contents, filetype, conn, sensor, y, begin)
+    contents <- db_prep(contents, filetype, sensor, y, begin)
+    z <- db_insert(contents, filetype, conn, y)
     } else {
       dir.create(file.path(outpath, "error_files"), showWarnings = FALSE)
       file.copy(e, file.path(outpath, "error_files"))
