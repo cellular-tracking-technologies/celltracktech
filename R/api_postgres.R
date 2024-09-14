@@ -402,6 +402,7 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
       contents$recorded_at <- as.character(contents$recorded_at)
       colnames(contents)[colnames(contents) == "gps.at"] <- "gps_at"
       contents$gps_at <- as.character(contents$gps_at)
+      contents <- contents[which(!is.na(contents$latitude)),]
       if ("mean.lat" %in% colnames(contents) | "mean lat" %in% colnames(contents)) {
         colnames(contents)[colnames(contents) %in% c("mean.lat", "mean lat")] <- "mean_lat"
         colnames(contents)[colnames(contents) %in% c("mean.lng", "mean lng")] <- "mean_lng"
@@ -481,6 +482,9 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
         contents$CumulativeSolarCurrent <- NA
         contents$Latitude <- NA
         contents$Longitude <- NA
+      } else if(ncol(contents) > 9) {
+        contents <- contents[which(contents$Latitude < 90 & contents$Latitde > -90),] 
+        #contents <- contents[contents$CumulativeSolarCurrent < 2147483647,]
       }
       nodeids <- toupper(unique(contents$NodeId))
       names(contents) <- sapply(names(contents), function(x) gsub("([[:lower:]])([[:upper:]])", "\\1_\\2", x))
@@ -499,7 +503,7 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
       # contents <- contents[,1:13]
     } else if (filetype == "blu") {
       # print(names(contents))
-      contents <- contents[!is.na(contents$TagId), ]
+      contents <- contents[which(!is.na(contents$TagId)), ]
       contents$RadioId <- as.integer(contents$RadioId)
       contents$TagRSSI <- as.integer(contents$TagRSSI)
       contents$UsbPort <- as.integer(contents$UsbPort)
@@ -518,7 +522,7 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
       # }
 
       if (length(which(!is.na(contents$node_id))) > 0) { # if there is anything beside NA nodes
-        nodecheck <- contents[!is.na(contents$node_id), ]
+        nodecheck <- contents[which(!is.na(contents$node_id)), ]
         nodecheck <- nodecheck[!duplicated(nodecheck[c("time", "tag_id", "node_id", "tag_rssi")]), ]
         badrec <- nodecheck[duplicated(nodecheck[c("time", "tag_id", "node_id")]), ]
         if (nrow(badrec) > 0) {
@@ -1087,10 +1091,15 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
     print(errtpe)
     #print(filetype)
     print(y)
+    contents <- db_prep(contents, filetype, sensor, y, begin)
+    if(nrow(contents) < 1) {errtype <- 7}
     if (errtype < 7 & errtype != 2) {
     print("inserting contents")
-    contents <- db_prep(contents, filetype, sensor, y, begin)
     z <- db_insert(contents, filetype, conn, y)
+    } else if(errtype == 7) {
+      dir.create(file.path(outpath, "ignore_files"), showWarnings = FALSE)
+      file.copy(e, file.path(outpath, "ignore_files"))
+      file.remove(e)
     } else {
       dir.create(file.path(outpath, "error_files"), showWarnings = FALSE)
       file.copy(e, file.path(outpath, "error_files"))
