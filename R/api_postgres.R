@@ -557,6 +557,7 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
 
 db_insert <- function(contents, filetype, conn, y) {
   if(any(colnames(contents) == "node_id")) {
+    contents$node_id <- toupper(contents$node_id)
     if (length(which(!is.na(contents$node_id))) > 0) {
       nodeids <- contents$node_id[which(!is.na(contents$node_id))]
       insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "nodes (node_id)", " VALUES ($1)
