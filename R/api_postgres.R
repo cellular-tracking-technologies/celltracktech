@@ -484,6 +484,7 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
       }
       nodeids <- toupper(unique(contents$NodeId))
       names(contents) <- sapply(names(contents), function(x) gsub("([[:lower:]])([[:upper:]])", "\\1_\\2", x))
+      names(contents) <- tolower(names(contents))
       # if(fix=TRUE) {
       #  query <- querygen(contents[1,])
       #  res <- DBI::dbGetQuery(conn, paste0("select * from node_health where ", query))
