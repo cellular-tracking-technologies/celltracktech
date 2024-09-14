@@ -566,7 +566,7 @@ db_insert <- function(contents, filetype, conn, y) {
   } else {
     nodeids <- c()
   }
-  if (filetype %in% c("raw", "node_health", "gps", "blu")) {
+  if (filetype %in% c("raw", "node_health", "gps", "blu") & nrow(contents) > 0) {
     if (filetype %in% c("raw", "blu")) {
         vars <- paste(DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))], sep = "", collapse = ",")
         vals <- paste(seq_along(1:(length(DBI::dbListFields(conn, filetype)) - 1)), sep = "", collapse = ", $")
