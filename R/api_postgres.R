@@ -402,6 +402,7 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
       contents$recorded_at <- as.character(contents$recorded_at)
       colnames(contents)[colnames(contents) == "gps.at"] <- "gps_at"
       contents$gps_at <- as.character(contents$gps_at)
+      contents <- contents[which(!is.na(contents$latitude)),]
       if ("mean.lat" %in% colnames(contents) | "mean lat" %in% colnames(contents)) {
         colnames(contents)[colnames(contents) %in% c("mean.lat", "mean lat")] <- "mean_lat"
         colnames(contents)[colnames(contents) %in% c("mean.lng", "mean lng")] <- "mean_lng"
@@ -481,9 +482,13 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
         contents$CumulativeSolarCurrent <- NA
         contents$Latitude <- NA
         contents$Longitude <- NA
+      } else if(ncol(contents) > 9) {
+        contents <- contents[which(contents$Latitude < 90 & contents$Latitde > -90),] 
+        #contents <- contents[contents$CumulativeSolarCurrent < 2147483647,]
       }
       nodeids <- toupper(unique(contents$NodeId))
       names(contents) <- sapply(names(contents), function(x) gsub("([[:lower:]])([[:upper:]])", "\\1_\\2", x))
+      names(contents) <- tolower(names(contents))
       # if(fix=TRUE) {
       #  query <- querygen(contents[1,])
       #  res <- DBI::dbGetQuery(conn, paste0("select * from node_health where ", query))
@@ -498,7 +503,7 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
       # contents <- contents[,1:13]
     } else if (filetype == "blu") {
       # print(names(contents))
-      contents <- contents[!is.na(contents$TagId), ]
+      contents <- contents[which(!is.na(contents$TagId)), ]
       contents$RadioId <- as.integer(contents$RadioId)
       contents$TagRSSI <- as.integer(contents$TagRSSI)
       contents$UsbPort <- as.integer(contents$UsbPort)
@@ -517,7 +522,7 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
       # }
 
       if (length(which(!is.na(contents$node_id))) > 0) { # if there is anything beside NA nodes
-        nodecheck <- contents[!is.na(contents$node_id), ]
+        nodecheck <- contents[which(!is.na(contents$node_id)), ]
         nodecheck <- nodecheck[!duplicated(nodecheck[c("time", "tag_id", "node_id", "tag_rssi")]), ]
         badrec <- nodecheck[duplicated(nodecheck[c("time", "tag_id", "node_id")]), ]
         if (nrow(badrec) > 0) {
@@ -556,6 +561,7 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
 
 db_insert <- function(contents, filetype, conn, y) {
   if(any(colnames(contents) == "node_id")) {
+    contents$node_id <- toupper(contents$node_id)
     if (length(which(!is.na(contents$node_id))) > 0) {
       nodeids <- contents$node_id[which(!is.na(contents$node_id))]
       insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "nodes (node_id)", " VALUES ($1)
@@ -566,7 +572,7 @@ db_insert <- function(contents, filetype, conn, y) {
   } else {
     nodeids <- c()
   }
-  if (filetype %in% c("raw", "node_health", "gps", "blu")) {
+  if (filetype %in% c("raw", "node_health", "gps", "blu") & nrow(contents) > 0) {
     if (filetype %in% c("raw", "blu")) {
         vars <- paste(DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))], sep = "", collapse = ",")
         vals <- paste(seq_along(1:(length(DBI::dbListFields(conn, filetype)) - 1)), sep = "", collapse = ", $")
@@ -801,6 +807,7 @@ timecheck <- function(contents, myrowfix) {
 
 file_handle <- function(e, filetype) {
   print(paste("checking file for errors:", e))
+  #print(filetype)
   file_err <- 0
   myrowfix <- c()
   ignore <- FALSE
@@ -982,12 +989,12 @@ get_my_data <- function(my_token, outpath, db_name = NULL, myproject = NULL, mys
   projects <- project_list(my_token, myproject)
   if (!is.null(db_name) & length(grep("postgresql", format(db_name))) > 0) {
     create_db(db_name) # EDIT TO TAKE NEW create_db() when you switch back!
-    #sapply(projects, pop_proj, conn = conn)
+    sapply(projects, pop_proj, conn = db_name)
     failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end)
   } else if(!is.null(db_name) & length(grep("duckdb", format(db_name))) > 0) {
     create_duck(db_name)
     failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end)
-    #sapply(projects, pop_proj, conn = conn)
+    sapply(projects, pop_proj, conn = db_name)
   } else {
     failed <- lapply(projects, get_data, outpath = outpath, my_station = mystation, beginning = begin, ending = end)
   }
@@ -1095,10 +1102,15 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
     print(errtpe)
     #print(filetype)
     print(y)
+    contents <- db_prep(contents, filetype, sensor, y, begin)
+    if(nrow(contents) < 1) {errtype <- 7}
     if (errtype < 7 & errtype != 2) {
     print("inserting contents")
-    contents <- db_prep(contents, filetype, sensor, y, begin)
     z <- db_insert(contents, filetype, conn, y)
+    } else if(errtype == 7) {
+      dir.create(file.path(outpath, "ignore_files"), showWarnings = FALSE)
+      file.copy(e, file.path(outpath, "ignore_files"))
+      file.remove(e)
     } else {
       dir.create(file.path(outpath, "error_files"), showWarnings = FALSE)
       file.copy(e, file.path(outpath, "error_files"))
