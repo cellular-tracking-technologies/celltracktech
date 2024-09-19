@@ -819,7 +819,7 @@ file_handle <- function(e, filetype) {
   }
 
   if (!is.null(contents) & nrow(contents > 0)) {
-    if(filetype %in% c("raw", "node_health", "gps")) {
+    if(filetype %in% c("raw", "node_health", "gps", "blu")) {
     delete.columns <- grep("[[:digit:]]", colnames(contents), perl = T)
     if (length(delete.columns) > 0) {
       file_err <- 1
@@ -829,6 +829,7 @@ file_handle <- function(e, filetype) {
           myrowfix[1] <- strsplit(Correct_Colnames(contents)[1], "[.]")[[1]][1]
           myrowfix[2] <- strsplit(Correct_Colnames(contents)[2], "[.]")[[1]][1]
           myrowfix[3] <- strsplit(Correct_Colnames(contents)[3], "\\.\\.")[[1]][1] # were there files where this wasn't correctly split?
+          myrowfix[3] <- ifelse(myrowfix[3]=="", NA, myrowfix[3])
           myrowfix[4] <- strsplit(Correct_Colnames(contents)[4], "\\.\\.")[[1]][1]
           myrowfix[5] <- strsplit(Correct_Colnames(contents)[5], "\\.\\.")[[1]][1]
           if (nchar(myrowfix[5]) < 1) {
@@ -843,6 +844,8 @@ file_handle <- function(e, filetype) {
             myrowfix[8] <- strsplit(Correct_Colnames(contents)[8], "\\.\\.")[[1]][1]
           }
           if (length(myrowfix) > 9) {
+            myrowfix[10] <- strsplit(Correct_Colnames(contents)[10], "\\.\\.")[[1]][1]
+            myrowfix[10] <- ifelse(myrowfix[10]=="", NA, myrowfix[10])
             myrowfix[12] <- strsplit(Correct_Colnames(contents)[12], "\\.\\.")[[1]][1]
             myrowfix[13] <- strsplit(Correct_Colnames(contents)[13], "\\.\\.")[[1]][1]
           }
@@ -858,7 +861,7 @@ file_handle <- function(e, filetype) {
       # contents <- newcontents
     }
 
-    if(!ignore){
+    if(!ignore & !filetype=="blu"){
       rowtest <- badrow(e, contents, filetype)
       contents <- rowtest[[1]]
     } else {
@@ -916,8 +919,16 @@ file_handle <- function(e, filetype) {
         }
       }
       contents <- contents[(nchar(contents$NodeId) == 6 | nchar(contents$NodeId) == 8),]
-    }} else if(filetype=="blu") {
-      rowtest <- list(contents,0)
+    } else if(filetype=="blu") {
+      #rowtest <- list(contents,0)
+      if (length(delete.columns) > 0) {
+        if (ncol(contents) > 8) {
+          names(contents) <- c("UsbPort","BluRadioId","RadioId","Time","TagRSSI","TagId","Sync","Product","Revision","NodeId","Payload")
+            rowfix <- data.frame(as.integer(myrowfix[1]), as.integer(myrowfix[2]), myrowfix[3], as.POSIXct(myrowfix[4], tz = "UTC"), as.integer(myrowfix[5]), as.character(myrowfix[6]), as.integer(myrowfix[7]), myrowfix[8], myrowfix[9], myrowfix[10], as.character(myrowfix[11]))
+            names(rowfix) <- names(contents)
+            contents <- rbind(contents, rowfix)
+          }
+        }
       contents <- contents[(nchar(contents$NodeId) == 8 | is.na(contents$NodeId)),]
     }
     timecols <- c("Time", "recorded at", "gps at", "RecordedAt", "recorded.at", "gps.at")
@@ -949,7 +960,7 @@ file_handle <- function(e, filetype) {
       if(filetype == 'gps' & all(is.na(contents[,2]))) {file_err <- 7}
     }
     # print(contents)
-  } else {file_err <- 2}
+  }} else {file_err <- 2}
   # print(tail(contents))
   return(list(contents, file_err, myrowfix, contents[1, ]))
 }
