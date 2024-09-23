@@ -483,7 +483,7 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
         contents$Latitude <- NA
         contents$Longitude <- NA
       } else if(ncol(contents) > 9) {
-        contents <- contents[which(contents$Latitude < 90 & contents$Latitde > -90),] 
+        contents <- contents[which(contents$Latitude < 90 & contents$Latitude > -90),]
         #contents <- contents[contents$CumulativeSolarCurrent < 2147483647,]
       }
       nodeids <- toupper(unique(contents$NodeId))
