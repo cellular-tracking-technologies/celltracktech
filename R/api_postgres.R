@@ -936,7 +936,7 @@ file_handle <- function(e, filetype) {
             contents <- rbind(contents, rowfix)
           }
         }
-      contents <- contents[(nchar(contents$NodeId) == 8 | is.na(contents$NodeId)),]
+      contents <- contents[(nchar(contents$NodeId) <= 8 | is.na(contents$NodeId)),]
     }
     timecols <- c("Time", "recorded at", "gps at", "RecordedAt", "recorded.at", "gps.at")
     filetime <- which(names(contents) %in% timecols)
