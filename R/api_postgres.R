@@ -925,7 +925,7 @@ file_handle <- function(e, filetype) {
           names(contents) <- c("Time", "RadioId", "NodeId", "NodeRssi", "Battery", "celsius")
         }
       }
-      contents <- contents[(nchar(contents$NodeId) == 6 | nchar(contents$NodeId) == 8),]
+      contents <- contents[(nchar(contents$NodeId) >= 6 & nchar(contents$NodeId) <= 8),]
     } else if(filetype=="blu") {
       #rowtest <- list(contents,0)
       if (length(delete.columns) > 0) {
