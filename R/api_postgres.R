@@ -679,6 +679,14 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     filenameinfo <- sensorid[2]
     file_info <- unlist(strsplit(filenameinfo, "\\."))[1]
     filetype <- ifelse(is.na(as.integer(file_info)), file_info, "sensorgnome")
+    print(filetype)
+    if (is.na(filetype)) {
+      filetype <- "none"
+    } else if (filetype == "node") {
+      filetype <- "node_health"
+    } else if (filetype == "data") {
+      filetype <- "raw"
+    }
     if (filetype %in% filetypes) {
     faul <- which(sapply(my_stations[["stations"]], function(sta) sta$station$id == sensor))
     if (length(faul) > 1) {
@@ -689,14 +697,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     }
     #print(paste("look here", faul))
     #print(my_stations[["stations"]])
-    print(filetype)
-    if (is.na(filetype)) {
-      filetype <- "none"
-    } else if (filetype == "node") {
-      filetype <- "node_health"
-    } else if (filetype == "data") {
-      filetype <- "raw"
-    }
+    
     #print(paste("downloading", y, "to", file.path(outpath, basename, sensor, filetype)))
     #print(x)
     #print(paste(x,y))
