@@ -619,7 +619,7 @@ db_insert <- function(contents, filetype, conn, y) {
   return(h)
 }
 
-get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, ending) {
+get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, ending, filetypes) {
   # print("getting your file list")
   projbasename <- thisproject$name
   id <- thisproject[["id"]]
@@ -667,14 +667,19 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
   print(paste("about to get", length(ids), "files"))
   file_names <- unlist(files_avail)[which(allfiles)]
   print("prepped list of filenames to get")
+  if (is.null(filetypes)) {filetypes <- c("raw", "node_health", "gps", "blu")}
 
-  get_files <- function(x, y) {
+  get_files <- function(x, y, filetypes) {
     print(x)
     print(y)
     splitfile <- unlist(strsplit(y, "CTT-"))
     fileinfo <- splitfile[2]
     sensorid <- unlist(strsplit(fileinfo, "-"))
     sensor <- sensorid[1]
+    filenameinfo <- sensorid[2]
+    file_info <- unlist(strsplit(filenameinfo, "\\."))[1]
+    filetype <- ifelse(is.na(as.integer(file_info)), file_info, "sensorgnome")
+    if (filetype %in% filetypes) {
     faul <- which(sapply(my_stations[["stations"]], function(sta) sta$station$id == sensor))
     if (length(faul) > 1) {
       begin <- sapply(faul, function(x) as.POSIXct(my_stations[["stations"]][[x]]$`deploy-at`, format = "%Y-%m-%dT%H:%M:%OS", tz = "UTC", optional = TRUE))
@@ -684,9 +689,6 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     }
     #print(paste("look here", faul))
     #print(my_stations[["stations"]])
-    filenameinfo <- sensorid[2]
-    file_info <- unlist(strsplit(filenameinfo, "\\."))[1]
-    filetype <- ifelse(is.na(as.integer(file_info)), file_info, "sensorgnome")
     print(filetype)
     if (is.na(filetype)) {
       filetype <- "none"
@@ -725,13 +727,14 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
         }
       }
     }
+    }
     if (!exists("z")) {
       z <- NULL
     }
     return(z)
-  }
+    }
 
-  failed <- Map(get_files, ids, file_names)
+  failed <- Map(get_files, ids, file_names, filetypes=filetypes)
   print("done getting files")
   return(failed)
 }
@@ -985,7 +988,7 @@ file_handle <- function(e, filetype) {
 #' @export
 #' @examples
 #' get_my_data(token, "~/mydata", myproject = "Project Name from CTT Account")
-get_my_data <- function(my_token, outpath, db_name = NULL, myproject = NULL, mystation = NULL, begin = NULL, end = NULL) {
+get_my_data <- function(my_token, outpath, db_name = NULL, myproject = NULL, mystation = NULL, begin = NULL, end = NULL, filetypes=NULL) {
   projects <- project_list(my_token, myproject)
   if (!is.null(db_name) & length(grep("postgresql", format(db_name))) > 0) {
     create_db(db_name) # EDIT TO TAKE NEW create_db() when you switch back!
@@ -993,7 +996,7 @@ get_my_data <- function(my_token, outpath, db_name = NULL, myproject = NULL, mys
     failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end)
   } else if(!is.null(db_name) & length(grep("duckdb", format(db_name))) > 0) {
     create_duck(db_name)
-    failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end)
+    failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
     sapply(projects, pop_proj, conn = db_name)
   } else {
     failed <- lapply(projects, get_data, outpath = outpath, my_station = mystation, beginning = begin, ending = end)
