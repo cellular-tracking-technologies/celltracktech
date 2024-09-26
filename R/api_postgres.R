@@ -814,14 +814,25 @@ file_handle <- function(e, filetype) {
   file_err <- 0
   myrowfix <- c()
   ignore <- FALSE
-  contents <- tryCatch(
-    {
-      readr::read_csv(e, col_names = TRUE)
-    },
-    error = function(err) {
-      return(NULL)
-    }
-  )
+  if(filetype=="raw") {
+    contents <- tryCatch(
+      {
+        readr::read_csv(e, col_names = TRUE, col_types = list(NodeId="c"))
+      },
+      error = function(err) {
+        return(NULL)
+      }
+    ) 
+  } else {
+    contents <- tryCatch(
+      {
+        readr::read_csv(e, col_names = TRUE)
+      },
+      error = function(err) {
+        return(NULL)
+      }
+    )
+  }
 
   if (filetype == "raw" & ncol(contents) > 6) {
     contents <- contents[,1:6]
@@ -1004,10 +1015,10 @@ get_my_data <- function(my_token, outpath, db_name = NULL, myproject = NULL, mys
   faul <- which(!sapply(failed[[1]], is.null))
   if (length(faul > 0)) {
     failed <- Map(`[`, failed, faul)
-    save(failed, file = file.path(outpath, "caught.RData"))
+    #save(failed, file = file.path(outpath, "caught.RData"))
   } else {
     failed <- "all good!"
-    save(failed, file = file.path(outpath, "caught.RData"))
+    #save(failed, file = file.path(outpath, "caught.RData"))
   }
 }
 
