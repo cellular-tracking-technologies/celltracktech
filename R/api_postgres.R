@@ -668,8 +668,11 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
   file_names <- unlist(files_avail)[which(allfiles)]
   print("prepped list of filenames to get")
   if (is.null(filetypes)) {filetypes <- c("raw", "node_health", "gps", "blu")}
+  filetypeget <- unlist(sapply(file_names, function(x) get_file_info(x)["filetype"]))
+  filesget <- data.frame(ids, file_names, filetypeget)
+  filesget <- filesget[filesget$filetypeget %in% filetypes,]
 
-  get_files <- function(x, y, filetypes) {
+  get_files <- function(x, y) {
     print(x)
     print(y)
     splitfile <- unlist(strsplit(y, "CTT-"))
@@ -735,7 +738,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     return(z)
     }
 
-  failed <- Map(get_files, ids, file_names, filetypes=filetypes)
+  failed <- Map(get_files, filesget$ids, filesget$file_names)
   print("done getting files")
   return(failed)
 }
