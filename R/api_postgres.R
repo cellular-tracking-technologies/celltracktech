@@ -489,6 +489,8 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
       nodeids <- toupper(unique(contents$NodeId))
       names(contents) <- sapply(names(contents), function(x) gsub("([[:lower:]])([[:upper:]])", "\\1_\\2", x))
       names(contents) <- tolower(names(contents))
+      
+      contents <- contents[!duplicated(contents[c("time", "node_id", "recorded_at")]), ]
       # if(fix=TRUE) {
       #  query <- querygen(contents[1,])
       #  res <- DBI::dbGetQuery(conn, paste0("select * from node_health where ", query))
@@ -1008,11 +1010,11 @@ get_my_data <- function(my_token, outpath, db_name = NULL, myproject = NULL, mys
   if (!is.null(db_name) & length(grep("postgresql", format(db_name))) > 0) {
     create_db(db_name) # EDIT TO TAKE NEW create_db() when you switch back!
     sapply(projects, pop_proj, conn = db_name)
-    failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end)
+    failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
   } else if(!is.null(db_name) & length(grep("duckdb", format(db_name))) > 0) {
     create_duck(db_name)
-    failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
     sapply(projects, pop_proj, conn = db_name)
+    failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
   } else {
     failed <- lapply(projects, get_data, outpath = outpath, my_station = mystation, beginning = begin, ending = end)
   }
