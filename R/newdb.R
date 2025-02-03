@@ -114,7 +114,7 @@ import_node_data <- function(d, outpath, myproject=NULL) {
   myout <- outpath
   if(!is.null(myproject)) {myout <- file.path(outpath,myproject)}
   myfiles <- list.files(file.path(myout, "nodes"), pattern="beep.*csv",recursive = TRUE, full.names = TRUE)
-  print(myfiles)
+  print(paste('myfiles',myfiles))
   files_loc <- sapply(strsplit(myfiles, "/"), tail, n=2)
   files <- paste(files_loc[1,],files_loc[2,],sep="/")
   allnode <- DBI::dbReadTable(d, "data_file")
@@ -132,16 +132,28 @@ load_node_data <- function(e, conn, outpath, myproject) {
     return(rowval)}
 
   #e <- file.path(outpath, "nodes", e)
-  print(e)
+  print(paste('whatever e is', e)) # e is the filepath
   file <- tail(unlist(strsplit(e, "/")), n=2)
+  print(paste('file', file))
   y <- paste(file, collapse="/")
+  print(paste('load node data y', y))
   sensor <- NA
   i <- DBI::dbReadTable(conn, "ctt_project_station")
+  print(paste('load node data i', i))
+
   begin <- min(i$deploy_at)
+  print(paste('load node data begin', begin))
+
   if(!is.null(myproject)) {
     myproj <- DBI::dbReadTable(conn, "ctt_project")
+    print(paste('load node data y', myproj))
+
     projid <- myproj$id[which(myproj$name == myproject)]
+    print(paste('load node data projid', projid))
+
     begin <- min(i$deploy_at[which(i$project_id == projid)])
+    print(paste('load node data begin, second', begin))
+
   }
 
   if(length(begin) == 0) {begin <- as.POSIXct("2018-01-01")}
@@ -150,13 +162,15 @@ load_node_data <- function(e, conn, outpath, myproject) {
   #lapply(runs[lengths(runs) > 1], range)
   df <- tryCatch({
     if (file.size(e) > 0) {
+        print(paste('read csv', readr::read_csv(e,na=c("NA", ""), skip_empty_rows = TRUE)))
         read_csv(e,na=c("NA", ""), skip_empty_rows = TRUE)
     }}, error = function(err) {
         # error handler picks up where error was generated
-        print("ignoring file", e, "- no data")
+        print(paste("ignoring file", err, "- no data"))
         return(NULL)
     }, error = function(w) {
-      print("error in file")
+      # print("error in file")
+      print(paste('error in file', w))
       #x <- read.csv(e,header=TRUE,as.is=TRUE, na.strings=c("NA", ""), skipNul = TRUE) might need to reimplement this...
       #x <- rbind(x,Correct_Colnames(x))
       #colnames(x) <- c("time", "id", "rssi")
@@ -220,13 +234,25 @@ load_node_data <- function(e, conn, outpath, myproject) {
     start <- min(df$Time, na.rm=T)
     end <- max(df$Time, na.rm=T)
     test <- dbGetQuery(conn, paste0("select * from raw where time > '", start,"' and time < '",end,"'"))
+    # print(paste('test from db', colnames(test))) # database has path and station_id
+    # print(paste('df from file', colnames(df)))
     test$Time <- test$time
     test$TagId <- test$tag_id
     test$RadioId <- test$radio_id
     test$NodeId <- test$node_id
     test$TagRSSI <- test$tag_rssi
     test$Validated <- test$validated
-    test <- test[,colnames(df)]
-    df <- dplyr::anti_join(df,test)
-    z <- db_insert(df, filetype, conn, sensor, y, begin)}
+    # test <- test[,colnames(df)] # grabs columns only from df... which do not contain path or station id
+    # test <- subset(test, select = c(time, tag_id, radio_id, node_id, tag_rssi, validated))
+
+    print(paste('test, from db, has station_id and path after indexing', colnames(test)))
+    print(paste('df from file', colnames(df))) # df has capitalized columns
+    # df <- dplyr::anti_join(df,test)
+    df <- dplyr::full_join(test,df)
+    print(paste('df after anti_join', colnames(df)))
+    df <- subset(df, select = c(id, path, radio_id, tag_id, node_id, tag_rssi, validated, time, station_id))
+    # z <- db_insert(df, filetype, conn, sensor, y, begin)
+    z <- db_insert(contents=df, filetype=filetype, conn=conn, y=y)
+
+    }
 }

@@ -50,10 +50,11 @@ file_types <- c("data", "node-data", "gps", "log", "telemetry", "sensorgnome", "
 
 project_list <- function(my_token, myproject = NULL) {
   projects <- httr::content(httr::POST(host, path = project, body = list(token = my_token), encode = "json"))
-  print(projects)
+  print(paste('projects', projects))
   projects <- projects[["projects"]]
   # print(projects)
   if (!is.null(myproject)) {
+    print(paste('my project', myproject))
     projects <- list(projects[[which(sapply(projects, function(x) x[["name"]]) == myproject)]])
   }
   return(projects)
@@ -489,7 +490,7 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
       nodeids <- toupper(unique(contents$NodeId))
       names(contents) <- sapply(names(contents), function(x) gsub("([[:lower:]])([[:upper:]])", "\\1_\\2", x))
       names(contents) <- tolower(names(contents))
-      
+
       contents <- contents[!duplicated(contents[c("time", "node_id", "recorded_at")]), ]
       # if(fix=TRUE) {
       #  query <- querygen(contents[1,])
@@ -561,7 +562,11 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
   if (any(row.names(contents) == "NA")) {contents <- contents[-which(row.names(contents) == "NA"), ]}
   return(contents)}
 
-db_insert <- function(contents, filetype, conn, y) {
+db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
+  # print(paste('filetype', filetype, 'y', y))
+  # print(paste('contents colnames', colnames(contents)))
+  # colnames(contents) = c('node_id', 'time', 'radio_id', 'tag_id', 'tag_rssi', 'validated')
+  # print(paste('colnames', tolower(colnames(contents))))
   if(any(colnames(contents) == "node_id")) {
     contents$node_id <- toupper(contents$node_id)
     if (length(which(!is.na(contents$node_id))) > 0) {
@@ -576,26 +581,43 @@ db_insert <- function(contents, filetype, conn, y) {
   }
   if (filetype %in% c("raw", "node_health", "gps", "blu") & nrow(contents) > 0) {
     if (filetype %in% c("raw", "blu")) {
+      # print(paste('filetype', filetype))
+      # print(paste('contents', DBI::dbListFields(conn, filetype)))
         vars <- paste(DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))], sep = "", collapse = ",")
         vals <- paste(seq_along(1:(length(DBI::dbListFields(conn, filetype)) - 1)), sep = "", collapse = ", $")
-        contents <- contents[, DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]]
+        # print(paste('contents', colnames(contents)))
+        # print(paste('contents', DBI::dbListFields(conn, filetype)))
+        print(paste('contents', colnames(contents)))
+        contents <- contents[, DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]] # need path and station_id columns
+        contents
     } else {
         vars <- paste(DBI::dbListFields(conn, filetype), sep = "", collapse = ",")
         vals <- paste(seq_along(1:length(DBI::dbListFields(conn, filetype))), sep = "", collapse = ", $")
         names(contents) <- tolower(names(contents))
         contents <- contents[, DBI::dbListFields(conn, filetype)]
     }
+
     h <- tryCatch(
         {
           tryCatch({
+            print(paste('failing contents', colnames(contents)))
+
               DBI::dbWriteTable(conn, filetype, contents, append = TRUE)
-              insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "data_file (path)", " VALUES ($1)
-                                         ON CONFLICT DO NOTHING", sep = ""))  #CTT-FC16AD87C466-node-health.2022-07-15_104908.csv.gz
+              print(paste('dbWrite table worked'))
+              query = paste("INSERT INTO ", "data_file (path)", " VALUES ($1) ON CONFLICT DO NOTHING", sep = "")
+              print(paste('query', query))
+              insertnew <-DBI::dbSendQuery(conn, query)
+              # insertnew <- DBI::dbSendQuery(conn,
+              #                               paste("INSERT INTO ",
+              #                                     "data_file (path)",
+              #                                     " VALUES ($1) ON CONFLICT DO NOTHING", sep = ""))  #CTT-FC16AD87C466-node-health.2022-07-15_104908.csv.gz
+              print(paste('insert new record', insertnew))
               DBI::dbBind(insertnew, params = list(y))
               DBI::dbClearResult(insertnew)
               return(NULL)
             },
             error = function(err) {
+              # print(paste('what the hell is this error', err))
               # error handler picks up where error was generated, in Bob's script it breaks if header is missing
               myquery <- paste("INSERT INTO ", filetype, " (", vars, ") VALUES ($", vals, ")
                                          ON CONFLICT DO NOTHING", sep = "")
@@ -610,7 +632,8 @@ db_insert <- function(contents, filetype, conn, y) {
           )
         },
         error = function(err) {
-          print("could not insert")
+          print(paste("could not insert", y))
+          print(paste('could not insert error', err))
           return(list(err, contents, y))
         }
       )
@@ -702,7 +725,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     }
     #print(paste("look here", faul))
     #print(my_stations[["stations"]])
-    
+
     #print(paste("downloading", y, "to", file.path(outpath, basename, sensor, filetype)))
     #print(x)
     #print(paste(x,y))
@@ -828,7 +851,7 @@ file_handle <- function(e, filetype) {
       error = function(err) {
         return(NULL)
       }
-    ) 
+    )
   } else {
     contents <- tryCatch(
       {
