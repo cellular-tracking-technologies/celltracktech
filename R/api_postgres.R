@@ -52,7 +52,7 @@ project_list <- function(my_token, myproject = NULL) {
   projects <- httr::content(httr::POST(host, path = project, body = list(token = my_token), encode = "json"))
   print(paste('projects', projects))
   projects <- projects[["projects"]]
-  # print(projects)
+  print(projects)
   if (!is.null(myproject)) {
     print(paste('my project', myproject))
     projects <- list(projects[[which(sapply(projects, function(x) x[["name"]]) == myproject)]])
@@ -564,7 +564,7 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
 
 db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
   # print(paste('filetype', filetype, 'y', y))
-  # print(paste('contents colnames', colnames(contents)))
+  print(paste('db insert contents', contents))
   # colnames(contents) = c('node_id', 'time', 'radio_id', 'tag_id', 'tag_rssi', 'validated')
   # print(paste('colnames', tolower(colnames(contents))))
   if(any(colnames(contents) == "node_id")) {
@@ -580,15 +580,17 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
     nodeids <- c()
   }
   if (filetype %in% c("raw", "node_health", "gps", "blu") & nrow(contents) > 0) {
+    print(paste('first if contents', contents))
     if (filetype %in% c("raw", "blu")) {
       # print(paste('filetype', filetype))
       # print(paste('contents', DBI::dbListFields(conn, filetype)))
         vars <- paste(DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))], sep = "", collapse = ",")
         vals <- paste(seq_along(1:(length(DBI::dbListFields(conn, filetype)) - 1)), sep = "", collapse = ", $")
-        # print(paste('contents', colnames(contents)))
         # print(paste('contents', DBI::dbListFields(conn, filetype)))
-        print(paste('contents', colnames(contents)))
+        print(paste('contents before db list fields', contents))
         contents <- contents[, DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]] # need path and station_id columns
+        print(paste('contents after db list fields', contents))
+
         contents
     } else {
         vars <- paste(DBI::dbListFields(conn, filetype), sep = "", collapse = ",")
@@ -597,30 +599,37 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
         contents <- contents[, DBI::dbListFields(conn, filetype)]
     }
 
+    # browser()
     h <- tryCatch(
         {
           tryCatch({
-            print(paste('failing contents', colnames(contents)))
+            print(paste('failing contents', contents))
 
               DBI::dbWriteTable(conn, filetype, contents, append = TRUE)
               print(paste('dbWrite table worked'))
               query = paste("INSERT INTO ", "data_file (path)", " VALUES ($1) ON CONFLICT DO NOTHING", sep = "")
               print(paste('query', query))
               insertnew <-DBI::dbSendQuery(conn, query)
+              # print(dbFetch(insertnew))
+              print('insertnew query created')
               # insertnew <- DBI::dbSendQuery(conn,
               #                               paste("INSERT INTO ",
               #                                     "data_file (path)",
               #                                     " VALUES ($1) ON CONFLICT DO NOTHING", sep = ""))  #CTT-FC16AD87C466-node-health.2022-07-15_104908.csv.gz
-              print(paste('insert new record', insertnew))
+              print('insertnew query ran')
+              print(paste('whatever the hell y is', y))
               DBI::dbBind(insertnew, params = list(y))
+              print('dbBind insert new ran')
               DBI::dbClearResult(insertnew)
+              print('dbi clear result insertnew ran')
               return(NULL)
             },
             error = function(err) {
               # print(paste('what the hell is this error', err))
               # error handler picks up where error was generated, in Bob's script it breaks if header is missing
-              myquery <- paste("INSERT INTO ", filetype, " (", vars, ") VALUES ($", vals, ")
-                                         ON CONFLICT DO NOTHING", sep = "")
+              # myquery <- paste("INSERT INTO ", filetype, " (", vars, ") VALUES ($", vals, ")
+                                         # ON CONFLICT DO NOTHING", sep = "")
+              myquery <- paste("INSERT INTO ", filetype, " (", vars, ") VALUES ($", vals, ")", sep = "")
               insertnew <- DBI::dbSendQuery(conn, myquery)
               DBI::dbBind(insertnew, params = unname(contents))
               DBI::dbClearResult(insertnew)
@@ -639,8 +648,9 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
       )
     }
   if (!exists("h")) {
-    h <- NULL
+    h <- NULL # h is boolean
   }
+  # print(paste('what the hell is h???', h)) # h is boolean
   return(h)
 }
 

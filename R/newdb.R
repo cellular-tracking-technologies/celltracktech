@@ -162,7 +162,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
   #lapply(runs[lengths(runs) > 1], range)
   df <- tryCatch({
     if (file.size(e) > 0) {
-        print(paste('read csv', readr::read_csv(e,na=c("NA", ""), skip_empty_rows = TRUE)))
+        # print(paste('read csv', readr::read_csv(e,na=c("NA", ""), skip_empty_rows = TRUE)))
         read_csv(e,na=c("NA", ""), skip_empty_rows = TRUE)
     }}, error = function(err) {
         # error handler picks up where error was generated
@@ -233,9 +233,11 @@ load_node_data <- function(e, conn, outpath, myproject) {
 
     start <- min(df$Time, na.rm=T)
     end <- max(df$Time, na.rm=T)
+    print(paste('start', start, 'end', end))
+    print(paste('time window query', paste0("select * from raw where time > '", start,"' and time < '",end,"'")))
     test <- dbGetQuery(conn, paste0("select * from raw where time > '", start,"' and time < '",end,"'"))
-    # print(paste('test from db', colnames(test))) # database has path and station_id
-    # print(paste('df from file', colnames(df)))
+    print(paste('test from db', colnames(test))) # database has path and station_id
+    print(paste('df from file', colnames(df)))
     test$Time <- test$time
     test$TagId <- test$tag_id
     test$RadioId <- test$radio_id
@@ -245,14 +247,24 @@ load_node_data <- function(e, conn, outpath, myproject) {
     # test <- test[,colnames(df)] # grabs columns only from df... which do not contain path or station id
     # test <- subset(test, select = c(time, tag_id, radio_id, node_id, tag_rssi, validated))
 
-    print(paste('test, from db, has station_id and path after indexing', colnames(test)))
-    print(paste('df from file', colnames(df))) # df has capitalized columns
-    # df <- dplyr::anti_join(df,test)
-    df <- dplyr::full_join(test,df)
-    print(paste('df after anti_join', colnames(df)))
-    df <- subset(df, select = c(id, path, radio_id, tag_id, node_id, tag_rssi, validated, time, station_id))
-    # z <- db_insert(df, filetype, conn, sensor, y, begin)
-    z <- db_insert(contents=df, filetype=filetype, conn=conn, y=y)
+    # print(paste('test, from db, has station_id and path after indexing', test))
+    # print(paste('df from file', df)) # df has capitalized columns
+    df <- dplyr::anti_join(df,test) # only gets beeps from node, and not ones picked up by sensor station
+    # print(paste('df after anti_join', df))
+    # df$station_id = test$station_id[1]
+    # df$path = y
+    # df$tag_id = df$id
+    # df$tag_rssi = df$rssi
+    # df$validated = NA
+    # df$node_id =
+    # # df <- subset(df, select = c(id, path, radio_id, tag_id, node_id, tag_rssi, validated, time, station_id))
+    colnames(df) = c('node_id', 'time', 'radio_id', 'tag_id', 'tag_rssi', 'validated')
+    df$path = y
+    df$station_id = test$station_id[1]
+    print(paste('df after subset colnames', colnames(df)))
+    print(paste('df after subset', df))
+    # z <- db_insert(contents=df, filetype=filetype, conn=conn, sensor=sensor, y=y, begin=begin)
+    z <- db_insert(contents=df, filetype=filetype, conn=conn, y=y, begin=begin)
 
     }
 }
