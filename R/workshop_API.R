@@ -1,7 +1,8 @@
 library(celltracktech)
 library(duckdb) # click no on pop up window
 library(devtools) # needs RTools
-library(readr)
+library(tidyverse)
+library(dotenv)
 
 source('./R/api_postgres.R')
 source('./R/filecatch.R')
@@ -14,7 +15,15 @@ start <- Sys.time()
 # install.packages("duckdb", repos = c("https://duckdb.r-universe.dev", "https://cloud.r-project.org"))
 # install.packages("https://github.com/duckdb/duckdb/releases/download/master-builds/duckdb_r_src.tar.gz", repos = NULL)
 
+####SETTINGS#####
+myproject <- "Mouse Bird" #this is your project name on your CTT account
+outpath <- "./vignettes/mouse_bird/" #where your downloaded files are to go
+my_token <- Sys.getenv('MOUSE_BIRD') # token stored in .env file
 
+
+# List Projects -----------------------------------------------------------
+#
+# project_list(my_token)
 
 con <- DBI::dbConnect(
   duckdb::duckdb(),
