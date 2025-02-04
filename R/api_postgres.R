@@ -563,10 +563,6 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
   return(contents)}
 
 db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
-  # print(paste('filetype', filetype, 'y', y))
-  print(paste('db insert contents', contents))
-  # colnames(contents) = c('node_id', 'time', 'radio_id', 'tag_id', 'tag_rssi', 'validated')
-  # print(paste('colnames', tolower(colnames(contents))))
   if(any(colnames(contents) == "node_id")) {
     contents$node_id <- toupper(contents$node_id)
     if (length(which(!is.na(contents$node_id))) > 0) {
@@ -580,17 +576,11 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
     nodeids <- c()
   }
   if (filetype %in% c("raw", "node_health", "gps", "blu") & nrow(contents) > 0) {
-    print(paste('first if contents', contents))
     if (filetype %in% c("raw", "blu")) {
-      # print(paste('filetype', filetype))
-      # print(paste('contents', DBI::dbListFields(conn, filetype)))
         vars <- paste(DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))], sep = "", collapse = ",")
         vals <- paste(seq_along(1:(length(DBI::dbListFields(conn, filetype)) - 1)), sep = "", collapse = ", $")
-        # print(paste('contents', DBI::dbListFields(conn, filetype)))
-        print(paste('contents before db list fields', contents))
-        contents <- contents[, DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]] # need path and station_id columns
-        print(paste('contents after db list fields', contents))
 
+        contents <- contents[, DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]] # need path and station_id columns
         contents
     } else {
         vars <- paste(DBI::dbListFields(conn, filetype), sep = "", collapse = ",")
@@ -603,29 +593,22 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
     h <- tryCatch(
         {
           tryCatch({
-            print(paste('failing contents', contents))
-
               DBI::dbWriteTable(conn, filetype, contents, append = TRUE)
               print(paste('dbWrite table worked'))
               query = paste("INSERT INTO ", "data_file (path)", " VALUES ($1) ON CONFLICT DO NOTHING", sep = "")
-              print(paste('query', query))
               insertnew <-DBI::dbSendQuery(conn, query)
-              # print(dbFetch(insertnew))
-              print('insertnew query created')
+              print('insertnew query ran')
               # insertnew <- DBI::dbSendQuery(conn,
               #                               paste("INSERT INTO ",
               #                                     "data_file (path)",
               #                                     " VALUES ($1) ON CONFLICT DO NOTHING", sep = ""))  #CTT-FC16AD87C466-node-health.2022-07-15_104908.csv.gz
-              print('insertnew query ran')
-              print(paste('whatever the hell y is', y))
               DBI::dbBind(insertnew, params = list(y))
-              print('dbBind insert new ran')
+              print('dbind insertnew ran')
               DBI::dbClearResult(insertnew)
-              print('dbi clear result insertnew ran')
+              print('dbclear result ran')
               return(NULL)
             },
             error = function(err) {
-              # print(paste('what the hell is this error', err))
               # error handler picks up where error was generated, in Bob's script it breaks if header is missing
               # myquery <- paste("INSERT INTO ", filetype, " (", vars, ") VALUES ($", vals, ")
                                          # ON CONFLICT DO NOTHING", sep = "")
@@ -641,8 +624,6 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
           )
         },
         error = function(err) {
-          print(paste("could not insert", y))
-          print(paste('could not insert error', err))
           return(list(err, contents, y))
         }
       )
@@ -697,6 +678,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
   files_to <- filenames[!filenames %in% files_loc]
   print("comparison complete")
 
+  # browser()
   allfiles <- rapply(files_avail, function(z) z %in% files_to, how = "unlist") # this is the super intensive, time consuming function...
   ids <- unlist(files_avail)[which(allfiles) - 1]
   print(paste("about to get", length(ids), "files"))
@@ -762,7 +744,9 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
         contents <- file_handle(e, filetype)[[1]]
         print(begin)
         contents <- db_prep(contents, filetype, sensor, y, begin)
-        z <- db_insert(contents, filetype, f, y)
+        # z <- db_insert(contents, filetype, f, y)
+        z <- db_insert(contents=contents, filetype=filetype, conn=f, y=y)
+
         }
       }
     }
@@ -1139,6 +1123,7 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
 
   if (filetype %in% c("raw", "node_health", "gps", "blu")) {
   sensor <- out$sensor
+  print(paste('out df y', out$y))
   y <- out$y
   i <- DBI::dbReadTable(conn, "ctt_project_station")
   begin <- i[i$station_id == sensor, ]$deploy_at
@@ -1158,8 +1143,9 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
     contents <- db_prep(contents, filetype, sensor, y, begin)
     if(nrow(contents) < 1) {errtype <- 7}
     if (errtype < 7 & errtype != 2) {
-    print("inserting contents")
-    z <- db_insert(contents, filetype, conn, y)
+    # z <- db_insert(contents, filetype, conn, y)
+    z <- db_insert(contents=contents, filetype=filetype, conn=conn, y=y, begin=begin)
+    print(paste('get files import z', z))
     } else if(errtype == 7) {
       dir.create(file.path(outpath, "ignore_files"), showWarnings = FALSE)
       file.copy(e, file.path(outpath, "ignore_files"))

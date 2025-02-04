@@ -1,8 +1,13 @@
-library(celltracktech)
+# library(celltracktech)
 library(duckdb) # click no on pop up window
 library(devtools) # needs RTools
 library(tidyverse)
 library(dotenv)
+
+load_dot_env(file='.env')
+Sys.getenv('MOUSE_BIRD')
+Sys.getenv('WORKSHOP')
+Sys.getenv('RODENT_TELEMETRY')
 
 source('./R/api_postgres.R')
 source('./R/filecatch.R')
@@ -31,16 +36,14 @@ con <- DBI::dbConnect(
   read_only = FALSE
 )
 
-
-
 ################
 get_my_data(
   my_token,
   outpath,
   con,
   myproject=myproject,
-  begin=as.Date("2022-09-08"),
-  end=as.Date("2022-09-09"),
+  begin=as.Date("2022-10-17"),
+  end=as.Date("2022-10-19"),
   filetypes=c("raw", "node_health")
 )
 

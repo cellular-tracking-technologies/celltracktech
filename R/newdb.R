@@ -113,7 +113,9 @@ print(Sys.time() - start)
 import_node_data <- function(d, outpath, myproject=NULL) {
   myout <- outpath
   if(!is.null(myproject)) {myout <- file.path(outpath,myproject)}
-  myfiles <- list.files(file.path(myout, "nodes"), pattern="beep.*csv",recursive = TRUE, full.names = TRUE)
+  # myfiles <- list.files(file.path(myout, "nodes"), pattern="beep.*csv",recursive = TRUE, full.names = TRUE)
+  myfiles <- list.files(file.path(myout, "nodes"), pattern=".*csv",recursive = TRUE, full.names = TRUE)
+
   print(paste('myfiles',myfiles))
   files_loc <- sapply(strsplit(myfiles, "/"), tail, n=2)
   files <- paste(files_loc[1,],files_loc[2,],sep="/")
@@ -132,11 +134,9 @@ load_node_data <- function(e, conn, outpath, myproject) {
     return(rowval)}
 
   #e <- file.path(outpath, "nodes", e)
-  print(paste('whatever e is', e)) # e is the filepath
   file <- tail(unlist(strsplit(e, "/")), n=2)
   print(paste('file', file))
   y <- paste(file, collapse="/")
-  print(paste('load node data y', y))
   sensor <- NA
   i <- DBI::dbReadTable(conn, "ctt_project_station")
   print(paste('load node data i', i))
@@ -233,11 +233,9 @@ load_node_data <- function(e, conn, outpath, myproject) {
 
     start <- min(df$Time, na.rm=T)
     end <- max(df$Time, na.rm=T)
-    print(paste('start', start, 'end', end))
-    print(paste('time window query', paste0("select * from raw where time > '", start,"' and time < '",end,"'")))
+
     test <- dbGetQuery(conn, paste0("select * from raw where time > '", start,"' and time < '",end,"'"))
-    print(paste('test from db', colnames(test))) # database has path and station_id
-    print(paste('df from file', colnames(df)))
+
     test$Time <- test$time
     test$TagId <- test$tag_id
     test$RadioId <- test$radio_id
@@ -245,24 +243,14 @@ load_node_data <- function(e, conn, outpath, myproject) {
     test$TagRSSI <- test$tag_rssi
     test$Validated <- test$validated
     # test <- test[,colnames(df)] # grabs columns only from df... which do not contain path or station id
-    # test <- subset(test, select = c(time, tag_id, radio_id, node_id, tag_rssi, validated))
 
-    # print(paste('test, from db, has station_id and path after indexing', test))
-    # print(paste('df from file', df)) # df has capitalized columns
     df <- dplyr::anti_join(df,test) # only gets beeps from node, and not ones picked up by sensor station
-    # print(paste('df after anti_join', df))
-    # df$station_id = test$station_id[1]
-    # df$path = y
-    # df$tag_id = df$id
-    # df$tag_rssi = df$rssi
-    # df$validated = NA
-    # df$node_id =
-    # # df <- subset(df, select = c(id, path, radio_id, tag_id, node_id, tag_rssi, validated, time, station_id))
+
     colnames(df) = c('node_id', 'time', 'radio_id', 'tag_id', 'tag_rssi', 'validated')
     df$path = y
+    print(paste('test station id', test$station_id[1]))
     df$station_id = test$station_id[1]
-    print(paste('df after subset colnames', colnames(df)))
-    print(paste('df after subset', df))
+
     # z <- db_insert(contents=df, filetype=filetype, conn=conn, sensor=sensor, y=y, begin=begin)
     z <- db_insert(contents=df, filetype=filetype, conn=conn, y=y, begin=begin)
 
