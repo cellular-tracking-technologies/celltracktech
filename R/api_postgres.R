@@ -54,8 +54,17 @@ project_list <- function(my_token, myproject = NULL) {
   projects <- projects[["projects"]]
   print(projects)
   if (!is.null(myproject)) {
-    print(paste('my project', myproject))
-    projects <- list(projects[[which(sapply(projects, function(x) x[["name"]]) == myproject)]])
+
+    projects <- tryCatch({
+      print(paste('The project name you entered is:', myproject))
+
+      list(projects[[which(sapply(projects, function(x) x[["name"]]) == myproject)]])
+    }, error = function(err) {
+      print(paste('Error:', conditionMessage(err)))
+      cat('The project you entered is not found in your project list. Check your spelling and if you have access to the project.\n')
+    })
+    # projects <- list(projects[[which(sapply(projects, function(x) x[["name"]]) == myproject)]])
+    print(projects)
   }
   return(projects)
 }
@@ -689,6 +698,8 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
   filesget <- data.frame(ids, file_names, filetypeget)
   filesget <- filesget[filesget$filetypeget %in% filetypes,]
 
+  # x = file ids
+  # y = file names
   get_files <- function(x, y) {
     print(x)
     print(y)

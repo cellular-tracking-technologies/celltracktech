@@ -21,9 +21,9 @@ start <- Sys.time()
 # install.packages("https://github.com/duckdb/duckdb/releases/download/master-builds/duckdb_r_src.tar.gz", repos = NULL)
 
 ####SETTINGS#####
-myproject <- "Mouse Bird" #this is your project name on your CTT account
-outpath <- "./vignettes/mouse_bird/" #where your downloaded files are to go
-my_token <- Sys.getenv('MOUSE_BIRD') # token stored in .env file
+myproject <- "Rodent Telemetry Project " #this is your project name on your CTT account
+outpath <- "./vignettes/rodent_telemetry/" #where your downloaded files are to go
+my_token <- Sys.getenv('RODENT_TELEMETRY') # token stored in .env file
 
 
 # List Projects -----------------------------------------------------------
@@ -32,7 +32,7 @@ my_token <- Sys.getenv('MOUSE_BIRD') # token stored in .env file
 
 con <- DBI::dbConnect(
   duckdb::duckdb(),
-  dbdir = "./vignettes/mouse_bird/mouse_bird.db",
+  dbdir = "./vignettes/rodent_telemetry/rodent_telemetry.db",
   read_only = FALSE
 )
 
@@ -42,8 +42,8 @@ get_my_data(
   outpath,
   con,
   myproject=myproject,
-  begin=as.Date("2022-10-17"),
-  end=as.Date("2022-10-19"),
+  begin=as.Date("2024-08-18"),
+  end=as.Date("2024-08-19"),
   filetypes=c("raw", "node_health")
 )
 
@@ -54,6 +54,21 @@ time_elapse <- Sys.time() - start
 print(time_elapse)
 
 #raw <- tbl(con, "node_health") |> collect()
+
+# Database Functions ------------------------------------------------------
+
+# list tables in database
+DBI::dbListTables(con)
+
+# list last 10 records in raw
+raw = DBI::dbGetQuery(con, "SELECT * FROM raw "); raw
+tail(raw)
+
+# list data in nodes table
+node_table = DBI::dbGetQuery(con, 'SELECT * FROM nodes')
+
+# list data in data_file table
+df_table = DBI::dbGetQuery(con, 'SELECT * FROM data_file')
 
 
 # Import Node Data --------------------------------------------------------
@@ -76,26 +91,6 @@ DBI::dbDisconnect(con)
 
 # colnames(contents) = c('node_id', 'time', 'radio_id', 'tag_id', 'tag_rssi', 'validated')
 # print(paste('colnames', tolower(colnames(contents))))
-
-# Database Functions ------------------------------------------------------
-
-# list tables in database
-DBI::dbListTables(con)
-
-# list last 10 records in raw
-raw_last10 = DBI::dbGetQuery(con,
-                              "SELECT * FROM raw ");
-tail(raw_last10)
-# dbFetch(raw_last10)
-# raw_df = dbFetch(raw_last10); raw_df
-
-# list data in nodes table
-node_table = DBI::dbSendQuery(con,
-                              'SELECT * FROM nodes'); dbFetch(node_table)
-
-# list data in data_file table
-df_table = DBI::dbSendQuery(con,
-                            'SELECT * FROM data_file'); dbFetch(df_table)
 
 
 # Read Node CSV -----------------------------------------------------------
