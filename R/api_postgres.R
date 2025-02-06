@@ -591,6 +591,7 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
 
         contents <- contents[, DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]] # need path and station_id columns
         contents
+        print(paste('end of 2nd if contents', colnames(contents)))
     } else {
         vars <- paste(DBI::dbListFields(conn, filetype), sep = "", collapse = ",")
         vals <- paste(seq_along(1:length(DBI::dbListFields(conn, filetype))), sep = "", collapse = ", $")
@@ -599,9 +600,9 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
     }
 
     # browser()
-    h <- tryCatch(
-        {
+    h <- tryCatch({
           tryCatch({
+            print(paste('h trycatch contents', colnames(contents)))
               DBI::dbWriteTable(conn, filetype, contents, append = TRUE)
               print(paste('dbWrite table worked'))
               query = paste("INSERT INTO ", "data_file (path)", " VALUES ($1) ON CONFLICT DO NOTHING", sep = "")
@@ -629,10 +630,10 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
                                          ON CONFLICT DO NOTHING", sep = ""))  #CTT-FC16AD87C466-node-health.2022-07-15_104908.csv.gz
               DBI::dbBind(insertnew, params = list(y))
               DBI::dbClearResult(insertnew)
-            }
-          )
+            })
         },
         error = function(err) {
+          print(paste('h error', err))
           return(list(err, contents, y))
         }
       )
@@ -646,7 +647,9 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
 
 get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, ending, filetypes) {
   # print("getting your file list")
-  projbasename <- thisproject$name
+  # projbasename <- thisproject$name
+  projbasename <- stringr::str_trim(thisproject$name)
+  print(paste('project name before trim', thisproject$name, 'project name after trim', projbasename))
   id <- thisproject[["id"]]
   myfiles <- list.files(file.path(outpath), recursive = TRUE)
   dir.create(file.path(outpath, projbasename), showWarnings = FALSE)

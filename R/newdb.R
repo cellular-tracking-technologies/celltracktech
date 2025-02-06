@@ -131,7 +131,8 @@ load_node_data <- function(e, conn, outpath, myproject) {
     rowval <- gsub("^X", "",  rowval)
     DatePattern = '^[[:digit:]]{4}\\.[[:digit:]]{2}\\.[[:digit:]]{2}[T,\\.][[:digit:]]{2}\\.[[:digit:]]{2}\\.[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?'
     #rowval[which(grepl(DatePattern,rowval))] <- as.character(as.POSIXct(rowval[grepl(DatePattern,rowval)], format="%Y.%m.%d.%H.%M.%S", tz="UTC"))
-    return(rowval)}
+    return(rowval)
+  }
 
   #e <- file.path(outpath, "nodes", e)
   file <- tail(unlist(strsplit(e, "/")), n=2)
@@ -221,7 +222,10 @@ load_node_data <- function(e, conn, outpath, myproject) {
   #nodes <- nodes[nodes$Time > as.POSIXct("2020-08-20"),]
     df <- df[order(df$Time),]
     df$RadioId <- 4 #https://bitbucket.org/cellulartrackingtechnologies/lifetag-system-report/src/master/beeps.py
-    df$TagId <- toupper(df$id)
+    # df$TagId <- toupper(df$id)
+    df$TagId <- ifelse("id" %in% colnames(df), toupper(df$id), toupper(df$tag_id))
+    df$payload <- ifelse('payload' %in% colnames(df), toupper(df$payload), NULL)
+    print(paste('Blu Tag id', head(df$TagId)))
     df$id <- NULL
     df$TagRSSI <- as.integer(df$rssi)
     df <- df[!is.na(df$TagRSSI),]
@@ -245,11 +249,10 @@ load_node_data <- function(e, conn, outpath, myproject) {
     # test <- test[,colnames(df)] # grabs columns only from df... which do not contain path or station id
 
     df <- dplyr::anti_join(df,test) # only gets beeps from node, and not ones picked up by sensor station
-
-    colnames(df) = c('node_id', 'time', 'radio_id', 'tag_id', 'tag_rssi', 'validated')
+    print(paste('df colnames', colnames(df)))
+    colnames(df) = c('node_id', 'time', 'radio_id', 'tag_id', 'tag_rssi', 'validated', 'payload')
     df$path = y
-    print(paste('test station id', test$station_id[1]))
-    df$station_id = test$station_id[1]
+    df$station_id = NA
 
     # z <- db_insert(contents=df, filetype=filetype, conn=conn, sensor=sensor, y=y, begin=begin)
     z <- db_insert(contents=df, filetype=filetype, conn=conn, y=y, begin=begin)

@@ -42,9 +42,9 @@ get_my_data(
   outpath,
   con,
   myproject=myproject,
-  begin=as.Date("2024-08-18"),
-  end=as.Date("2024-08-19"),
-  filetypes=c("raw", "node_health")
+  begin=as.Date("2024-08-19"),
+  end=as.Date("2024-08-20"),
+  filetypes=c("raw", "node_health", 'blu')
 )
 
 update_db(con, outpath, myproject)
@@ -64,6 +64,12 @@ DBI::dbListTables(con)
 raw = DBI::dbGetQuery(con, "SELECT * FROM raw "); raw
 tail(raw)
 
+# list last 10 records in blu
+blu = DBI::dbGetQuery(con, "SELECT * FROM raw "); blu
+tail(blu)
+head(blu)
+
+
 # list data in nodes table
 node_table = DBI::dbGetQuery(con, 'SELECT * FROM nodes')
 
@@ -79,13 +85,13 @@ source('./R/node.R')
 
 con <- DBI::dbConnect(
   duckdb::duckdb(),
-  dbdir = "./vignettes/mouse_bird/mouse_bird.db",
+  dbdir = "./vignettes/aos2024/meadows.db",
   read_only = FALSE
 )
 
 import_node_data(con,
                  outpath = outpath,
-                 myproject="Mouse Bird")
+                 myproject="Meadows V2")
 
 DBI::dbDisconnect(con)
 
