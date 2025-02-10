@@ -1,4 +1,4 @@
-# library(celltracktech)
+library(celltracktech)
 library(duckdb) # click no on pop up window
 library(devtools) # needs RTools
 library(tidyverse)
@@ -9,10 +9,10 @@ Sys.getenv('MOUSE_BIRD')
 Sys.getenv('WORKSHOP')
 Sys.getenv('RODENT_TELEMETRY')
 
-source('./R/api_postgres.R')
-source('./R/filecatch.R')
-source('./R/newdb.R')
-source('./R/node.R')
+# source('./R/api_postgres.R')
+# source('./R/filecatch.R')
+# source('./R/newdb.R')
+# source('./R/node.R')
 
 start <- Sys.time()
 
