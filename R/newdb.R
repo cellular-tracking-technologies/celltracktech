@@ -224,8 +224,14 @@ load_node_data <- function(e, conn, outpath, myproject) {
     df$RadioId <- 4 #https://bitbucket.org/cellulartrackingtechnologies/lifetag-system-report/src/master/beeps.py
     # df$TagId <- toupper(df$id)
     df$TagId <- ifelse("id" %in% colnames(df), toupper(df$id), toupper(df$tag_id))
-    df$payload <- ifelse('payload' %in% colnames(df), toupper(df$payload), NULL)
-    print(paste('Blu Tag id', head(df$TagId)))
+    # if ('payload' %in% colnames(df)) {
+    #   toupper(df$payload)
+    # } else {
+    #   df$payload = NA
+    # }
+    # print(colnames(df))
+    df$payload <- ifelse('payload' %in% colnames(df), toupper(df$payload), NA)
+    # print(paste('Blu Tag id', head(df$TagId)))
     df$id <- NULL
     df$TagRSSI <- as.integer(df$rssi)
     df <- df[!is.na(df$TagRSSI),]
@@ -243,16 +249,24 @@ load_node_data <- function(e, conn, outpath, myproject) {
     test$Time <- test$time
     test$TagId <- test$tag_id
     test$RadioId <- test$radio_id
-    test$NodeId <- test$node_id
+    test$NodeId <- toupper(test$node_id)
     test$TagRSSI <- test$tag_rssi
     test$Validated <- test$validated
     # test <- test[,colnames(df)] # grabs columns only from df... which do not contain path or station id
 
     df <- dplyr::anti_join(df,test) # only gets beeps from node, and not ones picked up by sensor station
-    print(paste('df colnames', colnames(df)))
-    colnames(df) = c('node_id', 'time', 'radio_id', 'tag_id', 'tag_rssi', 'validated', 'payload')
+    # colnames(df) = c('node_id', 'time', 'radio_id', 'tag_id', 'tag_rssi', 'validated', 'payload')
+    df = df %>%
+      dplyr::mutate(tag_id = NULL) %>%
+      dplyr::rename(time = Time,
+                    tag_rssi = TagRSSI,
+                    radio_id = RadioId,
+                    validated = Validated,
+                    node_id = NodeId,
+                    tag_id = TagId)
     df$path = y
     df$station_id = NA
+    print(paste('df colnames', colnames(df)))
 
     # z <- db_insert(contents=df, filetype=filetype, conn=conn, sensor=sensor, y=y, begin=begin)
     z <- db_insert(contents=df, filetype=filetype, conn=conn, y=y, begin=begin)
