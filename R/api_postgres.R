@@ -50,11 +50,21 @@ file_types <- c("data", "node-data", "gps", "log", "telemetry", "sensorgnome", "
 
 project_list <- function(my_token, myproject = NULL) {
   projects <- httr::content(httr::POST(host, path = project, body = list(token = my_token), encode = "json"))
-  print(projects)
+  print(paste('projects', projects))
   projects <- projects[["projects"]]
-  # print(projects)
+  print(projects)
   if (!is.null(myproject)) {
-    projects <- list(projects[[which(sapply(projects, function(x) x[["name"]]) == myproject)]])
+
+    projects <- tryCatch({
+      print(paste('The project name you entered is:', myproject))
+
+      list(projects[[which(sapply(projects, function(x) x[["name"]]) == myproject)]])
+    }, error = function(err) {
+      print(paste('Error:', conditionMessage(err)))
+      cat('The project you entered is not found in your project list. Check your spelling and if you have access to the project.\n')
+    })
+    # projects <- list(projects[[which(sapply(projects, function(x) x[["name"]]) == myproject)]])
+    print(projects)
   }
   return(projects)
 }
@@ -489,7 +499,7 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
       nodeids <- toupper(unique(contents$NodeId))
       names(contents) <- sapply(names(contents), function(x) gsub("([[:lower:]])([[:upper:]])", "\\1_\\2", x))
       names(contents) <- tolower(names(contents))
-      
+
       contents <- contents[!duplicated(contents[c("time", "node_id", "recorded_at")]), ]
       # if(fix=TRUE) {
       #  query <- querygen(contents[1,])
@@ -561,7 +571,7 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
   if (any(row.names(contents) == "NA")) {contents <- contents[-which(row.names(contents) == "NA"), ]}
   return(contents)}
 
-db_insert <- function(contents, filetype, conn, y) {
+db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
   if(any(colnames(contents) == "node_id")) {
     contents$node_id <- toupper(contents$node_id)
     if (length(which(!is.na(contents$node_id))) > 0) {
@@ -578,27 +588,41 @@ db_insert <- function(contents, filetype, conn, y) {
     if (filetype %in% c("raw", "blu")) {
         vars <- paste(DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))], sep = "", collapse = ",")
         vals <- paste(seq_along(1:(length(DBI::dbListFields(conn, filetype)) - 1)), sep = "", collapse = ", $")
-        contents <- contents[, DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]]
+
+        contents <- contents[, DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]] # need path and station_id columns
+        contents
+        print(paste('end of 2nd if contents', colnames(contents)))
     } else {
         vars <- paste(DBI::dbListFields(conn, filetype), sep = "", collapse = ",")
         vals <- paste(seq_along(1:length(DBI::dbListFields(conn, filetype))), sep = "", collapse = ", $")
         names(contents) <- tolower(names(contents))
         contents <- contents[, DBI::dbListFields(conn, filetype)]
     }
-    h <- tryCatch(
-        {
+
+    # browser()
+    h <- tryCatch({
           tryCatch({
+            print(paste('h trycatch contents', colnames(contents)))
               DBI::dbWriteTable(conn, filetype, contents, append = TRUE)
-              insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "data_file (path)", " VALUES ($1)
-                                         ON CONFLICT DO NOTHING", sep = ""))  #CTT-FC16AD87C466-node-health.2022-07-15_104908.csv.gz
+              print(paste('dbWrite table worked'))
+              query = paste("INSERT INTO ", "data_file (path)", " VALUES ($1) ON CONFLICT DO NOTHING", sep = "")
+              insertnew <-DBI::dbSendQuery(conn, query)
+              print('insertnew query ran')
+              # insertnew <- DBI::dbSendQuery(conn,
+              #                               paste("INSERT INTO ",
+              #                                     "data_file (path)",
+              #                                     " VALUES ($1) ON CONFLICT DO NOTHING", sep = ""))  #CTT-FC16AD87C466-node-health.2022-07-15_104908.csv.gz
               DBI::dbBind(insertnew, params = list(y))
+              print('dbind insertnew ran')
               DBI::dbClearResult(insertnew)
+              print('dbclear result ran')
               return(NULL)
             },
             error = function(err) {
               # error handler picks up where error was generated, in Bob's script it breaks if header is missing
-              myquery <- paste("INSERT INTO ", filetype, " (", vars, ") VALUES ($", vals, ")
-                                         ON CONFLICT DO NOTHING", sep = "")
+              # myquery <- paste("INSERT INTO ", filetype, " (", vars, ") VALUES ($", vals, ")
+                                         # ON CONFLICT DO NOTHING", sep = "")
+              myquery <- paste("INSERT INTO ", filetype, " (", vars, ") VALUES ($", vals, ")", sep = "")
               insertnew <- DBI::dbSendQuery(conn, myquery)
               DBI::dbBind(insertnew, params = unname(contents))
               DBI::dbClearResult(insertnew)
@@ -606,24 +630,26 @@ db_insert <- function(contents, filetype, conn, y) {
                                          ON CONFLICT DO NOTHING", sep = ""))  #CTT-FC16AD87C466-node-health.2022-07-15_104908.csv.gz
               DBI::dbBind(insertnew, params = list(y))
               DBI::dbClearResult(insertnew)
-            }
-          )
+            })
         },
         error = function(err) {
-          print("could not insert")
+          print(paste('h error', err))
           return(list(err, contents, y))
         }
       )
     }
   if (!exists("h")) {
-    h <- NULL
+    h <- NULL # h is boolean
   }
+  # print(paste('what the hell is h???', h)) # h is boolean
   return(h)
 }
 
 get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, ending, filetypes) {
   # print("getting your file list")
-  projbasename <- thisproject$name
+  # projbasename <- thisproject$name
+  projbasename <- stringr::str_trim(thisproject$name)
+  print(paste('project name before trim', thisproject$name, 'project name after trim', projbasename))
   id <- thisproject[["id"]]
   myfiles <- list.files(file.path(outpath), recursive = TRUE)
   dir.create(file.path(outpath, projbasename), showWarnings = FALSE)
@@ -664,6 +690,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
   files_to <- filenames[!filenames %in% files_loc]
   print("comparison complete")
 
+  # browser()
   allfiles <- rapply(files_avail, function(z) z %in% files_to, how = "unlist") # this is the super intensive, time consuming function...
   ids <- unlist(files_avail)[which(allfiles) - 1]
   print(paste("about to get", length(ids), "files"))
@@ -674,6 +701,8 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
   filesget <- data.frame(ids, file_names, filetypeget)
   filesget <- filesget[filesget$filetypeget %in% filetypes,]
 
+  # x = file ids
+  # y = file names
   get_files <- function(x, y) {
     print(x)
     print(y)
@@ -702,7 +731,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     }
     #print(paste("look here", faul))
     #print(my_stations[["stations"]])
-    
+
     #print(paste("downloading", y, "to", file.path(outpath, basename, sensor, filetype)))
     #print(x)
     #print(paste(x,y))
@@ -729,7 +758,9 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
         contents <- file_handle(e, filetype)[[1]]
         print(begin)
         contents <- db_prep(contents, filetype, sensor, y, begin)
-        z <- db_insert(contents, filetype, f, y)
+        # z <- db_insert(contents, filetype, f, y)
+        z <- db_insert(contents=contents, filetype=filetype, conn=f, y=y)
+
         }
       }
     }
@@ -828,7 +859,7 @@ file_handle <- function(e, filetype) {
       error = function(err) {
         return(NULL)
       }
-    ) 
+    )
   } else {
     contents <- tryCatch(
       {
@@ -1106,6 +1137,7 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
 
   if (filetype %in% c("raw", "node_health", "gps", "blu")) {
   sensor <- out$sensor
+  print(paste('out df y', out$y))
   y <- out$y
   i <- DBI::dbReadTable(conn, "ctt_project_station")
   begin <- i[i$station_id == sensor, ]$deploy_at
@@ -1125,8 +1157,9 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
     contents <- db_prep(contents, filetype, sensor, y, begin)
     if(nrow(contents) < 1) {errtype <- 7}
     if (errtype < 7 & errtype != 2) {
-    print("inserting contents")
-    z <- db_insert(contents, filetype, conn, y)
+    # z <- db_insert(contents, filetype, conn, y)
+    z <- db_insert(contents=contents, filetype=filetype, conn=conn, y=y, begin=begin)
+    print(paste('get files import z', z))
     } else if(errtype == 7) {
       dir.create(file.path(outpath, "ignore_files"), showWarnings = FALSE)
       file.copy(e, file.path(outpath, "ignore_files"))
