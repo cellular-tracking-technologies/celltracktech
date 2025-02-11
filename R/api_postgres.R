@@ -591,7 +591,6 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
 
         contents <- contents[, DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]] # need path and station_id columns
         contents
-        print(paste('end of 2nd if contents', colnames(contents)))
     } else {
         vars <- paste(DBI::dbListFields(conn, filetype), sep = "", collapse = ",")
         vals <- paste(seq_along(1:length(DBI::dbListFields(conn, filetype))), sep = "", collapse = ", $")
@@ -602,20 +601,15 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
     # browser()
     h <- tryCatch({
           tryCatch({
-            print(paste('h trycatch contents', colnames(contents)))
               DBI::dbWriteTable(conn, filetype, contents, append = TRUE)
-              print(paste('dbWrite table worked'))
               query = paste("INSERT INTO ", "data_file (path)", " VALUES ($1) ON CONFLICT DO NOTHING", sep = "")
               insertnew <-DBI::dbSendQuery(conn, query)
-              print('insertnew query ran')
               # insertnew <- DBI::dbSendQuery(conn,
               #                               paste("INSERT INTO ",
               #                                     "data_file (path)",
               #                                     " VALUES ($1) ON CONFLICT DO NOTHING", sep = ""))  #CTT-FC16AD87C466-node-health.2022-07-15_104908.csv.gz
               DBI::dbBind(insertnew, params = list(y))
-              print('dbind insertnew ran')
               DBI::dbClearResult(insertnew)
-              print('dbclear result ran')
               return(NULL)
             },
             error = function(err) {
@@ -1137,7 +1131,6 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
 
   if (filetype %in% c("raw", "node_health", "gps", "blu")) {
   sensor <- out$sensor
-  print(paste('out df y', out$y))
   y <- out$y
   i <- DBI::dbReadTable(conn, "ctt_project_station")
   begin <- i[i$station_id == sensor, ]$deploy_at
