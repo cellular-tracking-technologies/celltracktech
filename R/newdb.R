@@ -113,8 +113,10 @@ print(Sys.time() - start)
 import_node_data <- function(d, outpath, myproject=NULL) {
   myout <- outpath
   if(!is.null(myproject)) {myout <- file.path(outpath,myproject)}
-  myfiles <- list.files(file.path(myout, "nodes"), pattern="beep.*csv",recursive = TRUE, full.names = TRUE)
-  print(myfiles)
+  # myfiles <- list.files(file.path(myout, "nodes"), pattern="beep.*csv",recursive = TRUE, full.names = TRUE)
+  myfiles <- list.files(file.path(myout, "nodes"), pattern=".*csv",recursive = TRUE, full.names = TRUE)
+
+  print(paste('myfiles',myfiles))
   files_loc <- sapply(strsplit(myfiles, "/"), tail, n=2)
   files <- paste(files_loc[1,],files_loc[2,],sep="/")
   allnode <- DBI::dbReadTable(d, "data_file")
@@ -129,19 +131,30 @@ load_node_data <- function(e, conn, outpath, myproject) {
     rowval <- gsub("^X", "",  rowval)
     DatePattern = '^[[:digit:]]{4}\\.[[:digit:]]{2}\\.[[:digit:]]{2}[T,\\.][[:digit:]]{2}\\.[[:digit:]]{2}\\.[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?'
     #rowval[which(grepl(DatePattern,rowval))] <- as.character(as.POSIXct(rowval[grepl(DatePattern,rowval)], format="%Y.%m.%d.%H.%M.%S", tz="UTC"))
-    return(rowval)}
+    return(rowval)
+  }
 
   #e <- file.path(outpath, "nodes", e)
-  print(e)
   file <- tail(unlist(strsplit(e, "/")), n=2)
+  print(paste('file', file))
   y <- paste(file, collapse="/")
   sensor <- NA
   i <- DBI::dbReadTable(conn, "ctt_project_station")
+  print(paste('load node data i', i))
+
   begin <- min(i$deploy_at)
+  print(paste('load node data begin', begin))
+
   if(!is.null(myproject)) {
     myproj <- DBI::dbReadTable(conn, "ctt_project")
+    print(paste('load node data y', myproj))
+
     projid <- myproj$id[which(myproj$name == myproject)]
+    print(paste('load node data projid', projid))
+
     begin <- min(i$deploy_at[which(i$project_id == projid)])
+    print(paste('load node data begin, second', begin))
+
   }
 
   if(length(begin) == 0) {begin <- as.POSIXct("2018-01-01")}
@@ -150,13 +163,15 @@ load_node_data <- function(e, conn, outpath, myproject) {
   #lapply(runs[lengths(runs) > 1], range)
   df <- tryCatch({
     if (file.size(e) > 0) {
+        # print(paste('read csv', readr::read_csv(e,na=c("NA", ""), skip_empty_rows = TRUE)))
         read_csv(e,na=c("NA", ""), skip_empty_rows = TRUE)
     }}, error = function(err) {
         # error handler picks up where error was generated
-        print("ignoring file", e, "- no data")
+        print(paste("ignoring file", err, "- no data"))
         return(NULL)
     }, error = function(w) {
-      print("error in file")
+      # print("error in file")
+      print(paste('error in file', w))
       #x <- read.csv(e,header=TRUE,as.is=TRUE, na.strings=c("NA", ""), skipNul = TRUE) might need to reimplement this...
       #x <- rbind(x,Correct_Colnames(x))
       #colnames(x) <- c("time", "id", "rssi")
@@ -207,7 +222,16 @@ load_node_data <- function(e, conn, outpath, myproject) {
   #nodes <- nodes[nodes$Time > as.POSIXct("2020-08-20"),]
     df <- df[order(df$Time),]
     df$RadioId <- 4 #https://bitbucket.org/cellulartrackingtechnologies/lifetag-system-report/src/master/beeps.py
-    df$TagId <- toupper(df$id)
+    # df$TagId <- toupper(df$id)
+    df$TagId <- ifelse("id" %in% colnames(df), toupper(df$id), toupper(df$tag_id))
+    # if ('payload' %in% colnames(df)) {
+    #   toupper(df$payload)
+    # } else {
+    #   df$payload = NA
+    # }
+    # print(colnames(df))
+    df$payload <- ifelse('payload' %in% colnames(df), toupper(df$payload), NA)
+    # print(paste('Blu Tag id', head(df$TagId)))
     df$id <- NULL
     df$TagRSSI <- as.integer(df$rssi)
     df <- df[!is.na(df$TagRSSI),]
@@ -219,14 +243,33 @@ load_node_data <- function(e, conn, outpath, myproject) {
 
     start <- min(df$Time, na.rm=T)
     end <- max(df$Time, na.rm=T)
+
     test <- dbGetQuery(conn, paste0("select * from raw where time > '", start,"' and time < '",end,"'"))
+
     test$Time <- test$time
     test$TagId <- test$tag_id
     test$RadioId <- test$radio_id
-    test$NodeId <- test$node_id
+    test$NodeId <- toupper(test$node_id)
     test$TagRSSI <- test$tag_rssi
     test$Validated <- test$validated
-    test <- test[,colnames(df)]
-    df <- dplyr::anti_join(df,test)
-    z <- db_insert(df, filetype, conn, sensor, y, begin)}
+    # test <- test[,colnames(df)] # grabs columns only from df... which do not contain path or station id
+
+    df <- dplyr::anti_join(df,test) # only gets beeps from node, and not ones picked up by sensor station
+    # colnames(df) = c('node_id', 'time', 'radio_id', 'tag_id', 'tag_rssi', 'validated', 'payload')
+    df = df %>%
+      dplyr::mutate(tag_id = NULL) %>%
+      dplyr::rename(time = Time,
+                    tag_rssi = TagRSSI,
+                    radio_id = RadioId,
+                    validated = Validated,
+                    node_id = NodeId,
+                    tag_id = TagId)
+    df$path = y
+    df$station_id = NA
+    print(paste('df colnames', colnames(df)))
+
+    # z <- db_insert(contents=df, filetype=filetype, conn=conn, sensor=sensor, y=y, begin=begin)
+    z <- db_insert(contents=df, filetype=filetype, conn=conn, y=y, begin=begin)
+
+    }
 }
