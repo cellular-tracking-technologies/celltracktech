@@ -140,21 +140,15 @@ load_node_data <- function(e, conn, outpath, myproject) {
   y <- paste(file, collapse="/")
   sensor <- NA
   i <- DBI::dbReadTable(conn, "ctt_project_station")
-  print(paste('load node data i', i))
 
   begin <- min(i$deploy_at)
-  print(paste('load node data begin', begin))
 
   if(!is.null(myproject)) {
     myproj <- DBI::dbReadTable(conn, "ctt_project")
-    print(paste('load node data y', myproj))
 
     projid <- myproj$id[which(myproj$name == myproject)]
-    print(paste('load node data projid', projid))
 
     begin <- min(i$deploy_at[which(i$project_id == projid)])
-    print(paste('load node data begin, second', begin))
-
   }
 
   if(length(begin) == 0) {begin <- as.POSIXct("2018-01-01")}
@@ -266,7 +260,6 @@ load_node_data <- function(e, conn, outpath, myproject) {
                     tag_id = TagId)
     df$path = y
     df$station_id = NA
-    print(paste('df colnames', colnames(df)))
 
     # z <- db_insert(contents=df, filetype=filetype, conn=conn, sensor=sensor, y=y, begin=begin)
     z <- db_insert(contents=df, filetype=filetype, conn=conn, y=y, begin=begin)
