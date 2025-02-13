@@ -1036,8 +1036,25 @@ file_handle <- function(e, filetype) {
 #' @export
 #' @examples
 #' get_my_data(token, "~/mydata", myproject = "Project Name from CTT Account")
-get_my_data <- function(my_token, outpath, db_name = NULL, myproject = NULL, mystation = NULL, begin = NULL, end = NULL, filetypes=NULL) {
+get_my_data <- function(my_token,
+                        outpath,
+                        db_name = NULL,
+                        myproject = NULL,
+                        mystation = NULL,
+                        begin = NULL,
+                        end = NULL,
+                        filetypes=NULL) {
   projects <- project_list(my_token, myproject)
+
+  # create directory if it does not exist
+  if (file.exists(outpath)) {
+    print(paste('Folder exists, no need to create a new directory.'))
+  } else {
+    # create a new sub directory inside the main path
+    print(paste('Folder', outpath, 'does not exist, creating it now.'))
+    dir.create(outpath)
+  }
+
   if (!is.null(db_name) & length(grep("postgresql", format(db_name))) > 0) {
     create_db(db_name) # EDIT TO TAKE NEW create_db() when you switch back!
     sapply(projects, pop_proj, conn = db_name)
