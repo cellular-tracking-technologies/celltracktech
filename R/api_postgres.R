@@ -571,6 +571,19 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
   if (any(row.names(contents) == "NA")) {contents <- contents[-which(row.names(contents) == "NA"), ]}
   return(contents)}
 
+#' Title
+#'
+#' @param contents Dataframe
+#' @param filetype filetype
+#' @param conn database connection
+#' @param sensor NA
+#' @param y file path
+#' @param begin date station was deployed
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
   if(any(colnames(contents) == "node_id")) {
     contents$node_id <- toupper(contents$node_id)
@@ -1037,10 +1050,12 @@ get_my_data <- function(my_token,
                         mystation = NULL,
                         begin = NULL,
                         end = NULL,
-                        filetypes=NULL) {
+                        # filetypes
+                        filetypes=NULL
+                        ) {
   projects <- project_list(my_token, myproject)
 
-  # create directory if it does not exist
+  # # create directory if it does not exist
   if (file.exists(outpath)) {
     print(paste('Folder exists, no need to create a new directory.'))
   } else {
@@ -1052,13 +1067,32 @@ get_my_data <- function(my_token,
   if (!is.null(db_name) & length(grep("postgresql", format(db_name))) > 0) {
     create_db(db_name) # EDIT TO TAKE NEW create_db() when you switch back!
     sapply(projects, pop_proj, conn = db_name)
-    failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
+    failed <- lapply(projects,
+                     get_data,
+                     f = db_name,
+                     outpath = outpath,
+                     my_station = mystation,
+                     beginning = begin,
+                     ending = end,
+                     filetypes=filetypes)
   } else if(!is.null(db_name) & length(grep("duckdb", format(db_name))) > 0) {
     create_duck(db_name)
     sapply(projects, pop_proj, conn = db_name)
-    failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
+    failed <- lapply(projects,
+                     get_data,
+                     f = db_name,
+                     outpath = outpath,
+                     my_station = mystation,
+                     beginning = begin,
+                     ending = end,
+                     filetypes=filetypes)
   } else {
-    failed <- lapply(projects, get_data, outpath = outpath, my_station = mystation, beginning = begin, ending = end)
+    failed <- lapply(projects,
+                     get_data,
+                     outpath = outpath,
+                     my_station = mystation,
+                     beginning = begin,
+                     ending = end)
   }
   faul <- which(!sapply(failed[[1]], is.null))
   if (length(faul > 0)) {

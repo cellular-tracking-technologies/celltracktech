@@ -125,6 +125,18 @@ import_node_data <- function(d, outpath, myproject=NULL) {
   lapply(files_import, load_node_data, conn=d, outpath=outpath, myproject=myproject)
 }
 
+
+#' Load Node Data
+#'
+#' @param e file path
+#' @param conn database connection
+#' @param outpath outpath directory
+#' @param myproject project name
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 load_node_data <- function(e, conn, outpath, myproject) {
   Correct_Colnames <- function(df) {
     rowval <- gsub("^X\\.", "-",  colnames(df))
