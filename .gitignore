@@ -2,4 +2,4 @@
 .Rhistory
 .env
 vignettes/*
-R/emily_kelvin_script.R
+examples/*
