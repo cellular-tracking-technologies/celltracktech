@@ -571,6 +571,19 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
   if (any(row.names(contents) == "NA")) {contents <- contents[-which(row.names(contents) == "NA"), ]}
   return(contents)}
 
+#' Title
+#'
+#' @param contents Dataframe
+#' @param filetype filetype
+#' @param conn database connection
+#' @param sensor NA
+#' @param y file path
+#' @param begin date station was deployed
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
   if(any(colnames(contents) == "node_id")) {
     contents$node_id <- toupper(contents$node_id)
@@ -641,9 +654,10 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
 
 get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, ending, filetypes) {
   # print("getting your file list")
+  # print(paste('get_data filetypes', filetypes))
   # projbasename <- thisproject$name
   projbasename <- stringr::str_trim(thisproject$name)
-  print(paste('project name before trim', thisproject$name, 'project name after trim', projbasename))
+  # print(paste('project name before trim', thisproject$name, 'project name after trim', projbasename))
   id <- thisproject[["id"]]
   myfiles <- list.files(file.path(outpath), recursive = TRUE)
   dir.create(file.path(outpath, projbasename), showWarnings = FALSE)
@@ -690,10 +704,15 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
   print(paste("about to get", length(ids), "files"))
   file_names <- unlist(files_avail)[which(allfiles)]
   print("prepped list of filenames to get")
-  if (is.null(filetypes)) {filetypes <- c("raw", "node_health", "gps", "blu")}
+  if (is.null(filetypes)) {
+    filetypes <- c("raw", "node_health", "gps", "blu")
+  }
+  # print(paste('filetypes after prepped list of filenames to get', filetypes))
   filetypeget <- unlist(sapply(file_names, function(x) get_file_info(x)["filetype"]))
   filesget <- data.frame(ids, file_names, filetypeget)
+  # print(paste('initial filesget', filesget))
   filesget <- filesget[filesget$filetypeget %in% filetypes,]
+  # print(paste('final filesget', filesget))
 
   # x = file ids
   # y = file names
@@ -1030,18 +1049,57 @@ file_handle <- function(e, filetype) {
 #' @export
 #' @examples
 #' get_my_data(token, "~/mydata", myproject = "Project Name from CTT Account")
-get_my_data <- function(my_token, outpath, db_name = NULL, myproject = NULL, mystation = NULL, begin = NULL, end = NULL, filetypes=NULL) {
+get_my_data <- function(my_token,
+                        outpath,
+                        db_name = NULL,
+                        myproject = NULL,
+                        mystation = NULL,
+                        begin = NULL,
+                        end = NULL,
+                        filetypes=NULL
+                        ) {
   projects <- project_list(my_token, myproject)
+  # print(paste('get my data filetypes', filetypes))
+  # # create directory if it does not exist
+  if (file.exists(outpath)) {
+    print(paste('Folder exists, no need to create a new directory.'))
+  } else {
+    # create a new sub directory inside the main path
+    print(paste('Folder', outpath, 'does not exist, creating it now.'))
+    dir.create(outpath)
+  }
+
   if (!is.null(db_name) & length(grep("postgresql", format(db_name))) > 0) {
+    # print(paste('postgresql conditional filestypes', filetypes))
     create_db(db_name) # EDIT TO TAKE NEW create_db() when you switch back!
     sapply(projects, pop_proj, conn = db_name)
-    failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
+    failed <- lapply(projects,
+                     get_data,
+                     f = db_name,
+                     outpath = outpath,
+                     my_station = mystation,
+                     beginning = begin,
+                     ending = end,
+                     filetypes=filetypes)
   } else if(!is.null(db_name) & length(grep("duckdb", format(db_name))) > 0) {
     create_duck(db_name)
     sapply(projects, pop_proj, conn = db_name)
-    failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
+    failed <- lapply(projects,
+                     get_data,
+                     f = db_name,
+                     outpath = outpath,
+                     my_station = mystation,
+                     beginning = begin,
+                     ending = end,
+                     filetypes=filetypes)
   } else {
-    failed <- lapply(projects, get_data, outpath = outpath, my_station = mystation, beginning = begin, ending = end)
+    failed <- lapply(projects,
+                     get_data,
+                     outpath = outpath,
+                     my_station = mystation,
+                     beginning = begin,
+                     ending = end,
+                     filetypes=filetypes)
   }
   faul <- which(!sapply(failed[[1]], is.null))
   if (length(faul > 0)) {

@@ -2,4 +2,6 @@
 .Rhistory
 .env
 vignettes/*
-R/emily_kelvin_script.R
+lizard-example.R
+*test.R
+examples/*
