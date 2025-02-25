@@ -40,7 +40,7 @@ If you want to sharing this repository with colleagues over GitHub, it is recomm
 First, create the .env file using the terminal:
 ![Screenshot of terminal window in R environment with code to create an .env file](./terminal_screenshot.jpg)
 ```
-touch.env
+touch .env
 
 echo "API_KEY=your_api_key" >> .env
 ```
