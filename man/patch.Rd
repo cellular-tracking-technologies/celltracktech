@@ -19,5 +19,5 @@ patch(d, outpath, myproject, dirout)
 This function allows you to copy files with errors or corrupt lines into a new destination to look closer
 }
 \examples{
-patch(dbConnect(RPostgres::Postgres(), dbname=db_name), "~/mydata", "My Project", "~/errfiles")
+patch(dbConnect(RPostgres::Postgres(), dbname = db_name), "~/mydata", "My Project", "~/errfiles")
 }
