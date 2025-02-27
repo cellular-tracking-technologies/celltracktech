@@ -4,7 +4,7 @@
 \alias{error_files}
 \title{Find files with errors}
 \usage{
-error_files(dirin, dirout)
+error_files(dirin, dirout, conn = NULL)
 }
 \arguments{
 \item{dirin}{where your files were downloaded}

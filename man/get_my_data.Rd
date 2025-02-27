@@ -11,7 +11,8 @@ get_my_data(
   myproject = NULL,
   mystation = NULL,
   begin = NULL,
-  end = NULL
+  end = NULL,
+  filetypes = NULL
 )
 }
 \arguments{
@@ -33,5 +34,5 @@ get_my_data(
 This function allows you to download your sensor station data, with the option of simultaneously importing to a local database
 }
 \examples{
-get_my_data(token, "~/mydata", myproject="Project Name from CTT Account")
+get_my_data(token, "~/mydata", myproject = "Project Name from CTT Account")
 }

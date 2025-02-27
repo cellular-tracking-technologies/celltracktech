@@ -2,7 +2,7 @@
 % Please edit documentation in R/api_postgres.R
 \name{create_db}
 \alias{create_db}
-\title{Create database}
+\title{Create Postgres database}
 \usage{
 create_db(conn)
 }

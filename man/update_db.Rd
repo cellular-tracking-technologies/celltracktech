@@ -19,5 +19,5 @@ update_db(d, outpath, myproject, fix = FALSE)
 This function allows you to import data you've downloaded to your database
 }
 \examples{
-update_db(conn, "~/mydata", myproject="Project Name from CTT Account", fix=FALSE)
+update_db(conn, "~/mydata", myproject = "Project Name from CTT Account", fix = FALSE)
 }
