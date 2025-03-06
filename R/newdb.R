@@ -110,7 +110,7 @@ print(Sys.time() - start)
 #' # "My Project"
 #' import_node_data(conn, outpath, myproject="My Project")
 
-import_node_data <- function(d, outpath, myproject=NULL) {
+import_node_data <- function(d, outpath, myproject=NULL, filetype) {
   myout <- outpath
   if(!is.null(myproject)) {myout <- file.path(outpath,myproject)}
   # myfiles <- list.files(file.path(myout, "nodes"), pattern="beep.*csv",recursive = TRUE, full.names = TRUE)
@@ -122,7 +122,7 @@ import_node_data <- function(d, outpath, myproject=NULL) {
   allnode <- DBI::dbReadTable(d, "data_file")
   filesdone <- allnode$path
   files_import <- myfiles[which(!files %in% filesdone)]
-  lapply(files_import, load_node_data, conn=d, outpath=outpath, myproject=myproject)
+  lapply(files_import, load_node_data, conn=d, outpath=outpath, myproject=myproject, filetype=filetype)
 }
 
 
@@ -137,7 +137,7 @@ import_node_data <- function(d, outpath, myproject=NULL) {
 #' @export
 #'
 #' @examples
-load_node_data <- function(e, conn, outpath, myproject) {
+load_node_data <- function(e, conn, outpath, myproject, filetype) {
   Correct_Colnames <- function(df) {
     rowval <- gsub("^X\\.", "-",  colnames(df))
     rowval <- gsub("^X", "",  rowval)
@@ -164,7 +164,8 @@ load_node_data <- function(e, conn, outpath, myproject) {
   }
 
   if(length(begin) == 0) {begin <- as.POSIXct("2018-01-01")}
-  filetype <- "raw"
+  # filetype <- "raw"
+  filetype <- filetype
   #runs = split(seq_along(badlines), cumsum(c(0, diff(badlines) > 1)))
   #lapply(runs[lengths(runs) > 1], range)
   df <- tryCatch({
