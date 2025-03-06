@@ -4,7 +4,7 @@
 \alias{import_node_data}
 \title{Incorporate node data}
 \usage{
-import_node_data(d, outpath, myproject = NULL)
+import_node_data(d, outpath, myproject = NULL, filetype)
 }
 \arguments{
 \item{d}{The connection to your local database}

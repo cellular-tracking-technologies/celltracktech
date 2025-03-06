@@ -4,7 +4,7 @@
 \alias{load_node_data}
 \title{Load Node Data}
 \usage{
-load_node_data(e, conn, outpath, myproject)
+load_node_data(e, conn, outpath, myproject, filetype)
 }
 \arguments{
 \item{e}{file path}

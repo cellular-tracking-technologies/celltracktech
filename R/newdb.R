@@ -110,19 +110,31 @@ print(Sys.time() - start)
 #' # "My Project"
 #' import_node_data(conn, outpath, myproject="My Project")
 
-import_node_data <- function(d, outpath, myproject=NULL, filetype) {
+import_node_data <- function(d, outpath, myproject=NULL) {
   myout <- outpath
-  if(!is.null(myproject)) {myout <- file.path(outpath,myproject)}
+  if(!is.null(myproject)) {
+    myout <- file.path(outpath,myproject)
+    }
   # myfiles <- list.files(file.path(myout, "nodes"), pattern="beep.*csv",recursive = TRUE, full.names = TRUE)
-  myfiles <- list.files(file.path(myout, "nodes"), pattern=".*csv",recursive = TRUE, full.names = TRUE)
+  myfiles <- list.files(file.path(myout, "nodes"),
+                        pattern=".*csv",
+                        recursive = TRUE,
+                        full.names = TRUE)
 
-  print(paste('myfiles',myfiles))
+  print(paste('myfiles', myfiles))
   files_loc <- sapply(strsplit(myfiles, "/"), tail, n=2)
   files <- paste(files_loc[1,],files_loc[2,],sep="/")
+  print(paste('files', files))
   allnode <- DBI::dbReadTable(d, "data_file")
+  print(paste('allnode', allnode))
   filesdone <- allnode$path
   files_import <- myfiles[which(!files %in% filesdone)]
-  lapply(files_import, load_node_data, conn=d, outpath=outpath, myproject=myproject, filetype=filetype)
+  print(files_import)
+  lapply(files_import,
+         load_node_data,
+         conn=d,
+         outpath=outpath,
+         myproject=myproject)
 }
 
 
@@ -137,19 +149,17 @@ import_node_data <- function(d, outpath, myproject=NULL, filetype) {
 #' @export
 #'
 #' @examples
-load_node_data <- function(e, conn, outpath, myproject, filetype) {
-  Correct_Colnames <- function(df) {
-    rowval <- gsub("^X\\.", "-",  colnames(df))
-    rowval <- gsub("^X", "",  rowval)
-    DatePattern = '^[[:digit:]]{4}\\.[[:digit:]]{2}\\.[[:digit:]]{2}[T,\\.][[:digit:]]{2}\\.[[:digit:]]{2}\\.[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?'
-    #rowval[which(grepl(DatePattern,rowval))] <- as.character(as.POSIXct(rowval[grepl(DatePattern,rowval)], format="%Y.%m.%d.%H.%M.%S", tz="UTC"))
-    return(rowval)
-  }
-
+load_node_data <- function(e, conn, outpath, myproject) {
   #e <- file.path(outpath, "nodes", e)
   file <- tail(unlist(strsplit(e, "/")), n=2)
   print(paste('file', file))
   y <- paste(file, collapse="/")
+  print(paste('y file', y))
+
+  file_list = str_extract_all(y, c('434', 'blu', 'gps', 'health'))
+  filetype = file_list %>% unlist()
+  print(paste('filetype', filetype))
+
   sensor <- NA
   i <- DBI::dbReadTable(conn, "ctt_project_station")
 
@@ -184,6 +194,7 @@ load_node_data <- function(e, conn, outpath, myproject, filetype) {
       #colnames(x) <- c("time", "id", "rssi")
       #return(x)
     })
+
   badlines <- grep("[^ -~]", df$id)
   if (length(badlines) > 0) {
     salvage <- df[badlines,]
@@ -213,7 +224,7 @@ load_node_data <- function(e, conn, outpath, myproject, filetype) {
 
     }
     #savethis <- regexpr("[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T,\\.][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?.*",salvage$id)
-    }
+  }
   badlines <- grep("[^ -~]", df$time)
   if (length(badlines) > 0) { df <- df[-badlines,]}
   badlines <- grep("[[:digit:]]-", df$time, invert=TRUE)
@@ -223,22 +234,36 @@ load_node_data <- function(e, conn, outpath, myproject, filetype) {
     df$NodeId <- tolower(file[1])
     time = "UTC"
     df$Time <- df$time
-    if(is.character(df$time)) {df$Time <- as.POSIXct(df$time,format="%Y-%m-%dT%H:%M:%SZ",tz = time, optional=TRUE)}
+    if (is.character(df$time)) {
+      df$Time <- as.POSIXct(df$time,
+                            format="%Y-%m-%dT%H:%M:%SZ",
+                            tz = time,
+                            optional=TRUE)
+    }
+
+    print(filetype)
     df <- df[!is.na(df$Time),]
     df$time <- NULL
   #nodes <- nodes[nodes$Time > as.POSIXct("2020-08-20"),]
     df <- df[order(df$Time),]
+
+    start <- min(df$Time, na.rm=T)
+    end <- max(df$Time, na.rm=T)
+    print(paste(start, end))
+
+    # get existing data table from database
+    test <- dbGetQuery(conn,
+                       paste0("select * from", ' ', filetype, ' ', "where gps_at > '", start, "' and gps_at < '", end, "'"))
+    if (filetype == 'gps') {
+      df$gps_at = df$Time
+      df <- dplyr::anti_join(df,test) # only gets beeps from node, and not ones picked up by sensor station
+      z <- db_insert(contents=df, filetype=filetype, conn=conn, y=y, begin=begin)
+
+    }
     df$RadioId <- 4 #https://bitbucket.org/cellulartrackingtechnologies/lifetag-system-report/src/master/beeps.py
     # df$TagId <- toupper(df$id)
     df$TagId <- ifelse("id" %in% colnames(df), toupper(df$id), toupper(df$tag_id))
-    # if ('payload' %in% colnames(df)) {
-    #   toupper(df$payload)
-    # } else {
-    #   df$payload = NA
-    # }
-    # print(colnames(df))
-    df$payload <- ifelse('payload' %in% colnames(df), toupper(df$payload), NA)
-    # print(paste('Blu Tag id', head(df$TagId)))
+
     df$id <- NULL
     df$TagRSSI <- as.integer(df$rssi)
     df <- df[!is.na(df$TagRSSI),]
@@ -247,11 +272,17 @@ load_node_data <- function(e, conn, outpath, myproject, filetype) {
     validated <- which(nchar(df$TagId) == 10)
     df$Validated[validated] <- 1
     df$TagId[validated] <- substr(df$TagId[validated], 1, 8)
+    df$payload <- ifelse('payload' %in% colnames(df), toupper(df$payload), NA)
+
+    print(paste('filetype before getting test dataframe', filetype))
 
     start <- min(df$Time, na.rm=T)
     end <- max(df$Time, na.rm=T)
+    print(paste(start, end))
 
-    test <- dbGetQuery(conn, paste0("select * from raw where time > '", start,"' and time < '",end,"'"))
+    # get existing data table from database
+    test <- dbGetQuery(conn,
+                       paste0("select * from", ' ', filetype, ' ', "where Time > '", start, "' and Time < '", end, "'"))
 
     test$Time <- test$time
     test$TagId <- test$tag_id
@@ -263,6 +294,7 @@ load_node_data <- function(e, conn, outpath, myproject, filetype) {
 
     df <- dplyr::anti_join(df,test) # only gets beeps from node, and not ones picked up by sensor station
     # colnames(df) = c('node_id', 'time', 'radio_id', 'tag_id', 'tag_rssi', 'validated', 'payload')
+
     df = df %>%
       dplyr::mutate(tag_id = NULL) %>%
       dplyr::rename(time = Time,
@@ -271,11 +303,32 @@ load_node_data <- function(e, conn, outpath, myproject, filetype) {
                     validated = Validated,
                     node_id = NodeId,
                     tag_id = TagId)
-    df$path = y
-    df$station_id = NA
+
+    # insert node data into blu table
+    if (filetype == 'blu') {
+      df$usb_port = NA
+      df$blu_radio_id = NA
+      df$sync = NA
+      df$product = NA
+      df$revision = NA
+      df$path = y
+      df$station_id = NA
+      df$payload = NA
+    } else {
+      df$path = y
+      df$station_id = NA
+    }
 
     # z <- db_insert(contents=df, filetype=filetype, conn=conn, sensor=sensor, y=y, begin=begin)
     z <- db_insert(contents=df, filetype=filetype, conn=conn, y=y, begin=begin)
 
     }
+}
+
+Correct_Colnames <- function(df) {
+  rowval <- gsub("^X\\.", "-",  colnames(df))
+  rowval <- gsub("^X", "",  rowval)
+  DatePattern = '^[[:digit:]]{4}\\.[[:digit:]]{2}\\.[[:digit:]]{2}[T,\\.][[:digit:]]{2}\\.[[:digit:]]{2}\\.[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?'
+  #rowval[which(grepl(DatePattern,rowval))] <- as.character(as.POSIXct(rowval[grepl(DatePattern,rowval)], format="%Y.%m.%d.%H.%M.%S", tz="UTC"))
+  return(rowval)
 }

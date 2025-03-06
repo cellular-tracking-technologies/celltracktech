@@ -276,6 +276,16 @@ create_db <- function(conn) {
   )")
 }
 
+
+#' Create DuckDB database
+#'
+#' @param conn
+#'
+#' @returns
+#' @export
+#'
+#' @examples
+#' create_duck(conn)
 create_duck <- function(conn) {
   DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS ctt_project
   (
@@ -589,6 +599,7 @@ db_prep <- function(contents, filetype, sensor, y, begin) {
 #'
 #' @examples
 db_insert <- function(contents, filetype, conn, sensor = NA, y, begin = NULL) {
+  print(paste('db_insert contents', colnames(contents)))
   if (any(colnames(contents) == "node_id")) {
     contents$node_id <- toupper(contents$node_id)
     if (length(which(!is.na(contents$node_id))) > 0) {
@@ -603,8 +614,13 @@ db_insert <- function(contents, filetype, conn, sensor = NA, y, begin = NULL) {
   }
   if (filetype %in% c("raw", "node_health", "gps", "blu") & nrow(contents) > 0) {
     if (filetype %in% c("raw", "blu")) {
-      vars <- paste(DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))], sep = "", collapse = ",")
-      vals <- paste(seq_along(1:(length(DBI::dbListFields(conn, filetype)) - 1)), sep = "", collapse = ", $")
+      vars <- paste(DBI::dbListFields(conn,
+                                      filetype)[2:length(DBI::dbListFields(conn, filetype))],
+                    sep = "", collapse = ",")
+      vals <- paste(seq_along(1:(length(DBI::dbListFields(conn,
+                                                          filetype)) - 1)),
+                    sep = "",
+                    collapse = ", $")
 
       contents <- contents[, DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]] # need path and station_id columns
       contents
