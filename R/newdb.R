@@ -167,13 +167,14 @@ load_node_data <- function(e, conn, outpath, myproject) {
 
   if(!is.null(myproject)) {
     myproj <- DBI::dbReadTable(conn, "ctt_project")
-
     projid <- myproj$id[which(myproj$name == myproject)]
-
     begin <- min(i$deploy_at[which(i$project_id == projid)])
   }
 
-  if(length(begin) == 0) {begin <- as.POSIXct("2018-01-01")}
+  if (length(begin) == 0) {
+    begin <- as.POSIXct("2018-01-01")
+  }
+
   # filetype <- "raw"
   #runs = split(seq_along(badlines), cumsum(c(0, diff(badlines) > 1)))
   #lapply(runs[lengths(runs) > 1], range)
@@ -181,14 +182,12 @@ load_node_data <- function(e, conn, outpath, myproject) {
   # get data from file
   df <- tryCatch({
     if (file.size(e) > 0) {
-        # print(paste('read csv', readr::read_csv(e,na=c("NA", ""), skip_empty_rows = TRUE)))
         read_csv(e,na=c("NA", ""), skip_empty_rows = TRUE)
     }}, error = function(err) {
         # error handler picks up where error was generated
         print(paste("ignoring file", err, "- no data"))
         return(NULL)
     }, error = function(w) {
-      # print("error in file")
       print(paste('error in file', w))
       #x <- read.csv(e,header=TRUE,as.is=TRUE, na.strings=c("NA", ""), skipNul = TRUE) might need to reimplement this...
       #x <- rbind(x,Correct_Colnames(x))
@@ -232,8 +231,13 @@ load_node_data <- function(e, conn, outpath, myproject) {
   if (length(badlines) > 0) { df <- df[-badlines,]}
     #if(!all((c("time", "id", "rssi") %in% colnames(df)))) {df <- NULL}
   if(!is.null(df)) {
+
+    # set Node ID
     df$NodeId <- tolower(file[1])
+
+    # set time zone (always UTC)
     time = "UTC"
+
     df$Time <- df$time
     if (is.character(df$time)) {
       df$Time <- as.POSIXct(df$time,
@@ -242,7 +246,6 @@ load_node_data <- function(e, conn, outpath, myproject) {
                             optional=TRUE)
     }
 
-    print(filetype)
     df <- df[!is.na(df$Time),]
     df$time <- NULL
   #nodes <- nodes[nodes$Time > as.POSIXct("2020-08-20"),]
@@ -252,78 +255,139 @@ load_node_data <- function(e, conn, outpath, myproject) {
     end <- max(df$Time, na.rm=T)
     print(paste(start, end))
 
-    # get existing data table from database
-    test <- dbGetQuery(conn,
-                       paste0("select * from", ' ', filetype, ' ', "where gps_at > '", start, "' and gps_at < '", end, "'"))
+    # filetype conditional, modify the test (data from database) and df (data from file) column names for the anti_join function
     if (filetype == 'gps') {
+
+      # get existing data table from database
+      test <- dbGetQuery(conn,
+                         paste0("SELECT * FROM",
+                                ' ', filetype, ' ',
+                                "WHERE gps_at > '", start,
+                                "'AND gps_at < '", end, "'"))
       df$gps_at = df$Time
-      df <- dplyr::anti_join(df,test) # only gets beeps from node, and not ones picked up by sensor station
+
+      # only gets beeps from node, and not ones picked up by sensor station
+      df <- dplyr::anti_join(df,test)
+
+      # get other columns that exist in database
+      df$path <- y
+      df$quality <- NA
+      df$recorded_at <- ifelse("recorded_at" %in% colnames(df), df$recorded_at, NA)
+      df$station_id <- ifelse("station_id" %in% colnames(df), df$station_id, 'filler')
+      df$mean_lat <- ifelse("mean_lat" %in% colnames(df), df$mean_lat, NA)
+      df$mean_lng <- ifelse("mean_lng" %in% colnames(df), df$mean_lng, NA)
+      df$n_fixes <- ifelse('n_fixes' %in% colnames(df), df$n_fixes, NA)
+
+      z <- db_insert(contents=df,
+                     filetype=filetype,
+                     conn=conn,
+                     y=y,
+                     begin=begin)
+
+    } else if (filetype == 'health') {
+      # get existing data table from database
+      test <- dbGetQuery(conn,
+                         paste0("SELECT * FROM node_health ",
+                                "WHERE time > '", start,
+                                "'AND time < '", end, "'"))
+
+      df$radio_id = ifelse('radio_id' %in% colnames(df), df$radio_id, 4)
+      df$node_id = df$NodeId
+      df$node_rssi = ifelse('node_rssi' %in% colnames(df), df$node_rssi, NA)
+      df$battery = ifelse('battery' %in% colnames(df), df$battery, df$batt_mv/1000)
+      df$celsius = ifelse('celsius' %in% colnames(df), df$celsius, df$node_temp_c)
+      df$recorded_at = NA
+      df$firmware = NA
+      df$solar_volts = ifelse('solar_volts' %in% colnames(df), df$solar_volts, df$charge_mv/1000)
+      df$solar_current = ifelse('solar_current' %in% colnames(df), df$solar_current, df$charge_ma)
+      df$cumulative_solar_current = ifelse('cumulative_solar_current' %in% colnames(df),
+                                           df$cumulative_solar_current, df$energy_used_mah)
+      df$latitude = NA
+      df$longitude = NA
+      df$station_id = 'filler'
+      df$path = y
+      df$time = df$Time
+
+      # only gets beeps from node, and not ones picked up by sensor station
+      df <- dplyr::anti_join(df,test) %>%
+        distinct(time, radio_id, node_id, .keep_all = TRUE) # removes rows with the same time, radio id, and node id
+
+      z <- db_insert(contents=df,
+                     filetype='node_health',
+                     conn=conn,
+                     y=y,
+                     begin=begin)
+
+    }  else {
+      if (filetype == 434) {
+        filetype = 'raw'
+      }
+      df$RadioId <- 4 #https://bitbucket.org/cellulartrackingtechnologies/lifetag-system-report/src/master/beeps.py
+      # df$TagId <- toupper(df$id)
+      df$TagId <- ifelse("id" %in% colnames(df), toupper(df$id), toupper(df$tag_id))
+
+      df$id <- NULL
+      df$TagRSSI <- as.integer(df$rssi)
+      df <- df[!is.na(df$TagRSSI),]
+      df$rssi <- NULL
+      df$Validated <- 0
+      validated <- which(nchar(df$TagId) == 10)
+      df$Validated[validated] <- 1
+      df$TagId[validated] <- substr(df$TagId[validated], 1, 8)
+      df$payload <- ifelse('payload' %in% colnames(df), toupper(df$payload), NA)
+
+      print(paste('filetype before getting test dataframe', filetype))
+
+      start <- min(df$Time, na.rm=T)
+      end <- max(df$Time, na.rm=T)
+      print(paste(start, end))
+
+      # get existing data table from database
+      test <- dbGetQuery(conn,
+                         paste0("SELECT * FROM", ' ',
+                                filetype, ' ',
+                                "WHERE Time > '", start,
+                                "' and Time < '", end, "'"))
+
+      test$Time <- test$time
+      test$TagId <- test$tag_id
+      test$RadioId <- test$radio_id
+      test$NodeId <- toupper(test$node_id)
+      test$TagRSSI <- test$tag_rssi
+      test$Validated <- test$validated
+      # grabs columns only from df... which do not contain path or station id
+      # test <- test[,colnames(df)]
+
+      # only gets beeps from node, and not ones picked up by sensor station
+      df <- dplyr::anti_join(df,test)
+
+      # renaming columns
+      df = df %>%
+        dplyr::mutate(tag_id = NULL) %>%
+        dplyr::rename(time = Time,
+                      tag_rssi = TagRSSI,
+                      radio_id = RadioId,
+                      validated = Validated,
+                      node_id = NodeId,
+                      tag_id = TagId)
+
+      # insert node data into blu table
+      if (filetype == 'blu') {
+        df$usb_port = NA
+        df$blu_radio_id = NA
+        df$product = NA
+        df$revision = NA
+        df$path = y
+        df$station_id = NA
+      } else {
+        df$path = y
+        df$station_id = NA
+      }
+
+      # z <- db_insert(contents=df, filetype=filetype, conn=conn, sensor=sensor, y=y, begin=begin)
       z <- db_insert(contents=df, filetype=filetype, conn=conn, y=y, begin=begin)
-
     }
-    df$RadioId <- 4 #https://bitbucket.org/cellulartrackingtechnologies/lifetag-system-report/src/master/beeps.py
-    # df$TagId <- toupper(df$id)
-    df$TagId <- ifelse("id" %in% colnames(df), toupper(df$id), toupper(df$tag_id))
-
-    df$id <- NULL
-    df$TagRSSI <- as.integer(df$rssi)
-    df <- df[!is.na(df$TagRSSI),]
-    df$rssi <- NULL
-    df$Validated <- 0
-    validated <- which(nchar(df$TagId) == 10)
-    df$Validated[validated] <- 1
-    df$TagId[validated] <- substr(df$TagId[validated], 1, 8)
-    df$payload <- ifelse('payload' %in% colnames(df), toupper(df$payload), NA)
-
-    print(paste('filetype before getting test dataframe', filetype))
-
-    start <- min(df$Time, na.rm=T)
-    end <- max(df$Time, na.rm=T)
-    print(paste(start, end))
-
-    # get existing data table from database
-    test <- dbGetQuery(conn,
-                       paste0("select * from", ' ', filetype, ' ', "where Time > '", start, "' and Time < '", end, "'"))
-
-    test$Time <- test$time
-    test$TagId <- test$tag_id
-    test$RadioId <- test$radio_id
-    test$NodeId <- toupper(test$node_id)
-    test$TagRSSI <- test$tag_rssi
-    test$Validated <- test$validated
-    # test <- test[,colnames(df)] # grabs columns only from df... which do not contain path or station id
-
-    df <- dplyr::anti_join(df,test) # only gets beeps from node, and not ones picked up by sensor station
-    # colnames(df) = c('node_id', 'time', 'radio_id', 'tag_id', 'tag_rssi', 'validated', 'payload')
-
-    df = df %>%
-      dplyr::mutate(tag_id = NULL) %>%
-      dplyr::rename(time = Time,
-                    tag_rssi = TagRSSI,
-                    radio_id = RadioId,
-                    validated = Validated,
-                    node_id = NodeId,
-                    tag_id = TagId)
-
-    # insert node data into blu table
-    if (filetype == 'blu') {
-      df$usb_port = NA
-      df$blu_radio_id = NA
-      df$sync = NA
-      df$product = NA
-      df$revision = NA
-      df$path = y
-      df$station_id = NA
-      df$payload = NA
-    } else {
-      df$path = y
-      df$station_id = NA
-    }
-
-    # z <- db_insert(contents=df, filetype=filetype, conn=conn, sensor=sensor, y=y, begin=begin)
-    z <- db_insert(contents=df, filetype=filetype, conn=conn, y=y, begin=begin)
-
-    }
+  }
 }
 
 Correct_Colnames <- function(df) {

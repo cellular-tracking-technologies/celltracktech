@@ -632,12 +632,13 @@ db_insert <- function(contents, filetype, conn, sensor = NA, y, begin = NULL) {
     }
 
     # browser()
-    h <- tryCatch(
-      {
-        tryCatch(
-          {
+    h <- tryCatch({
+        tryCatch({
             DBI::dbWriteTable(conn, filetype, contents, append = TRUE)
-            query <- paste("INSERT INTO ", "data_file (path)", " VALUES ($1) ON CONFLICT DO NOTHING", sep = "")
+            query <- paste("INSERT INTO ",
+                           "data_file (path)",
+                           " VALUES ($1) ON CONFLICT DO NOTHING",
+                           sep = "")
             insertnew <- DBI::dbSendQuery(conn, query)
             # insertnew <- DBI::dbSendQuery(conn,
             #                               paste("INSERT INTO ",
@@ -664,19 +665,17 @@ db_insert <- function(contents, filetype, conn, sensor = NA, y, begin = NULL) {
                                           sep = "")) # CTT-FC16AD87C466-node-health.2022-07-15_104908.csv.gz
             DBI::dbBind(insertnew, params = list(y))
             DBI::dbClearResult(insertnew)
-          }
-        )
+          })
       },
       error = function(err) {
         print(paste("h error", err))
         return(list(err, contents, y))
-      }
-    )
+      })
   }
+
   if (!exists("h")) {
     h <- NULL # h is boolean
   }
-  # print(paste('what the hell is h???', h)) # h is boolean
   return(h)
 }
 
