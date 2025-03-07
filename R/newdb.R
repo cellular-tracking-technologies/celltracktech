@@ -175,9 +175,10 @@ load_node_data <- function(e, conn, outpath, myproject) {
 
   if(length(begin) == 0) {begin <- as.POSIXct("2018-01-01")}
   # filetype <- "raw"
-  filetype <- filetype
   #runs = split(seq_along(badlines), cumsum(c(0, diff(badlines) > 1)))
   #lapply(runs[lengths(runs) > 1], range)
+
+  # get data from file
   df <- tryCatch({
     if (file.size(e) > 0) {
         # print(paste('read csv', readr::read_csv(e,na=c("NA", ""), skip_empty_rows = TRUE)))
