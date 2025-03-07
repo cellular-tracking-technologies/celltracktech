@@ -26,7 +26,7 @@ project_list(my_token)
 
 con <- DBI::dbConnect(
   duckdb::duckdb(),
-  dbdir = "./examples/btfi/btfi3.duckdb",
+  dbdir = "./examples/btfi/btfi5.duckdb",
   read_only = FALSE
 )
 
@@ -58,12 +58,15 @@ head(blu)
 
 # get gps records
 gps = DBI::dbGetQuery(con, 'SELECT * FROM gps')
+head(gps)
 
 node_health = DBI::dbGetQuery(con, 'SELECT * FROM node_health')
+head(node_health)
 
 # list data in nodes table
 node_table = DBI::dbGetQuery(con, 'SELECT * FROM nodes')
 
 # list data in data_file table
 df_table = DBI::dbGetQuery(con, 'SELECT * FROM data_file')
+
 

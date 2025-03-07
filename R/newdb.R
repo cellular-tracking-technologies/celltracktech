@@ -273,7 +273,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df$path <- y
       df$quality <- NA
       df$recorded_at <- ifelse("recorded_at" %in% colnames(df), df$recorded_at, NA)
-      df$station_id <- ifelse("station_id" %in% colnames(df), df$station_id, 'filler')
+      df$station_id <- ifelse("station_id" %in% colnames(df), df$station_id, find_station_name(outpath, myproject))
       df$mean_lat <- ifelse("mean_lat" %in% colnames(df), df$mean_lat, NA)
       df$mean_lng <- ifelse("mean_lng" %in% colnames(df), df$mean_lng, NA)
       df$n_fixes <- ifelse('n_fixes' %in% colnames(df), df$n_fixes, NA)
@@ -304,7 +304,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
                                            df$cumulative_solar_current, df$energy_used_mah)
       df$latitude = NA
       df$longitude = NA
-      df$station_id = 'filler'
+      df$station_id = find_station_name(outpath, myproject)
       df$path = y
       df$time = df$Time
 
@@ -318,23 +318,26 @@ load_node_data <- function(e, conn, outpath, myproject) {
                      y=y,
                      begin=begin)
 
-    }  else {
-      if (filetype == 434) {
-        filetype = 'raw'
-      }
-      df$RadioId <- 4 #https://bitbucket.org/cellulartrackingtechnologies/lifetag-system-report/src/master/beeps.py
+    }  else if (filetype == 434) {
+      filetype = 'raw'
+      # df$RadioId <- 4 #https://bitbucket.org/cellulartrackingtechnologies/lifetag-system-report/src/master/beeps.py
       # df$TagId <- toupper(df$id)
-      df$TagId <- ifelse("id" %in% colnames(df), toupper(df$id), toupper(df$tag_id))
-
-      df$id <- NULL
-      df$TagRSSI <- as.integer(df$rssi)
-      df <- df[!is.na(df$TagRSSI),]
+      # df$tag_id <- toupper(df$id)
+      # df$id <- NULL
+      df$tag_id <- toupper(df$tag_id)
+      # df$TagRSSI <- as.integer(df$rssi)
+      # df <- df[!is.na(df$TagRSSI),]
+      df$tag_rssi <- as.integer(df$rssi)
+      df <- df[!is.na(df$tag_rssi),]
       df$rssi <- NULL
-      df$Validated <- 0
-      validated <- which(nchar(df$TagId) == 10)
-      df$Validated[validated] <- 1
-      df$TagId[validated] <- substr(df$TagId[validated], 1, 8)
-      df$payload <- ifelse('payload' %in% colnames(df), toupper(df$payload), NA)
+      # df$Validated <- 0
+      df$validated <- 0
+      # validated <- which(nchar(df$TagId) == 10)
+      # df$Validated[validated] <- 1
+      validated <- which(nchar(df$tag_id) == 10)
+      df$validated[validated] <- 1
+      # df$TagId[validated] <- substr(df$TagId[validated], 1, 8)
+      df$tag_id[validated] <- substr(df$tag_id[validated], 1, 8)
 
       print(paste('filetype before getting test dataframe', filetype))
 
@@ -349,43 +352,58 @@ load_node_data <- function(e, conn, outpath, myproject) {
                                 "WHERE Time > '", start,
                                 "' and Time < '", end, "'"))
 
-      test$Time <- test$time
-      test$TagId <- test$tag_id
-      test$RadioId <- test$radio_id
-      test$NodeId <- toupper(test$node_id)
-      test$TagRSSI <- test$tag_rssi
-      test$Validated <- test$validated
-      # grabs columns only from df... which do not contain path or station id
-      # test <- test[,colnames(df)]
-
       # only gets beeps from node, and not ones picked up by sensor station
       df <- dplyr::anti_join(df,test)
+      df$path = y
+      df$station_id = NA
+      df$node_id = df$NodeId
+      df$time = df$Time
+      df$radio_id = 4
 
-      # renaming columns
-      df = df %>%
-        dplyr::mutate(tag_id = NULL) %>%
-        dplyr::rename(time = Time,
-                      tag_rssi = TagRSSI,
-                      radio_id = RadioId,
-                      validated = Validated,
-                      node_id = NodeId,
-                      tag_id = TagId)
-
-      # insert node data into blu table
-      if (filetype == 'blu') {
-        df$usb_port = NA
-        df$blu_radio_id = NA
-        df$product = NA
-        df$revision = NA
-        df$path = y
-        df$station_id = NA
-      } else {
-        df$path = y
-        df$station_id = NA
-      }
-
-      # z <- db_insert(contents=df, filetype=filetype, conn=conn, sensor=sensor, y=y, begin=begin)
       z <- db_insert(contents=df, filetype=filetype, conn=conn, y=y, begin=begin)
+
+    } else if (filetype == 'blu') {
+
+      start <- min(df$Time, na.rm=T)
+      end <- max(df$Time, na.rm=T)
+      print(paste(start, end))
+
+      df$tag_rssi <- as.integer(df$rssi)
+      df$time <- df$Time
+      df$radio_id <- 4
+
+
+      # get existing data table from database
+      test <- dbGetQuery(conn,
+                         paste0("SELECT * FROM", ' ',
+                                filetype, ' ',
+                                "WHERE time > '", start,
+                                "' and time < '", end, "'"))
+
+      # only get records that do not exist in database
+      df <- dplyr::anti_join(df,test)
+
+      df$usb_port = NA
+      df$blu_radio_id = NA
+      df$product = NA
+      df$revision = NA
+      df$path = y
+      df$station_id = NA
+      df$node_id = df$NodeId
+      z <- db_insert(contents=df, filetype=filetype, conn=conn, y=y, begin=begin)
+    }
+  }
+}
+
+find_station_name <- function(outpath, myproject) {
+  # find name of sensor station
+  dirs = list.dirs(paste0(outpath, myproject, '/'), full.names = FALSE)
+
+  station = NULL
+  for (i in length(dirs)) {
+    if (nchar(dirs[i] == 12)) {
+      station = dirs[i]
+      return(station)
     }
   }
 }

@@ -352,9 +352,10 @@ create_duck <- function(conn) {
     station_id TEXT
   )")
 
+  # PRIMARY KEY (radio_id, node_id, time, station_id),
   DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS node_health
   (
-    PRIMARY KEY (radio_id, node_id, time, station_id),
+    PRIMARY KEY (radio_id, node_id, time),
     time TIMESTAMP with time zone NOT NULL,
     radio_id smallint,
     node_id TEXT,
@@ -599,7 +600,6 @@ db_prep <- function(contents, filetype, sensor, y, begin) {
 #'
 #' @examples
 db_insert <- function(contents, filetype, conn, sensor = NA, y, begin = NULL) {
-  print(paste('db_insert contents', colnames(contents)))
   if (any(colnames(contents) == "node_id")) {
     contents$node_id <- toupper(contents$node_id)
     if (length(which(!is.na(contents$node_id))) > 0) {
