@@ -230,6 +230,8 @@ load_node_data <- function(e, conn, outpath, myproject) {
   badlines <- grep("[[:digit:]]-", df$time, invert=TRUE)
   if (length(badlines) > 0) { df <- df[-badlines,]}
     #if(!all((c("time", "id", "rssi") %in% colnames(df)))) {df <- NULL}
+
+  # dataframe is not null, modify df
   if(!is.null(df)) {
 
     # set Node ID
