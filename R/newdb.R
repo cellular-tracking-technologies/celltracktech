@@ -268,6 +268,10 @@ load_node_data <- function(e, conn, outpath, myproject) {
                                 "'AND gps_at < '", end, "'"))
       df$gps_at = df$Time
 
+      # remove any duplicates with same gps_at value
+      df -> df %>%
+        distinct(gps_at, .keep_all = TRUE)
+
       # only gets beeps from node, and not ones picked up by sensor station
       df <- dplyr::anti_join(df,test)
 
