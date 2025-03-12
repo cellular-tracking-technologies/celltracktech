@@ -156,7 +156,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
   y <- paste(file, collapse="/")
   print(paste('y file', y))
 
-  file_list = str_extract_all(y, c('434', 'blu', 'gps', 'health'))
+  file_list = str_extract_all(y, c('434', 'blu', 'gps', 'health', '2p4'))
   filetype = file_list %>% unlist()
   print(paste('filetype', filetype))
 
@@ -368,7 +368,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
 
       z <- db_insert(contents=df, filetype=filetype, conn=conn, y=y, begin=begin)
 
-    } else if (filetype == 'blu') {
+    } else if (filetype == 'blu' || filetype == '2p4') {
 
       start <- min(df$Time, na.rm=T)
       end <- max(df$Time, na.rm=T)
@@ -381,10 +381,9 @@ load_node_data <- function(e, conn, outpath, myproject) {
 
       # get existing data table from database
       test <- dbGetQuery(conn,
-                         paste0("SELECT * FROM", ' ',
-                                filetype, ' ',
+                         paste0("SELECT * FROM blu ",
                                 "WHERE time > '", start,
-                                "' and time < '", end, "'"))
+                                "'AND time < '", end, "'"))
 
       # only get records that do not exist in database
       df <- dplyr::anti_join(df,test)
@@ -396,7 +395,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df$path = y
       df$station_id = NA
       df$node_id = df$NodeId
-      z <- db_insert(contents=df, filetype=filetype, conn=conn, y=y, begin=begin)
+      z <- db_insert(contents=df, filetype='blu', conn=conn, y=y, begin=begin)
     }
   }
 }

@@ -16,7 +16,7 @@ my_token <- Sys.getenv('BTFI')
 db_name <- "btfi.duckdb"
 myproject <- "Black-throated finches in Australia" #this is your project name on your CTT account
 create_outpath('./examples/btfi')
-outpath <-'./examples/btfi/'
+outpath <-'./examples/'
 
 # List Projects -----------------------------------------------------------
 
@@ -26,7 +26,7 @@ project_list(my_token)
 
 con <- DBI::dbConnect(
   duckdb::duckdb(),
-  dbdir = "./examples/btfi/btfi5.duckdb",
+  dbdir = paste0('./examples/', myproject, '/', 'btfi.duckdb'),
   read_only = FALSE
 )
 
@@ -69,4 +69,5 @@ node_table = DBI::dbGetQuery(con, 'SELECT * FROM nodes')
 # list data in data_file table
 df_table = DBI::dbGetQuery(con, 'SELECT * FROM data_file')
 
+DBI::dbDisconnect(con)
 
