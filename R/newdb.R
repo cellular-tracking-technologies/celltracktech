@@ -270,7 +270,9 @@ load_node_data <- function(e, conn, outpath, myproject) {
 
       # remove any duplicates with same gps_at value
       df <- df %>%
-        distinct(gps_at, .keep_all = TRUE)
+        distinct(gps_at,
+                 station_id,
+                 .keep_all = TRUE)
 
       # only gets beeps from node, and not ones picked up by sensor station
       df <- dplyr::anti_join(df,test)
@@ -297,17 +299,30 @@ load_node_data <- function(e, conn, outpath, myproject) {
                                 "WHERE time > '", start,
                                 "'AND time < '", end, "'"))
 
-      df$radio_id = ifelse('radio_id' %in% colnames(df), df$radio_id, 4)
+      df$radio_id = ifelse('radio_id' %in% colnames(df),
+                           df$radio_id,
+                           4)
       df$node_id = df$NodeId
-      df$node_rssi = ifelse('node_rssi' %in% colnames(df), df$node_rssi, NA)
-      df$battery = ifelse('battery' %in% colnames(df), df$battery, df$batt_mv/1000)
-      df$celsius = ifelse('celsius' %in% colnames(df), df$celsius, df$node_temp_c)
+      df$node_rssi = ifelse('node_rssi' %in% colnames(df),
+                            df$node_rssi,
+                            NA)
+      df$battery = ifelse('battery' %in% colnames(df),
+                          df$battery,
+                          df$batt_mv/1000)
+      df$celsius = ifelse('celsius' %in% colnames(df),
+                          df$celsius,
+                          df$node_temp_c)
       df$recorded_at = NA
       df$firmware = NA
-      df$solar_volts = ifelse('solar_volts' %in% colnames(df), df$solar_volts, df$charge_mv/1000)
-      df$solar_current = ifelse('solar_current' %in% colnames(df), df$solar_current, df$charge_ma)
+      df$solar_volts = ifelse('solar_volts' %in% colnames(df),
+                              df$solar_volts,
+                              df$charge_mv/1000)
+      df$solar_current = ifelse('solar_current' %in% colnames(df),
+                                df$solar_current,
+                                df$charge_ma)
       df$cumulative_solar_current = ifelse('cumulative_solar_current' %in% colnames(df),
-                                           df$cumulative_solar_current, df$energy_used_mah)
+                                           df$cumulative_solar_current,
+                                           df$energy_used_mah)
       df$latitude = NA
       df$longitude = NA
       df$station_id = find_station_name(outpath, myproject)
