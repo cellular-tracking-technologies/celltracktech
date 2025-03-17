@@ -271,8 +271,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
 
       # get existing data table from database
       test <- dbGetQuery(conn,
-                         paste0("SELECT * FROM",
-                                ' ', filetype, ' ',
+                         paste0("SELECT * FROM gps ",
                                 "WHERE gps_at >= '", start,
                                 "'AND gps_at <= '", end, "'"))
       df$gps_at = df$Time

@@ -35,7 +35,8 @@ get_my_data(
   myproject=myproject,
   begin=as.Date("2023-08-01"),
   end=as.Date("2023-08-31"),
-  filetypes=c("raw", "node_health")
+  # filetypes=c("raw", "node_health")
+  filetypes = c('gps')
 )
 
 update_db(con, outpath, myproject)
@@ -75,6 +76,10 @@ tail(raw)
 blu = DBI::dbGetQuery(con, "SELECT * FROM raw "); blu
 tail(blu)
 head(blu)
+
+# get gps records
+gps = DBI::dbGetQuery(con, 'SELECT * FROM gps')
+
 
 
 # list data in nodes table

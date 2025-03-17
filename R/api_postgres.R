@@ -391,7 +391,7 @@ create_duck <- function(conn) {
     mean_lng NUMERIC(9,6),
     n_fixes smallint,
     node_id TEXT,
-    PRIMARY KEY (gps_at, station_id)
+    PRIMARY KEY (gps_at, station_id, node_id)
   )")
 }
 

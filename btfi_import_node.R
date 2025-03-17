@@ -88,7 +88,7 @@ DBI::dbDisconnect(con)
 
 # Primary key issue for gps and node health -------------------------------
 
-e = './examples/Black-throated Finches in Australia/nodes/20240101/node_7/health_0.csv'
+e = './examples/Black-throated Finches in Australia/nodes/20250101/node_6/health_0.csv'
 
 con <- DBI::dbConnect(
   duckdb::duckdb(),
