@@ -12,18 +12,16 @@ library(dotenv)
 # Settings ----------------------------------------------------------------
 load_dot_env(file='.env')
 
-my_token <- Sys.getenv('BFTI')
-db_name <- "btfi.duckdb"
-myproject <- "Black-throated finches in Australia" #this is your project name on your CTT account
-create_outpath('./examples/btfi')
-outpath <-'./examples/btfi/'
+my_token <- Sys.getenv('API_KEY')
+myproject <- "Meadows V2" #this is your project name on your CTT account
+create_outpath(paste0('./examples/', myproject, '/'))
+outpath <-'./examples/'
 
 con <- DBI::dbConnect(
   duckdb::duckdb(),
-  dbdir = "./examples/btfi/btfi.duckdb",
+  dbdir = "./examples/Meadows V2/meadows.duckdb",
   read_only = FALSE
 )
-
 
 # List Projects -----------------------------------------------------------
 
@@ -35,8 +33,8 @@ get_my_data(
   outpath,
   con,
   myproject=myproject,
-  begin=as.Date("2024-08-01"),
-  end=as.Date("2024-08-02"),
+  begin=as.Date("2023-08-01"),
+  end=as.Date("2023-08-31"),
   filetypes=c("raw", "node_health")
 )
 
@@ -52,7 +50,7 @@ print(time_elapse)
 # Import Node Data --------------------------------------------------------
 con <- DBI::dbConnect(
   duckdb::duckdb(),
-  dbdir = "./vignettes/aos2024/meadows.db",
+  dbdir = "./examples/Meadows V2/meadows.duckdb",
   read_only = FALSE
 )
 
@@ -63,9 +61,6 @@ import_node_data(con,
                  myproject="Meadows V2")
 
 DBI::dbDisconnect(con)
-
-# colnames(contents) = c('node_id', 'time', 'radio_id', 'tag_id', 'tag_rssi', 'validated')
-# print(paste('colnames', tolower(colnames(contents))))
 
 # Database Functions ------------------------------------------------------
 

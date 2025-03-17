@@ -45,6 +45,12 @@ DBI::dbDisconnect(con)
 
 # Database Functions ------------------------------------------------------
 
+con <- DBI::dbConnect(
+  duckdb::duckdb(),
+  dbdir = paste0('./examples/', myproject, '/', 'btfi.duckdb'),
+  read_only = FALSE
+)
+
 # list tables in database
 DBI::dbListTables(con)
 
@@ -58,16 +64,43 @@ head(blu)
 
 # get gps records
 gps = DBI::dbGetQuery(con, 'SELECT * FROM gps')
-head(gps)
+gps_distinct = gps %>% distinct()
 
 node_health = DBI::dbGetQuery(con, 'SELECT * FROM node_health')
+node_health_distinct = node_health %>% filter(time == "2025-01-09 20:49:27 UTC")
+
 head(node_health)
+
+node_health7 = node_health %>%
+  filter(node_id == 'NODE_7')
+
+node_health6 = node_health %>%
+  filter(node_id == 'NODE_6')
 
 # list data in nodes table
 node_table = DBI::dbGetQuery(con, 'SELECT * FROM nodes')
 
 # list data in data_file table
 df_table = DBI::dbGetQuery(con, 'SELECT * FROM data_file')
+
+DBI::dbDisconnect(con)
+
+
+# Primary key issue for gps and node health -------------------------------
+
+e = './examples/Black-throated Finches in Australia/nodes/20240101/node_7/health_0.csv'
+
+con <- DBI::dbConnect(
+  duckdb::duckdb(),
+  dbdir = paste0('./examples/', myproject, '/', 'btfi.duckdb'),
+  read_only = FALSE
+)
+
+create_duck(con)
+
+conn = con
+myproject <- "Black-throated finches in Australia" #this is your project name on your CTT account
+outpath <-'./examples/'
 
 DBI::dbDisconnect(con)
 

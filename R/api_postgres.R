@@ -355,6 +355,7 @@ create_duck <- function(conn) {
   # PRIMARY KEY (radio_id, node_id, time, station_id),
   DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS node_health
   (
+    PRIMARY KEY (radio_id, node_id, time),
     time TIMESTAMP with time zone NOT NULL,
     radio_id smallint,
     node_id TEXT,
@@ -389,6 +390,8 @@ create_duck <- function(conn) {
     mean_lat NUMERIC(8,6),
     mean_lng NUMERIC(9,6),
     n_fixes smallint,
+    node_id TEXT,
+    PRIMARY KEY (gps_at, station_id)
   )")
 }
 

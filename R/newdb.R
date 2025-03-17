@@ -273,8 +273,8 @@ load_node_data <- function(e, conn, outpath, myproject) {
       test <- dbGetQuery(conn,
                          paste0("SELECT * FROM",
                                 ' ', filetype, ' ',
-                                "WHERE gps_at > '", start,
-                                "'AND gps_at < '", end, "'"))
+                                "WHERE gps_at >= '", start,
+                                "'AND gps_at <= '", end, "'"))
       df$gps_at = df$Time
 
       # only gets beeps from node, and not ones picked up by sensor station
@@ -289,12 +289,14 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df$mean_lat <- ifelse("mean_lat" %in% colnames(df), df$mean_lat, NA)
       df$mean_lng <- ifelse("mean_lng" %in% colnames(df), df$mean_lng, NA)
       df$n_fixes <- ifelse('n_fixes' %in% colnames(df), df$n_fixes, NA)
+      df$node_id = toupper(df$NodeId)
 
-      df2 <- dplyr::anti_join(df, test)
+      df2 <- dplyr::anti_join(df, test, by = c('gps_at', 'node_id', 'station_id'))
 
       # remove any duplicates with same gps_at value
       df3 <- df2 %>%
         distinct(gps_at,
+                 node_id,
                  station_id,
                  .keep_all = TRUE)
 
@@ -308,8 +310,8 @@ load_node_data <- function(e, conn, outpath, myproject) {
       # get existing data table from database
       test <- dbGetQuery(conn,
                          paste0("SELECT * FROM node_health ",
-                                "WHERE time > '", start,
-                                "'AND time < '", end, "'"))
+                                "WHERE time >= '", start,
+                                "'AND time <= '", end, "'"))
 
       df$radio_id = ifelse('radio_id' %in% colnames(df),
                            df$radio_id,
@@ -343,17 +345,17 @@ load_node_data <- function(e, conn, outpath, myproject) {
 
       # only gets beeps from node, and not ones picked up by sensor station
       df2 <- df %>%
-        select(time, radio_id, node_id, node_rssi, battery, celsius, recorded_at, firmware, solar_volts, solar_current, cumulative_solar_current, latitude, longitude, station_id, path) %>%
-        filter(time > "2020-01-01 UTC")
-
-      df3 = dplyr::anti_join(df2, test) %>%
+        # select(time, radio_id, node_id, node_rssi, battery, celsius, recorded_at, firmware, solar_volts, solar_current, cumulative_solar_current, latitude, longitude, station_id, path) %>%
         distinct(time,
                  radio_id,
                  node_id,
                  path,
-                 .keep_all = TRUE) # removes rows with the same time, radio id, and node id
+                 .keep_all = TRUE) %>% # removes rows with the same time, radio id, and node id
+      filter(time > "2020-01-01 UTC")
 
-      z <- db_insert(contents=df2,
+      df3 = dplyr::anti_join(df2, test, by = c('time', 'radio_id', 'node_id'))
+
+      z <- db_insert(contents=df3,
                      filetype='node_health',
                      conn=conn,
                      y=y,
