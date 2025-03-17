@@ -114,7 +114,7 @@ import_node_data <- function(d, outpath, myproject=NULL) {
   myout <- outpath
   if(!is.null(myproject)) {
     myout <- file.path(outpath,myproject)
-    }
+  }
   # myfiles <- list.files(file.path(myout, "nodes"), pattern="beep.*csv",recursive = TRUE, full.names = TRUE)
   myfiles <- list.files(file.path(myout, "nodes"),
                         pattern=".*csv",
@@ -151,6 +151,7 @@ import_node_data <- function(d, outpath, myproject=NULL) {
 #' @examples
 load_node_data <- function(e, conn, outpath, myproject) {
   #e <- file.path(outpath, "nodes", e)
+  print(paste('e file', e))
   file <- tail(unlist(strsplit(e, "/")), n=2)
   print(paste('file', file))
   y <- paste(file, collapse="/")
@@ -226,10 +227,19 @@ load_node_data <- function(e, conn, outpath, myproject) {
     #savethis <- regexpr("[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T,\\.][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?.*",salvage$id)
   }
   badlines <- grep("[^ -~]", df$time)
-  if (length(badlines) > 0) { df <- df[-badlines,]}
+  if (length(badlines) > 0) {
+    df <- df[-badlines,]
+  }
+
   badlines <- grep("[[:digit:]]-", df$time, invert=TRUE)
-  if (length(badlines) > 0) { df <- df[-badlines,]}
+
+  if (length(badlines) > 0) {
+    df <- df[-badlines,]
+  }
     #if(!all((c("time", "id", "rssi") %in% colnames(df)))) {df <- NULL}
+
+
+
 
   # dataframe is not null, modify df
   if(!is.null(df)) {
@@ -255,7 +265,6 @@ load_node_data <- function(e, conn, outpath, myproject) {
 
     start <- min(df$Time, na.rm=T)
     end <- max(df$Time, na.rm=T)
-    print(paste(start, end))
 
     # filetype conditional, modify the test (data from database) and df (data from file) column names for the anti_join function
     if (filetype == 'gps') {
@@ -269,24 +278,27 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df$gps_at = df$Time
 
       # only gets beeps from node, and not ones picked up by sensor station
-      df <- dplyr::anti_join(df,test)
 
       # get other columns that exist in database
       df$path <- y
       df$quality <- NA
       df$recorded_at <- ifelse("recorded_at" %in% colnames(df), df$recorded_at, NA)
-      df$station_id <- ifelse("station_id" %in% colnames(df), df$station_id, find_station_name(outpath, myproject))
+      df$station_id <- ifelse("station_id" %in% colnames(df),
+                              df$station_id,
+                              find_station_name(outpath, myproject))
       df$mean_lat <- ifelse("mean_lat" %in% colnames(df), df$mean_lat, NA)
       df$mean_lng <- ifelse("mean_lng" %in% colnames(df), df$mean_lng, NA)
       df$n_fixes <- ifelse('n_fixes' %in% colnames(df), df$n_fixes, NA)
 
+      df2 <- dplyr::anti_join(df, test)
+
       # remove any duplicates with same gps_at value
-      df <- df %>%
+      df3 <- df2 %>%
         distinct(gps_at,
                  station_id,
                  .keep_all = TRUE)
 
-      z <- db_insert(contents=df,
+      z <- db_insert(contents=df3,
                      filetype=filetype,
                      conn=conn,
                      y=y,
@@ -302,7 +314,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df$radio_id = ifelse('radio_id' %in% colnames(df),
                            df$radio_id,
                            4)
-      df$node_id = df$NodeId
+      df$node_id = toupper(df$NodeId)
       df$node_rssi = ifelse('node_rssi' %in% colnames(df),
                             df$node_rssi,
                             NA)
@@ -330,16 +342,24 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df$time = df$Time
 
       # only gets beeps from node, and not ones picked up by sensor station
-      df <- dplyr::anti_join(df,test) %>%
-        distinct(time, radio_id, node_id, .keep_all = TRUE) # removes rows with the same time, radio id, and node id
+      df2 <- df %>%
+        select(time, radio_id, node_id, node_rssi, battery, celsius, recorded_at, firmware, solar_volts, solar_current, cumulative_solar_current, latitude, longitude, station_id, path) %>%
+        filter(time > "2020-01-01 UTC")
 
-      z <- db_insert(contents=df,
+      df3 = dplyr::anti_join(df2, test) %>%
+        distinct(time,
+                 radio_id,
+                 node_id,
+                 path,
+                 .keep_all = TRUE) # removes rows with the same time, radio id, and node id
+
+      z <- db_insert(contents=df2,
                      filetype='node_health',
                      conn=conn,
                      y=y,
                      begin=begin)
 
-    }  else if (filetype == 434) {
+    } else if (filetype == 434) {
       filetype = 'raw'
       # df$RadioId <- 4 #https://bitbucket.org/cellulartrackingtechnologies/lifetag-system-report/src/master/beeps.py
       # df$TagId <- toupper(df$id)
@@ -381,7 +401,11 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df$time = df$Time
       df$radio_id = 4
 
-      z <- db_insert(contents=df, filetype=filetype, conn=conn, y=y, begin=begin)
+      z <- db_insert(contents=df,
+                     filetype=filetype,
+                     conn=conn,
+                     y=y,
+                     begin=begin)
 
     } else if (filetype == 'blu' || filetype == '2p4') {
 
@@ -410,7 +434,12 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df$path = y
       df$station_id = NA
       df$node_id = df$NodeId
-      z <- db_insert(contents=df, filetype='blu', conn=conn, y=y, begin=begin)
+
+      z <- db_insert(contents=df,
+                     filetype='blu',
+                     conn=conn,
+                     y=y,
+                     begin=begin)
     }
   }
 }

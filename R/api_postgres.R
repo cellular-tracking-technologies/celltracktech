@@ -355,7 +355,6 @@ create_duck <- function(conn) {
   # PRIMARY KEY (radio_id, node_id, time, station_id),
   DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS node_health
   (
-    PRIMARY KEY (radio_id, node_id, time),
     time TIMESTAMP with time zone NOT NULL,
     radio_id smallint,
     node_id TEXT,
@@ -390,7 +389,6 @@ create_duck <- function(conn) {
     mean_lat NUMERIC(8,6),
     mean_lng NUMERIC(9,6),
     n_fixes smallint,
-    PRIMARY KEY (gps_at, station_id)
   )")
 }
 
@@ -615,7 +613,8 @@ db_insert <- function(contents, filetype, conn, sensor = NA, y, begin = NULL) {
   if (filetype %in% c("raw", "node_health", "gps", "blu") & nrow(contents) > 0) {
     if (filetype %in% c("raw", "blu")) {
       vars <- paste(DBI::dbListFields(conn,
-                                      filetype)[2:length(DBI::dbListFields(conn, filetype))],
+                                      filetype)[2:length(DBI::dbListFields(conn,
+                                                                           filetype))],
                     sep = "", collapse = ",")
       vals <- paste(seq_along(1:(length(DBI::dbListFields(conn,
                                                           filetype)) - 1)),
