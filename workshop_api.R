@@ -80,7 +80,8 @@ head(blu)
 # get gps records
 gps = DBI::dbGetQuery(con, 'SELECT * FROM gps')
 
-
+# get node_health records
+node_health = DBI::dbGetQuery(con, 'SELECT * FROM node_health')
 
 # list data in nodes table
 node_table = DBI::dbGetQuery(con, 'SELECT * FROM nodes')

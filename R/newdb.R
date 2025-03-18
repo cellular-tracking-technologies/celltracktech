@@ -288,7 +288,6 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df$mean_lat <- ifelse("mean_lat" %in% colnames(df), df$mean_lat, NA)
       df$mean_lng <- ifelse("mean_lng" %in% colnames(df), df$mean_lng, NA)
       df$n_fixes <- ifelse('n_fixes' %in% colnames(df), df$n_fixes, NA)
-      # df$node_id = toupper(df$NodeId)
 
       df2 <- dplyr::anti_join(df, test, by = c('gps_at', 'station_id'))
 
