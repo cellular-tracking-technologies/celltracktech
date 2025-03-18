@@ -1272,6 +1272,12 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath = outpath) {
       errtype <- 7
     }
     if (errtype < 7 & errtype != 2) {
+      if (filetype == 'gps') {
+        contents$hdop = NA
+        contents$vdop = NA
+        contents$pdop = NA
+        contents$on_time = NA
+      }
       # z <- db_insert(contents, filetype, conn, y)
       z <- db_insert(contents = contents, filetype = filetype, conn = conn, y = y, begin = begin)
       print(paste("get files import z", z))
