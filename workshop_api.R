@@ -36,7 +36,7 @@ get_my_data(
   begin=as.Date("2023-08-01"),
   end=as.Date("2023-08-31"),
   # filetypes=c("raw", "node_health")
-  filetypes = c('gps')
+  filetypes = c('raw', 'node_health','gps')
 )
 
 update_db(con, outpath, myproject)

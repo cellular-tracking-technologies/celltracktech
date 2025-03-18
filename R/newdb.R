@@ -288,14 +288,14 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df$mean_lat <- ifelse("mean_lat" %in% colnames(df), df$mean_lat, NA)
       df$mean_lng <- ifelse("mean_lng" %in% colnames(df), df$mean_lng, NA)
       df$n_fixes <- ifelse('n_fixes' %in% colnames(df), df$n_fixes, NA)
-      df$node_id = toupper(df$NodeId)
+      # df$node_id = toupper(df$NodeId)
 
-      df2 <- dplyr::anti_join(df, test, by = c('gps_at', 'node_id', 'station_id'))
+      df2 <- dplyr::anti_join(df, test, by = c('gps_at', 'station_id'))
 
       # remove any duplicates with same gps_at value
       df3 <- df2 %>%
         distinct(gps_at,
-                 node_id,
+                 # node_id,
                  station_id,
                  .keep_all = TRUE)
 
@@ -448,11 +448,10 @@ load_node_data <- function(e, conn, outpath, myproject) {
 find_station_name <- function(outpath, myproject) {
   # find name of sensor station
   dirs = list.dirs(paste0(outpath, myproject, '/'), full.names = FALSE)
-
   station = NULL
-  for (i in length(dirs)) {
-    if (nchar(dirs[i] == 12)) {
-      station = dirs[i]
+  for (i in dirs) {
+    if (nchar(i) == 12) {
+      station = i
       return(station)
     }
   }
