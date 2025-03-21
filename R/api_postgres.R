@@ -361,12 +361,18 @@ create_duck <- function(conn) {
     node_id TEXT,
     node_rssi smallint,
     battery NUMERIC(3,2),
+    battery_temp_c smallint,
     celsius smallint,
     recorded_at TIMESTAMP with time zone,
     firmware TEXT,
     solar_volts NUMERIC(4,2),
     solar_current smallint,
+    charge_temp_c smallint,
     cumulative_solar_current integer,
+    sd_free NUMERIC(3, 2),
+    detect_434 smallint,
+    detect_blu smallint,
+    errors smallint,
     latitude NUMERIC(8,6),
     longitude NUMERIC(9,6),
     station_id TEXT,
@@ -1277,6 +1283,13 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath = outpath) {
         contents$vdop = NA
         contents$pdop = NA
         contents$on_time = NA
+      } else if (filetype == 'node_health') {
+        contents$batt_temp_c = NA
+        contents$charge_temp_c = NA
+        contents$sd_free = NA
+        contents$detect_434 = NA
+        contents$detect_blu = NA
+        contents$errors = NA
       }
       # z <- db_insert(contents, filetype, conn, y)
       z <- db_insert(contents = contents, filetype = filetype, conn = conn, y = y, begin = begin)
