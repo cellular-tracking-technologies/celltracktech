@@ -91,28 +91,6 @@ df_table = DBI::dbGetQuery(con, 'SELECT * FROM data_file')
 
 DBI::dbDisconnect(con)
 
-# Import Node Data --------------------------------------------------------
-source('./R/api_postgres.R')
-source('./R/filecatch.R')
-source('./R/newdb.R')
-source('./R/node.R')
-
-con <- DBI::dbConnect(
-  duckdb::duckdb(),
-  dbdir = "./vignettes/aos2024/meadows.db",
-  read_only = FALSE
-)
-
-import_node_data(con,
-                 outpath = outpath,
-                 myproject="Meadows V2")
-
-DBI::dbDisconnect(con)
-
-# colnames(contents) = c('node_id', 'time', 'radio_id', 'tag_id', 'tag_rssi', 'validated')
-# print(paste('colnames', tolower(colnames(contents))))
-
-
 # Read Node CSV -----------------------------------------------------------
 
 nodes = read_csv('~/Documents/cellular-tracking-technologies/data-analysis/celltracktech/vignettes/mouse_bird/Mouse Bird/nodes/B796B2/sample_1_beep.csv')

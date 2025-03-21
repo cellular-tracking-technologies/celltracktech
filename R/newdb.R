@@ -157,7 +157,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
   y <- paste(file, collapse="/")
   print(paste('y file', y))
 
-  file_list = str_extract_all(y, c('434', 'blu', 'gps', 'health', '2p4'))
+  file_list = str_extract_all(y, c('434_mhz_beep', 'beep_', 'blu_beep_', '2p4_ghz_beep', 'gps', 'health'))
   filetype = file_list %>% unlist()
   print(paste('filetype', filetype))
 
@@ -250,9 +250,16 @@ load_node_data <- function(e, conn, outpath, myproject) {
     # set time zone (always UTC)
     time = "UTC"
 
-    df$Time <- df$time
-    if (is.character(df$time)) {
-      df$Time <- as.POSIXct(df$time,
+    if ('time' %in% colnames(df)) {
+      df$Time <- df$time
+        if (is.character(df$time)) {
+          df$Time <- as.POSIXct(df$time,
+                                format="%Y-%m-%dT%H:%M:%SZ",
+                                tz = time,
+                                optional=TRUE)
+        }
+    } else {
+      df$Time <- as.POSIXct(df$Time,
                             format="%Y-%m-%dT%H:%M:%SZ",
                             tz = time,
                             optional=TRUE)
@@ -275,6 +282,17 @@ load_node_data <- function(e, conn, outpath, myproject) {
                                 "WHERE gps_at >= '", start,
                                 "'AND gps_at <= '", end, "'"))
       df$gps_at = df$Time
+
+      if ('OnTime' %in% colnames(df)) {
+        df <- df %>%
+          rename(latitude = 'Latitude',
+                 longitude = 'Longitude',
+                 altitude = 'Altitude',
+                 hdop = 'Hdop',
+                 vdop = 'Vdop',
+                 pdop = 'Pdop',
+                 on_time = 'OnTime')
+      }
 
       # only gets beeps from node, and not ones picked up by sensor station
 
@@ -359,13 +377,22 @@ load_node_data <- function(e, conn, outpath, myproject) {
                      y=y,
                      begin=begin)
 
-    } else if (filetype == 434) {
+    } else if (filetype == 434 || filetype == 'beep_') {
       filetype = 'raw'
       # df$RadioId <- 4 #https://bitbucket.org/cellulartrackingtechnologies/lifetag-system-report/src/master/beeps.py
       # df$TagId <- toupper(df$id)
       # df$tag_id <- toupper(df$id)
       # df$id <- NULL
-      df$tag_id <- toupper(df$tag_id)
+      if ('tag_id' %in% colnames(df)) {
+        df <- df %>%
+          filter(is.character(tag_id))
+      }
+      df$tag_id
+      df$tag_id <- ifelse('tag_id' %in% colnames(df), toupper(df$tag_id), toupper(df$id))
+      if ('id' %in% colnames(df)) {
+        df <- df %>%
+          mutate(id = NULL)
+      }
       # df$TagRSSI <- as.integer(df$rssi)
       # df <- df[!is.na(df$TagRSSI),]
       df$tag_rssi <- as.integer(df$rssi)
@@ -388,11 +415,11 @@ load_node_data <- function(e, conn, outpath, myproject) {
 
       # get existing data table from database
       test <- dbGetQuery(conn,
-                         paste0("SELECT * FROM", ' ',
-                                filetype, ' ',
+                         paste0("SELECT * FROM raw ",
                                 "WHERE Time > '", start,
                                 "' and Time < '", end, "'"))
-
+      # print(colnames(test))
+      # print(paste('df', df))
       # only gets beeps from node, and not ones picked up by sensor station
       df <- dplyr::anti_join(df,test)
       df$path = y
@@ -407,8 +434,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
                      y=y,
                      begin=begin)
 
-    } else if (filetype == 'blu' || filetype == '2p4') {
-
+    } else if (filetype == 'blu_beep_' || filetype == '2p4_ghz_beep') {
       start <- min(df$Time, na.rm=T)
       end <- max(df$Time, na.rm=T)
       print(paste(start, end))
