@@ -639,7 +639,10 @@ db_insert <- function(contents, filetype, conn, sensor = NA, y, begin = NULL) {
       vars <- paste(DBI::dbListFields(conn, filetype), sep = "", collapse = ",")
       vals <- paste(seq_along(1:length(DBI::dbListFields(conn, filetype))), sep = "", collapse = ", $")
       names(contents) <- tolower(names(contents))
+      print(paste('contents names', names(contents)))
+      print(paste('contents colnames', colnames(contents)))
       contents <- contents[, DBI::dbListFields(conn, filetype)]
+      # contents <- contents %>% dplyr::select(DBI::dbListFields(conn, filetype))
     }
 
     # browser()
@@ -834,6 +837,19 @@ get_data <- function(thisproject,
             print(begin)
             contents <- db_prep(contents, filetype, sensor, y, begin)
             # z <- db_insert(contents, filetype, f, y)
+            if (filetype == 'gps') {
+              contents$hdop = NA
+              contents$vdop = NA
+              contents$pdop = NA
+              contents$on_time = NA
+            } else if (filetype == 'node_health') {
+              contents$battery_temp_c = NA
+              contents$charge_temp_c = NA
+              contents$sd_free = NA
+              contents$detect_434 = NA
+              contents$detect_blu = NA
+              contents$errors = NA
+            }
             z <- db_insert(contents = contents, filetype = filetype, conn = f, y = y)
           }
         }
@@ -1284,13 +1300,14 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath = outpath) {
         contents$pdop = NA
         contents$on_time = NA
       } else if (filetype == 'node_health') {
-        contents$batt_temp_c = NA
+        contents$battery_temp_c = NA
         contents$charge_temp_c = NA
         contents$sd_free = NA
         contents$detect_434 = NA
         contents$detect_blu = NA
         contents$errors = NA
       }
+      attach(contents)
       # z <- db_insert(contents, filetype, conn, y)
       z <- db_insert(contents = contents, filetype = filetype, conn = conn, y = y, begin = begin)
       print(paste("get files import z", z))

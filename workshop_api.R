@@ -34,7 +34,7 @@ get_my_data(
   con,
   myproject=myproject,
   begin=as.Date("2023-08-01"),
-  end=as.Date("2023-08-31"),
+  end=as.Date("2023-08-15"),
   # filetypes=c("raw", "node_health")
   filetypes = c('raw', 'node_health','gps')
 )
@@ -89,6 +89,7 @@ node_table = DBI::dbGetQuery(con, 'SELECT * FROM nodes')
 # list data in data_file table
 df_table = DBI::dbGetQuery(con, 'SELECT * FROM data_file')
 
+DBI::dbDisconnect(con)
 
 # Import Node Data --------------------------------------------------------
 source('./R/api_postgres.R')
