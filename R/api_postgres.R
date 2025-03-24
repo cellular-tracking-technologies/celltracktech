@@ -1300,7 +1300,7 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath = outpath) {
         contents$pdop = NA
         contents$on_time = NA
       } else if (filetype == 'node_health') {
-        contents$battery_temp_c = NA
+        contents$batt_temp_c = NA
         contents$charge_temp_c = NA
         contents$sd_free = NA
         contents$`434_det` = NA
