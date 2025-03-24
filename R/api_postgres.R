@@ -353,7 +353,7 @@ create_duck <- function(conn) {
   )")
 
   # PRIMARY KEY (radio_id, node_id, time, station_id),
-  DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS node_health
+  DBI::dbExecute(conn, 'CREATE TABLE IF NOT EXISTS node_health
   (
     PRIMARY KEY (radio_id, node_id, time),
     time TIMESTAMP with time zone NOT NULL,
@@ -361,7 +361,7 @@ create_duck <- function(conn) {
     node_id TEXT,
     node_rssi smallint,
     battery NUMERIC(3,2),
-    battery_temp_c smallint,
+    batt_temp_c smallint,
     celsius smallint,
     recorded_at TIMESTAMP with time zone,
     firmware TEXT,
@@ -369,9 +369,9 @@ create_duck <- function(conn) {
     solar_current smallint,
     charge_temp_c smallint,
     cumulative_solar_current integer,
-    sd_free NUMERIC(3, 2),
-    detect_434 smallint,
-    detect_blu smallint,
+    sd_free NUMERIC(6, 2),
+    "434_det" smallint,
+    blu_det smallint,
     errors smallint,
     latitude NUMERIC(8,6),
     longitude NUMERIC(9,6),
@@ -381,7 +381,7 @@ create_duck <- function(conn) {
       REFERENCES nodes (node_id)
         ON DELETE NO ACTION
         ON UPDATE NO ACTION
-  )")
+  )')
 
   DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS gps
   (
@@ -389,9 +389,9 @@ create_duck <- function(conn) {
     latitude NUMERIC(8,6),
     longitude NUMERIC(9,6),
     altitude NUMERIC(6,1),
-    hdop NUMERIC(3,2),
-    vdop NUMERIC(3,2),
-    pdop NUMERIC(3,2),
+    hdop NUMERIC(4,2),
+    vdop NUMERIC(4,2),
+    pdop NUMERIC(4,2),
     on_time NUMERIC(6,1),
     quality smallint,
     gps_at TIMESTAMP with time zone,
@@ -846,8 +846,8 @@ get_data <- function(thisproject,
               contents$battery_temp_c = NA
               contents$charge_temp_c = NA
               contents$sd_free = NA
-              contents$detect_434 = NA
-              contents$detect_blu = NA
+              contents$`434_det` = NA
+              contents$blu_det = NA
               contents$errors = NA
             }
             z <- db_insert(contents = contents, filetype = filetype, conn = f, y = y)
@@ -1303,8 +1303,8 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath = outpath) {
         contents$battery_temp_c = NA
         contents$charge_temp_c = NA
         contents$sd_free = NA
-        contents$detect_434 = NA
-        contents$detect_blu = NA
+        contents$`434_det` = NA
+        contents$blu_det = NA
         contents$errors = NA
       }
       attach(contents)

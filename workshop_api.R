@@ -34,7 +34,7 @@ get_my_data(
   con,
   myproject=myproject,
   begin=as.Date("2023-08-01"),
-  end=as.Date("2023-08-15"),
+  end=as.Date("2023-08-03"),
   # filetypes=c("raw", "node_health")
   filetypes = c('raw', 'node_health','gps')
 )
@@ -55,6 +55,7 @@ con <- DBI::dbConnect(
   read_only = FALSE
 )
 
+create_outpath(paste0(outpath, myproject, '/', 'nodes', '/'))
 celltracktech::create_duck(con)
 
 import_node_data(con,
@@ -69,25 +70,29 @@ DBI::dbDisconnect(con)
 DBI::dbListTables(con)
 
 # list last 10 records in raw
-raw = DBI::dbGetQuery(con, "SELECT * FROM raw "); raw
-tail(raw)
+raw = DBI::dbGetQuery(con, "SELECT * FROM raw LIMIT 5")
+head(raw)
 
 # list last 10 records in blu
-blu = DBI::dbGetQuery(con, "SELECT * FROM raw "); blu
-tail(blu)
+blu = DBI::dbGetQuery(con, "SELECT * FROM blu ")
 head(blu)
+blu05 = DBI::dbGetQuery(con, 'SELECT * FROM blu LIMIT 5')
+blu05
 
 # get gps records
 gps = DBI::dbGetQuery(con, 'SELECT * FROM gps')
 
 # get node_health records
-node_health = DBI::dbGetQuery(con, 'SELECT * FROM node_health')
+node_health = DBI::dbGetQuery(con, 'SELECT * FROM node_health LIMIT 5')
 
 # list data in nodes table
 node_table = DBI::dbGetQuery(con, 'SELECT * FROM nodes')
 
 # list data in data_file table
 df_table = DBI::dbGetQuery(con, 'SELECT * FROM data_file')
+
+# change datatable type
+dbGetQuery(conn, 'ALTER TABLE node_health ALTER sd_free TYPE NUMERIC(6,2)')
 
 DBI::dbDisconnect(con)
 
@@ -122,3 +127,27 @@ df$station_id = test$station_id[1]
 distinct_stations = DBI::dbGetQuery(con,
                                     "SELECT DISTINCT station_id FROM raw ")
 distinct_stations
+
+
+
+# Remove corrupted data ---------------------------------------------------
+
+e <- "./examples//Meadows V2/nodes/v3_node/health_0.csv"
+conn = con
+d = con
+
+df_filtered = for (i in 1:nrow(df)) {
+  gsub("[^\u0001-\u007F]+|<U\\+\\w+>","", i)
+}
+
+# Function to remove non-ASCII characters using iconv
+remove_non_ascii <- function(x) {
+  iconv(x, "UTF-8", "ASCII", sub = "")
+}
+
+# Apply function to the text column
+df$tag_id <- sapply(df$tag_id, remove_non_ascii)
+df$time <- sapply(df$time, remove_non_ascii)
+df$rssi <- sapply(df$rssi, remove_non_ascii)
+
+print(df)

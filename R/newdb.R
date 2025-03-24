@@ -157,7 +157,13 @@ load_node_data <- function(e, conn, outpath, myproject) {
   y <- paste(file, collapse="/")
   print(paste('y file', y))
 
-  file_list = str_extract_all(y, c('434_mhz_beep', 'beep_', 'blu_beep_', '2p4_ghz_beep', 'gps', 'health'))
+  file_list = str_extract_all(y, c('434_mhz_beep',
+                                   '434',
+                                   regex('(?<!_)(beep_\\d+)'),
+                                   regex('blu_beep_\\d+'),
+                                   '2p4_ghz_beep',
+                                   'gps',
+                                   'health'))
   filetype = file_list %>% unlist()
   print(paste('filetype', filetype))
 
@@ -196,7 +202,26 @@ load_node_data <- function(e, conn, outpath, myproject) {
       #return(x)
     })
 
-  badlines <- grep("[^ -~]", df$id)
+  # badlines <- grep("[^ -~]", df$id)
+
+  if ('id' %in% colnames(df)) {
+    # remove corrupted data
+    df$id <- sapply(df$id, remove_non_ascii)
+    df$time <- sapply(df$time, remove_non_ascii)
+    df$rssi <- sapply(df$rssi, remove_non_ascii)
+
+    badlines = grep("[^ -~]", df$id)
+  } else if ('tag_id' %in% colnames(df)) {
+    # remove corrupted data
+    df$tag_id <- sapply(df$tag_id, remove_non_ascii)
+    df$time <- sapply(df$time, remove_non_ascii)
+    df$rssi <- sapply(df$rssi, remove_non_ascii)
+
+    badlines = grep("[^ -~]", df$tag_id)
+  } else {
+    badlines = grep("[^ -~]", df$time)
+  }
+
   if (length(badlines) > 0) {
     salvage <- df[badlines,]
     df <- df[-badlines,]
@@ -226,7 +251,9 @@ load_node_data <- function(e, conn, outpath, myproject) {
     }
     #savethis <- regexpr("[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T,\\.][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?.*",salvage$id)
   }
+
   badlines <- grep("[^ -~]", df$time)
+
   if (length(badlines) > 0) {
     df <- df[-badlines,]
   }
@@ -253,10 +280,11 @@ load_node_data <- function(e, conn, outpath, myproject) {
     if ('time' %in% colnames(df)) {
       df$Time <- df$time
         if (is.character(df$time)) {
-          df$Time <- as.POSIXct(df$time,
-                                format="%Y-%m-%dT%H:%M:%SZ",
-                                tz = time,
-                                optional=TRUE)
+          # df$Time <- as.POSIXct(df$time,
+          #                       format="%Y-%m-%dT%H:%M:%SZ",
+          #                       tz = time,
+          #                       optional=TRUE)
+          df$Time <- as_datetime(df$time, tz = time)
         }
     } else {
       df$Time <- as.POSIXct(df$Time,
@@ -377,7 +405,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
                      y=y,
                      begin=begin)
 
-    } else if (filetype == 434 || filetype == 'beep_') {
+    } else if (filetype == 434 || filetype == regex('(?<!_)(beep_\\d+)') || filetype == '434_mhz_beep') {
       filetype = 'raw'
       # df$RadioId <- 4 #https://bitbucket.org/cellulartrackingtechnologies/lifetag-system-report/src/master/beeps.py
       # df$TagId <- toupper(df$id)
@@ -387,7 +415,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
         df <- df %>%
           filter(is.character(tag_id))
       }
-      df$tag_id
+      # df$tag_id
       df$tag_id <- ifelse('tag_id' %in% colnames(df), toupper(df$tag_id), toupper(df$id))
       if ('id' %in% colnames(df)) {
         df <- df %>%
@@ -407,8 +435,6 @@ load_node_data <- function(e, conn, outpath, myproject) {
       # df$TagId[validated] <- substr(df$TagId[validated], 1, 8)
       df$tag_id[validated] <- substr(df$tag_id[validated], 1, 8)
 
-      print(paste('filetype before getting test dataframe', filetype))
-
       start <- min(df$Time, na.rm=T)
       end <- max(df$Time, na.rm=T)
       print(paste(start, end))
@@ -421,20 +447,22 @@ load_node_data <- function(e, conn, outpath, myproject) {
       # print(colnames(test))
       # print(paste('df', df))
       # only gets beeps from node, and not ones picked up by sensor station
-      df <- dplyr::anti_join(df,test)
       df$path = y
       df$station_id = NA
       df$node_id = df$NodeId
       df$time = df$Time
       df$radio_id = 4
 
-      z <- db_insert(contents=df,
+      df2 <- dplyr::anti_join(df,test)
+
+
+      z <- db_insert(contents=df2,
                      filetype=filetype,
                      conn=conn,
                      y=y,
                      begin=begin)
 
-    } else if (filetype == 'blu_beep_' || filetype == '2p4_ghz_beep') {
+    } else if (filetype == regex('blu_beep_\\d+') || filetype == '2p4_ghz_beep') {
       start <- min(df$Time, na.rm=T)
       end <- max(df$Time, na.rm=T)
       print(paste(start, end))
@@ -488,4 +516,9 @@ Correct_Colnames <- function(df) {
   DatePattern = '^[[:digit:]]{4}\\.[[:digit:]]{2}\\.[[:digit:]]{2}[T,\\.][[:digit:]]{2}\\.[[:digit:]]{2}\\.[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?'
   #rowval[which(grepl(DatePattern,rowval))] <- as.character(as.POSIXct(rowval[grepl(DatePattern,rowval)], format="%Y.%m.%d.%H.%M.%S", tz="UTC"))
   return(rowval)
+}
+
+# Function to remove non-ASCII characters using iconv
+remove_non_ascii <- function(x) {
+  iconv(x, "UTF-8", "ASCII", sub = "")
 }
