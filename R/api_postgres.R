@@ -110,7 +110,10 @@ pop_proj <- function(a, conn) {
 
   vars <- paste(DBI::dbListFields(conn, "ctt_project_station"), sep = "", collapse = ",")
   # print(vars)
-  insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "ctt_project_station", " (", vars, ") VALUES ($1, $4, $2, $3, $5)
+  insertnew <- DBI::dbSendQuery(conn,
+                                paste("INSERT INTO ",
+                                      "ctt_project_station",
+                                      " (", vars, ") VALUES ($1, $4, $2, $3, $5)
                                        ON CONFLICT DO NOTHING", sep = ""))
   DBI::dbBind(insertnew, params = mystations)
   DBI::dbClearResult(insertnew)
@@ -235,7 +238,7 @@ create_db <- function(conn) {
     station_id TEXT
   )")
 
-  DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS node_health
+  DBI::dbExecute(conn, 'CREATE TABLE IF NOT EXISTS node_health
   (
     PRIMARY KEY (radio_id, node_id, time, station_id),
     time TIMESTAMP with time zone NOT NULL,
@@ -243,12 +246,18 @@ create_db <- function(conn) {
     node_id TEXT,
     node_rssi smallint,
     battery NUMERIC(3,2),
+    batt_temp_c smallint,
     celsius smallint,
     recorded_at TIMESTAMP with time zone,
     firmware TEXT,
     solar_volts NUMERIC(4,2),
     solar_current smallint,
+    charge_temp_c smallint,
     cumulative_solar_current integer,
+    sd_free NUMERIC(6, 2),
+    "434_det" smallint,
+    blu_det smallint,
+    errors smallint,
     latitude NUMERIC(8,6),
     longitude NUMERIC(9,6),
     station_id TEXT,
@@ -257,7 +266,8 @@ create_db <- function(conn) {
       REFERENCES nodes (node_id)
         ON DELETE NO ACTION
         ON UPDATE NO ACTION
-  )")
+  )')
+
 
   DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS gps
   (
@@ -265,6 +275,10 @@ create_db <- function(conn) {
     latitude NUMERIC(8,6),
     longitude NUMERIC(9,6),
     altitude NUMERIC(6,1),
+    hdop NUMERIC(6,2),
+    vdop NUMERIC(6,2),
+    pdop NUMERIC(6,2),
+    on_time NUMERIC(6,1),
     quality smallint,
     gps_at TIMESTAMP with time zone,
     recorded_at TIMESTAMP with time zone,
@@ -422,7 +436,8 @@ db_prep <- function(contents, filetype, sensor, y, begin) {
   timecols <- c("Time") # , "recorded at", "gps at", "RecordedAt", "recorded.at", "gps.at")
   for (x in timecols) {
     if (x %in% names(contents)) {
-      contents <- dplyr::filter(contents, (!!as.name(x)) < Sys.time() & (!!as.name(x)) > begin)
+      contents <- dplyr::filter(contents,
+                                (!!as.name(x)) < Sys.time() & (!!as.name(x)) > begin)
     }
   }
   contents <- data.frame(contents)
@@ -444,7 +459,8 @@ db_prep <- function(contents, filetype, sensor, y, begin) {
         contents$mean_lng <- NA
         contents$n_fixes <- NA
       }
-      names(contents) <- sapply(names(contents), function(x) gsub("([[:lower:]])([[:upper:]])", "\\1_\\2", x))
+      names(contents) <- sapply(names(contents),
+                                function(x) gsub("([[:lower:]])([[:upper:]])", "\\1_\\2", x))
       # if(fix=TRUE) {
       #  query <- querygen(contents[1,])
       #  res <- DBI::dbGetQuery(conn, paste0("select * from gps where ", query))
@@ -614,8 +630,11 @@ db_insert <- function(contents, filetype, conn, sensor = NA, y, begin = NULL) {
     contents$node_id <- toupper(contents$node_id)
     if (length(which(!is.na(contents$node_id))) > 0) {
       nodeids <- contents$node_id[which(!is.na(contents$node_id))]
-      insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "nodes (node_id)", " VALUES ($1)
-                                           ON CONFLICT DO NOTHING", sep = ""))
+      insertnew <- DBI::dbSendQuery(conn,
+                                    paste("INSERT INTO ",
+                                          "nodes (node_id)",
+                                          " VALUES ($1) ON CONFLICT DO NOTHING",
+                                          sep = ""))
       DBI::dbBind(insertnew, params = list(unique(nodeids)))
       DBI::dbClearResult(insertnew)
     }
@@ -642,22 +661,18 @@ db_insert <- function(contents, filetype, conn, sensor = NA, y, begin = NULL) {
       print(paste('contents names', names(contents)))
       print(paste('contents colnames', colnames(contents)))
       contents <- contents[, DBI::dbListFields(conn, filetype)]
-      # contents <- contents %>% dplyr::select(DBI::dbListFields(conn, filetype))
     }
 
     # browser()
     h <- tryCatch({
         tryCatch({
             DBI::dbWriteTable(conn, filetype, contents, append = TRUE)
-            query <- paste("INSERT INTO ",
-                           "data_file (path)",
-                           " VALUES ($1) ON CONFLICT DO NOTHING",
-                           sep = "")
-            insertnew <- DBI::dbSendQuery(conn, query)
-            # insertnew <- DBI::dbSendQuery(conn,
-            #                               paste("INSERT INTO ",
-            #                                     "data_file (path)",
-            #                                     " VALUES ($1) ON CONFLICT DO NOTHING", sep = ""))  #CTT-FC16AD87C466-node-health.2022-07-15_104908.csv.gz
+            query <-
+            insertnew <- DBI::dbSendQuery(conn,
+                                          paste("INSERT INTO ",
+                                                      "data_file (path)",
+                                                      " VALUES ($1) ON CONFLICT DO NOTHING",
+                                                      sep = ""))
             DBI::dbBind(insertnew, params = list(y))
             DBI::dbClearResult(insertnew)
             return(NULL)
@@ -676,7 +691,7 @@ db_insert <- function(contents, filetype, conn, sensor = NA, y, begin = NULL) {
             insertnew <- DBI::dbSendQuery(conn,
                                           paste("INSERT INTO ", "data_file (path)",
                                           " VALUES ($1) ON CONFLICT DO NOTHING",
-                                          sep = "")) # CTT-FC16AD87C466-node-health.2022-07-15_104908.csv.gz
+                                          sep = ""))
             DBI::dbBind(insertnew, params = list(y))
             DBI::dbClearResult(insertnew)
           })

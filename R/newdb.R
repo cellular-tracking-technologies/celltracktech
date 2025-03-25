@@ -115,6 +115,7 @@ import_node_data <- function(d, outpath, myproject=NULL) {
   if(!is.null(myproject)) {
     myout <- file.path(outpath,myproject)
   }
+  if (file.exists('*.duckdb'))
   # myfiles <- list.files(file.path(myout, "nodes"), pattern="beep.*csv",recursive = TRUE, full.names = TRUE)
   myfiles <- list.files(file.path(myout, "nodes"),
                         pattern=".*csv",

@@ -60,6 +60,7 @@ create_outpath(paste0(outpath, myproject, '/', 'nodes', '/'))
 # add individual node folders to outpath created above!
 
 celltracktech::create_duck(con)
+celltracktech::pop_proj(myproject, con)
 
 import_node_data(con,
                  outpath = outpath,
@@ -79,8 +80,12 @@ head(raw)
 # list last 10 records in blu
 blu = DBI::dbGetQuery(con, "SELECT * FROM blu ")
 head(blu)
+tail(blu)
 blu05 = DBI::dbGetQuery(con, 'SELECT * FROM blu LIMIT 5')
 blu05
+
+# using duckplyr
+tail(blu)
 
 # get gps records
 gps = DBI::dbGetQuery(con, 'SELECT * FROM gps')
