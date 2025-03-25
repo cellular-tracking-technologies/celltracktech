@@ -843,7 +843,7 @@ get_data <- function(thisproject,
               contents$pdop = NA
               contents$on_time = NA
             } else if (filetype == 'node_health') {
-              contents$battery_temp_c = NA
+              contents$batt_temp_c = NA
               contents$charge_temp_c = NA
               contents$sd_free = NA
               contents$`434_det` = NA
@@ -1139,15 +1139,8 @@ get_my_data <- function(my_token,
                         begin = NULL,
                         end = NULL,
                         filetypes = NULL) {
+
   projects <- project_list(my_token, myproject)
-  # # # create directory if it does not exist
-  # if (file.exists(outpath)) {
-  #   print(paste("Folder exists, no need to create a new directory."))
-  # } else {
-  #   # create a new sub directory inside the main path
-  #   print(paste("Folder", outpath, "does not exist, creating it now."))
-  #   dir.create(outpath)
-  # }
 
   # Checking if database is postgres, duckdb, or remote
   if (!is.null(db_name) && length(grep("postgresql", format(db_name))) > 0) {
@@ -1267,7 +1260,6 @@ get_file_info <- function(e) {
 
 get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath = outpath) {
   # e <- file.path(outpath, myproject, e)
-  print(paste("attempting file import", e))
   out <- get_file_info(e)
   filetype <- out$filetype
 
@@ -1309,8 +1301,11 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath = outpath) {
       }
       attach(contents)
       # z <- db_insert(contents, filetype, conn, y)
-      z <- db_insert(contents = contents, filetype = filetype, conn = conn, y = y, begin = begin)
-      print(paste("get files import z", z))
+      z <- db_insert(contents = contents,
+                     filetype = filetype,
+                     conn = conn,
+                     y = y,
+                     begin = begin)
     } else if (errtype == 7) {
       dir.create(file.path(outpath, "ignore_files"), showWarnings = FALSE)
       file.copy(e, file.path(outpath, "ignore_files"))

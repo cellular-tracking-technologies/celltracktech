@@ -159,8 +159,8 @@ load_node_data <- function(e, conn, outpath, myproject) {
 
   file_list = str_extract_all(y, c('434_mhz_beep',
                                    '434',
-                                   regex('(?<!_)(beep_\\d+)'),
-                                   regex('blu_beep_\\d+'),
+                                   regex('(?<!_)(beep)'),
+                                   regex('blu(?=_beep_\\d+)'),
                                    '2p4_ghz_beep',
                                    'gps',
                                    'health'))
@@ -405,7 +405,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
                      y=y,
                      begin=begin)
 
-    } else if (filetype == 434 || filetype == regex('(?<!_)(beep_\\d+)') || filetype == '434_mhz_beep') {
+    } else if (filetype == 434 || filetype == 'beep' || filetype == '434_mhz_beep') {
       filetype = 'raw'
       # df$RadioId <- 4 #https://bitbucket.org/cellulartrackingtechnologies/lifetag-system-report/src/master/beeps.py
       # df$TagId <- toupper(df$id)
@@ -462,7 +462,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
                      y=y,
                      begin=begin)
 
-    } else if (filetype == regex('blu_beep_\\d+') || filetype == '2p4_ghz_beep') {
+    } else if (filetype == 'blu' || filetype == '2p4_ghz_beep') {
       start <- min(df$Time, na.rm=T)
       end <- max(df$Time, na.rm=T)
       print(paste(start, end))

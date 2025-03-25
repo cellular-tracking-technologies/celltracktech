@@ -56,6 +56,9 @@ con <- DBI::dbConnect(
 )
 
 create_outpath(paste0(outpath, myproject, '/', 'nodes', '/'))
+
+# add individual node folders to outpath created above!
+
 celltracktech::create_duck(con)
 
 import_node_data(con,
@@ -84,6 +87,7 @@ gps = DBI::dbGetQuery(con, 'SELECT * FROM gps')
 
 # get node_health records
 node_health = DBI::dbGetQuery(con, 'SELECT * FROM node_health LIMIT 5')
+# node_health = DBI::dbGetQuery(con, 'SELECT * FROM node_health LIMIT 5')
 
 # list data in nodes table
 node_table = DBI::dbGetQuery(con, 'SELECT * FROM nodes')
