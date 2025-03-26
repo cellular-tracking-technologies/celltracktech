@@ -26,6 +26,11 @@ conn <- DBI::dbConnect(
   read_only = FALSE
 )
 
+conn <- DBI::dbConnect(
+  RPostgres::Postgres(),
+  dbname='meadows'
+)
+
 # List Projects -----------------------------------------------------------
 
 project_list(my_token)
@@ -43,13 +48,7 @@ get_my_data(
 )
 
 update_db(conn, outpath, myproject)
-DBI::dbDisconnect(con)
-
-time_elapse <- Sys.time() - start
-print(time_elapse)
-
-#raw <- tbl(con, "node_health") |> collect()
-
+DBI::dbDisconnect(conn)
 
 # Import Node Data --------------------------------------------------------
 conn <- DBI::dbConnect(
@@ -62,6 +61,7 @@ create_outpath(paste0(outpath, myproject, '/', 'nodes', '/'))
 
 # add individual node folders to outpath created above!
 
+## need to create database and populate project in import_node_data!!!
 celltracktech::create_duck(conn)
 celltracktech::pop_proj(myproject, conn)
 
@@ -78,39 +78,39 @@ DBI::dbDisconnect(conn)
 # Database Functions ------------------------------------------------------
 
 # list tables in database
-DBI::dbListTables(con)
+DBI::dbListTables(conn)
 
 # list last 10 records in raw
-raw = DBI::dbGetQuery(con, "SELECT * FROM raw LIMIT 5")
+raw = DBI::dbGetQuery(conn, "SELECT * FROM raw LIMIT 5")
 head(raw)
 
 # list last 10 records in blu
-blu = DBI::dbGetQuery(con, "SELECT * FROM blu ")
+blu = DBI::dbGetQuery(conn, "SELECT * FROM blu ")
 head(blu)
 tail(blu)
-blu05 = DBI::dbGetQuery(con, 'SELECT * FROM blu LIMIT 5')
+blu05 = DBI::dbGetQuery(conn, 'SELECT * FROM blu LIMIT 5')
 blu05
 
 # using duckplyr
 tail(blu)
 
 # get gps records
-gps = DBI::dbGetQuery(con, 'SELECT * FROM gps')
+gps = DBI::dbGetQuery(conn, 'SELECT * FROM gps')
 
 # get node_health records
-node_health = DBI::dbGetQuery(con, 'SELECT * FROM node_health LIMIT 5')
+node_health = DBI::dbGetQuery(conn, 'SELECT * FROM node_health LIMIT 5')
 # node_health = DBI::dbGetQuery(con, 'SELECT * FROM node_health LIMIT 5')
 
 # list data in nodes table
-node_table = DBI::dbGetQuery(con, 'SELECT * FROM nodes')
+node_table = DBI::dbGetQuery(conn, 'SELECT * FROM nodes')
 
 # list data in data_file table
-df_table = DBI::dbGetQuery(con, 'SELECT * FROM data_file')
+df_table = DBI::dbGetQuery(conn, 'SELECT * FROM data_file')
 
 # change datatable type
 dbGetQuery(conn, 'ALTER TABLE node_health ALTER sd_free TYPE NUMERIC(6,2)')
 
-DBI::dbDisconnect(con)
+DBI::dbDisconnect(conn)
 
 # Read Node CSV -----------------------------------------------------------
 
