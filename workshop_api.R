@@ -34,7 +34,7 @@ project_list(my_token)
 get_my_data(
   my_token,
   outpath,
-  con,
+  conn,
   myproject=myproject,
   begin=as.Date("2023-08-01"),
   end=as.Date("2023-08-03"),
@@ -42,7 +42,7 @@ get_my_data(
   filetypes = c('raw', 'node_health','gps')
 )
 
-update_db(con, outpath, myproject)
+update_db(conn, outpath, myproject)
 DBI::dbDisconnect(con)
 
 time_elapse <- Sys.time() - start
@@ -62,8 +62,8 @@ create_outpath(paste0(outpath, myproject, '/', 'nodes', '/'))
 
 # add individual node folders to outpath created above!
 
-celltracktech::create_duck(con)
-celltracktech::pop_proj(myproject, con)
+celltracktech::create_duck(conn)
+celltracktech::pop_proj(myproject, conn)
 
 e = './examples/Meadows V2/nodes/v3_node/blu_beep_9.csv'
 conn = con
