@@ -82,10 +82,13 @@ DBI::dbListTables(conn)
 
 # list last 10 records in raw
 raw = DBI::dbGetQuery(conn, "SELECT * FROM raw LIMIT 5")
+raw = DBI::dbGetQuery(conn, 'SELECT * FROM raw ORDER BY time LIMIT 5')
 head(raw)
 
 # list last 10 records in blu
 blu = DBI::dbGetQuery(conn, "SELECT * FROM blu ")
+blu = DBI::dbGetQuery(conn, 'SELECT * FROM blu ORDER BY time LIMIT 5')
+
 head(blu)
 tail(blu)
 blu05 = DBI::dbGetQuery(conn, 'SELECT * FROM blu LIMIT 5')
@@ -98,8 +101,9 @@ tail(blu)
 gps = DBI::dbGetQuery(conn, 'SELECT * FROM gps')
 
 # get node_health records
-node_health = DBI::dbGetQuery(conn, 'SELECT * FROM node_health LIMIT 5')
+node_health = DBI::dbGetQuery(conn, 'SELECT * FROM node_health ORDER BY blu_det DESC LIMIT 5')
 # node_health = DBI::dbGetQuery(con, 'SELECT * FROM node_health LIMIT 5')
+nh_v3 = DBI::dbGetQuery(conn, 'SELECT * FROM node_health WHERE blu_det>0')
 
 # list data in nodes table
 node_table = DBI::dbGetQuery(conn, 'SELECT * FROM nodes')
