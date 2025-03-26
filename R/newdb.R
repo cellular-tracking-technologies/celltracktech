@@ -115,7 +115,6 @@ import_node_data <- function(d, outpath, myproject=NULL) {
   if(!is.null(myproject)) {
     myout <- file.path(outpath,myproject)
   }
-  if (file.exists('*.duckdb'))
   # myfiles <- list.files(file.path(myout, "nodes"), pattern="beep.*csv",recursive = TRUE, full.names = TRUE)
   myfiles <- list.files(file.path(myout, "nodes"),
                         pattern=".*csv",
@@ -206,23 +205,14 @@ load_node_data <- function(e, conn, outpath, myproject) {
   # badlines <- grep("[^ -~]", df$id)
 
   if ('id' %in% colnames(df)) {
-    # remove corrupted data
-    df$id <- sapply(df$id, remove_non_ascii)
-    df$time <- sapply(df$time, remove_non_ascii)
-    df$rssi <- sapply(df$rssi, remove_non_ascii)
-
     badlines = grep("[^ -~]", df$id)
   } else if ('tag_id' %in% colnames(df)) {
-    # remove corrupted data
-    df$tag_id <- sapply(df$tag_id, remove_non_ascii)
-    df$time <- sapply(df$time, remove_non_ascii)
-    df$rssi <- sapply(df$rssi, remove_non_ascii)
-
     badlines = grep("[^ -~]", df$tag_id)
   } else {
     badlines = grep("[^ -~]", df$time)
   }
 
+  # get warning message: unknown or uninitialised column: id
   if (length(badlines) > 0) {
     salvage <- df[badlines,]
     df <- df[-badlines,]
@@ -266,8 +256,18 @@ load_node_data <- function(e, conn, outpath, myproject) {
   }
     #if(!all((c("time", "id", "rssi") %in% colnames(df)))) {df <- NULL}
 
+  # filter out timestamps that are not timestamps
+  df2 = df %>%
+    filter(is.Date(time) == TRUE)
 
+  # remove corrupted data
+  df_bad = df %>%
+    filter(if_any(everything(), ~ str_detect(., "[^\\x00-\\x7F]") == TRUE))
 
+  df2 = df %>%
+    filter(if_any(everything(), ~ str_detect(., "[^\\x00-\\x7F]") == FALSE))
+
+  df_anti_join = anti_join(df, df_bad)
 
   # dataframe is not null, modify df
   if(!is.null(df)) {
@@ -464,14 +464,29 @@ load_node_data <- function(e, conn, outpath, myproject) {
                      begin=begin)
 
     } else if (filetype == 'blu' || filetype == '2p4_ghz_beep') {
-      start <- min(df$Time, na.rm=T)
-      end <- max(df$Time, na.rm=T)
-      print(paste(start, end))
+      # remove corrupted data
+      # df2 = as.data.frame(sapply(df, remove_non_ascii))
+      # df2$payload = sapply(df2$payload, remove_non_ascii)
+      #
+      # # convert variables back to original type
+      # df2$sync <- as.integer(df2$sync)
+      # df2$family <- as.integer(df2$family)
+      # df2$payload_version <- as.integer(df2$payload_version)
+      # df2$payload <- as.integer(df2$payload)
+      # df2$rssi <- as.integer(df2$rssi)
+      # df2$sync <- as.integer(df2$sync)
 
-      df$tag_rssi <- as.integer(df$rssi)
-      df$time <- df$Time
+      df$tag_rssi <- df$rssi
+      # df2$time <- df2$Time
+      df$time <- as.POSIXct(df$time,
+                            format="%Y-%m-%dT%H:%M:%SZ",
+                            tz = 'UTC',
+                            optional=TRUE)
       df$radio_id <- 4
 
+      start <- min(df2$time, na.rm=T)
+      end <- max(df2$time, na.rm=T)
+      print(paste(start, end))
 
       # get existing data table from database
       test <- dbGetQuery(conn,
@@ -480,17 +495,17 @@ load_node_data <- function(e, conn, outpath, myproject) {
                                 "'AND time < '", end, "'"))
 
       # only get records that do not exist in database
-      df <- dplyr::anti_join(df,test)
+      df3 <- dplyr::anti_join(df2,test)
 
-      df$usb_port = NA
-      df$blu_radio_id = NA
-      df$product = NA
-      df$revision = NA
-      df$path = y
-      df$station_id = NA
-      df$node_id = df$NodeId
+      df3$usb_port = NA
+      df3$blu_radio_id = NA
+      df3$product = NA
+      df3$revision = NA
+      df3$path = y
+      df3$station_id = NA
+      df3$node_id = df3$NodeId
 
-      z <- db_insert(contents=df,
+      z <- db_insert(contents=df3,
                      filetype='blu',
                      conn=conn,
                      y=y,
@@ -521,5 +536,22 @@ Correct_Colnames <- function(df) {
 
 # Function to remove non-ASCII characters using iconv
 remove_non_ascii <- function(x) {
-  iconv(x, "UTF-8", "ASCII", sub = "")
+  if (str_detect(x, "[^\\x00-\\x7F]") == TRUE) {
+
+  }
+  # original_type = class(x)[1]
+  # iconv(x, "UTF-8", "ASCII", sub = "")
+
+  # if (original_type == 'numeric') {
+  #   x = as.integer(x)
+  # } else if (original_type == 'character') {
+  #   x = as.character(x)
+  # } else if (original_type == 'POSIXct') {
+  #   x = as.POSIXct(x,
+  #                  format="%Y-%m-%dT%H:%M:%SZ",
+  #                  tz = 'UTC',
+  #                  optional=TRUE)
+  # }
+  # print(paste('new type', class(x)[1]))
+  # return(x)
 }

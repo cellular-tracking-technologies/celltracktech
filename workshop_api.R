@@ -4,6 +4,7 @@ library(devtools) # needs RTools
 library(readr)
 library(dotenv)
 
+devtools::load_all()
 ### Install DuckDB from R Universe ###
 # install.packages("duckdb", repos = c("https://duckdb.r-universe.dev", "https://cloud.r-project.org"))
 # install.packages("https://github.com/duckdb/duckdb/releases/download/master-builds/duckdb_r_src.tar.gz", repos = NULL)
@@ -49,7 +50,7 @@ print(time_elapse)
 
 
 # Import Node Data --------------------------------------------------------
-con <- DBI::dbConnect(
+conn <- DBI::dbConnect(
   duckdb::duckdb(),
   dbdir = "./examples/Meadows V2/meadows.duckdb",
   read_only = FALSE
@@ -61,6 +62,10 @@ create_outpath(paste0(outpath, myproject, '/', 'nodes', '/'))
 
 celltracktech::create_duck(con)
 celltracktech::pop_proj(myproject, con)
+
+e = './examples/Meadows V2/nodes/v3_node/blu_beep_5.csv'
+conn = con
+
 
 import_node_data(con,
                  outpath = outpath,

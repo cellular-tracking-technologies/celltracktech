@@ -655,8 +655,12 @@ db_insert <- function(contents, filetype, conn, sensor = NA, y, begin = NULL) {
       contents <- contents[, DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]] # need path and station_id columns
       contents
     } else {
-      vars <- paste(DBI::dbListFields(conn, filetype), sep = "", collapse = ",")
-      vals <- paste(seq_along(1:length(DBI::dbListFields(conn, filetype))), sep = "", collapse = ", $")
+      vars <- paste(DBI::dbListFields(conn, filetype),
+                    sep = "",
+                    collapse = ",")
+      vals <- paste(seq_along(1:length(DBI::dbListFields(conn, filetype))),
+                    sep = "",
+                    collapse = ", $")
       names(contents) <- tolower(names(contents))
       print(paste('contents names', names(contents)))
       print(paste('contents colnames', colnames(contents)))
@@ -667,7 +671,6 @@ db_insert <- function(contents, filetype, conn, sensor = NA, y, begin = NULL) {
     h <- tryCatch({
         tryCatch({
             DBI::dbWriteTable(conn, filetype, contents, append = TRUE)
-            query <-
             insertnew <- DBI::dbSendQuery(conn,
                                           paste("INSERT INTO ",
                                                       "data_file (path)",
