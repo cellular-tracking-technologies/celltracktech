@@ -202,6 +202,15 @@ load_node_data <- function(e, conn, outpath, myproject) {
       #return(x)
     })
 
+  # remove corrupted data
+  df_bad = df %>%
+    filter(if_any(everything(), ~ str_detect(., "[^\\x00-\\x7F]+") == TRUE))
+
+  # df2 = df %>%
+  #   filter(if_any(everything(), ~ str_detect(., "[^\\x00-\\x7F]") == FALSE))
+
+  df_anti_join = anti_join(df, df_bad)
+  df = df_anti_join
   # badlines <- grep("[^ -~]", df$id)
 
   if ('id' %in% colnames(df)) {
@@ -243,6 +252,8 @@ load_node_data <- function(e, conn, outpath, myproject) {
     #savethis <- regexpr("[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T,\\.][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?.*",salvage$id)
   }
 
+
+
   badlines <- grep("[^ -~]", df$time)
 
   if (length(badlines) > 0) {
@@ -257,17 +268,22 @@ load_node_data <- function(e, conn, outpath, myproject) {
     #if(!all((c("time", "id", "rssi") %in% colnames(df)))) {df <- NULL}
 
   # filter out timestamps that are not timestamps
-  df2 = df %>%
-    filter(is.Date(time) == TRUE)
-
-  # remove corrupted data
-  df_bad = df %>%
-    filter(if_any(everything(), ~ str_detect(., "[^\\x00-\\x7F]") == TRUE))
-
-  df2 = df %>%
-    filter(if_any(everything(), ~ str_detect(., "[^\\x00-\\x7F]") == FALSE))
-
-  df_anti_join = anti_join(df, df_bad)
+  if ('time' %in% colnames(df)) {
+    df = df %>%
+      mutate(Time = as.POSIXct(time,
+                               format="%Y-%m-%dT%H:%M:%SZ",
+                               tz = 'UTC',
+                               optional=TRUE)) %>%
+      filter(is.na(Time) == FALSE)
+  } else {
+    df = df %>%
+      mutate(Time = as.POSIXct(Time,
+                               format="%Y-%m-%dT%H:%M:%SZ",
+                               tz = 'UTC',
+                               optional=TRUE)) %>%
+      filter(is.na(Time) == FALSE)
+  }
+      # is.Date(as.POSIXct(Time)) == TRUE)
 
   # dataframe is not null, modify df
   if(!is.null(df)) {
@@ -278,21 +294,21 @@ load_node_data <- function(e, conn, outpath, myproject) {
     # set time zone (always UTC)
     time = "UTC"
 
-    if ('time' %in% colnames(df)) {
-      df$Time <- df$time
-        if (is.character(df$time)) {
-          # df$Time <- as.POSIXct(df$time,
-          #                       format="%Y-%m-%dT%H:%M:%SZ",
-          #                       tz = time,
-          #                       optional=TRUE)
-          df$Time <- as_datetime(df$time, tz = time)
-        }
-    } else {
-      df$Time <- as.POSIXct(df$Time,
-                            format="%Y-%m-%dT%H:%M:%SZ",
-                            tz = time,
-                            optional=TRUE)
-    }
+    # if ('time' %in% colnames(df)) {
+    #   df$Time <- df$time
+    #     if (is.character(df$time)) {
+    #       df$Time <- as.POSIXct(df$time[1],
+    #                             format="%Y-%m-%dT%H:%M:%SZ",
+    #                             tz = time,
+    #                             optional=TRUE)
+    #       df$Time <- as_datetime(df$time, tz = time)
+    #     }
+    # } else {
+    #   df$Time <- as.POSIXct(df$Time,
+    #                         format="%Y-%m-%dT%H:%M:%SZ",
+    #                         tz = time,
+    #                         optional=TRUE)
+    # }
 
     df <- df[!is.na(df$Time),]
     df$time <- NULL
@@ -464,28 +480,15 @@ load_node_data <- function(e, conn, outpath, myproject) {
                      begin=begin)
 
     } else if (filetype == 'blu' || filetype == '2p4_ghz_beep') {
-      # remove corrupted data
-      # df2 = as.data.frame(sapply(df, remove_non_ascii))
-      # df2$payload = sapply(df2$payload, remove_non_ascii)
-      #
-      # # convert variables back to original type
-      # df2$sync <- as.integer(df2$sync)
-      # df2$family <- as.integer(df2$family)
-      # df2$payload_version <- as.integer(df2$payload_version)
-      # df2$payload <- as.integer(df2$payload)
-      # df2$rssi <- as.integer(df2$rssi)
-      # df2$sync <- as.integer(df2$sync)
 
-      df$tag_rssi <- df$rssi
-      # df2$time <- df2$Time
-      df$time <- as.POSIXct(df$time,
-                            format="%Y-%m-%dT%H:%M:%SZ",
-                            tz = 'UTC',
-                            optional=TRUE)
+      df$tag_rssi <- as.integer(df$rssi)
+      df <- df %>%
+        filter(is.na(tag_rssi) == FALSE)
+      df$time <- df$Time
       df$radio_id <- 4
 
-      start <- min(df2$time, na.rm=T)
-      end <- max(df2$time, na.rm=T)
+      start <- min(df$time, na.rm=T)
+      end <- max(df$time, na.rm=T)
       print(paste(start, end))
 
       # get existing data table from database
@@ -495,7 +498,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
                                 "'AND time < '", end, "'"))
 
       # only get records that do not exist in database
-      df3 <- dplyr::anti_join(df2,test)
+      df3 <- dplyr::anti_join(df,test)
 
       df3$usb_port = NA
       df3$blu_radio_id = NA

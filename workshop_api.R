@@ -18,7 +18,9 @@ myproject <- "Meadows V2" #this is your project name on your CTT account
 create_outpath(paste0('./examples/', myproject, '/'))
 outpath <-'./examples/'
 
-con <- DBI::dbConnect(
+e = './examples/Meadows V2/nodes/v3_node/blu_beep_5.csv'
+
+conn <- DBI::dbConnect(
   duckdb::duckdb(),
   dbdir = "./examples/Meadows V2/meadows.duckdb",
   read_only = FALSE
@@ -63,15 +65,15 @@ create_outpath(paste0(outpath, myproject, '/', 'nodes', '/'))
 celltracktech::create_duck(con)
 celltracktech::pop_proj(myproject, con)
 
-e = './examples/Meadows V2/nodes/v3_node/blu_beep_5.csv'
+e = './examples/Meadows V2/nodes/v3_node/blu_beep_9.csv'
 conn = con
 
 
-import_node_data(con,
+import_node_data(conn,
                  outpath = outpath,
                  myproject="Meadows V2")
 
-DBI::dbDisconnect(con)
+DBI::dbDisconnect(conn)
 
 # Database Functions ------------------------------------------------------
 
