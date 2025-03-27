@@ -189,8 +189,17 @@ load_node_data <- function(e, conn, outpath, myproject) {
   # get data from file
   df <- tryCatch({
     if (file.size(e) > 0) {
-        read_csv(e,na=c("NA", ""), skip_empty_rows = TRUE)
-    }}, error = function(err) {
+        read_csv(e, na = c("NA", ""), skip_empty_rows = TRUE)
+    } else {
+      err <- 'No Data in File'
+      contents <- NULL
+
+      z <- list(err, contents, y)
+
+      return(z)
+    }
+
+    }, error = function(err) {
         # error handler picks up where error was generated
         print(paste("ignoring file", err, "- no data"))
         return(NULL)
