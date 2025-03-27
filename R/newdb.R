@@ -215,9 +215,6 @@ load_node_data <- function(e, conn, outpath, myproject) {
   df_bad = df %>%
     filter(if_any(everything(), ~ str_detect(., "[^\\x00-\\x7F]+") == TRUE))
 
-  # df2 = df %>%
-  #   filter(if_any(everything(), ~ str_detect(., "[^\\x00-\\x7F]") == FALSE))
-
   df_anti_join = anti_join(df, df_bad)
   df = df_anti_join
   # badlines <- grep("[^ -~]", df$id)
@@ -495,6 +492,9 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df$time <- df$Time
       df$radio_id <- 4
 
+      # revision (type of blu tag) is from sensor station, payload_version is from node
+      df$revision = ifelse('revision' %in% colnames(df), df$revision, df$payload_version)
+
       start <- min(df$time, na.rm=T)
       end <- max(df$time, na.rm=T)
       print(paste(start, end))
@@ -511,7 +511,6 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df3$usb_port = NA
       df3$blu_radio_id = NA
       df3$product = NA
-      df3$revision = NA
       df3$path = y
       df3$station_id = find_station_name(outpath, myproject)
       df3$node_id = df3$NodeId

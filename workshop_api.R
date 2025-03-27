@@ -102,12 +102,13 @@ blu05
 tail(blu)
 
 # get gps records
-gps = DBI::dbGetQuery(conn, 'SELECT * FROM gps')
+gps = DBI::dbGetQuery(conn, 'SELECT * FROM gps LIMIT 5')
 gps
 
 # get node_health records
-node_health = DBI::dbGetQuery(conn, 'SELECT * FROM node_health ORDER BY blu_det DESC LIMIT 5')
-# node_health = DBI::dbGetQuery(con, 'SELECT * FROM node_health LIMIT 5')
+node_health = DBI::dbGetQuery(conn,
+                              'SELECT * FROM node_health ORDER BY blu_det DESC LIMIT 5')
+node_health = DBI::dbGetQuery(conn, 'SELECT * FROM node_health LIMIT 5')
 nh_v3 = DBI::dbGetQuery(conn, 'SELECT * FROM node_health WHERE blu_det>0')
 
 # list data in nodes table
@@ -121,6 +122,12 @@ dbGetQuery(conn, 'ALTER TABLE node_health ALTER sd_free TYPE NUMERIC(6,2)')
 
 DBI::dbDisconnect(conn)
 
+
+# Going from previous version to latest version of package ----------------
+
+# if you are updating the celltracktech package to the latest version, gps and node_health will have additional columns in their respective tables. Newly uploaded files will populate those columns, while previously uploaded files will have NA in them. If you want to populate those old files, you will need to delete your database and repupload everything, or delete the contents in the 'data_file' table:
+
+dbGetQuery(conn, 'DELETE FROM data_file')
 # Read Node CSV -----------------------------------------------------------
 
 nodes = read_csv('~/Documents/cellular-tracking-technologies/data-analysis/celltracktech/vignettes/mouse_bird/Mouse Bird/nodes/B796B2/sample_1_beep.csv')

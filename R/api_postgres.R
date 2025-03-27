@@ -397,6 +397,14 @@ create_duck <- function(conn) {
         ON UPDATE NO ACTION
   )')
 
+  DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS batt_temp_c smallint')
+  DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS charge_temp_c smallint')
+  DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS charge_temp_c smallint')
+  DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS sd_free NUMERIC(6, 2)')
+  DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS "434_det" smallint')
+  DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS blu_det smallint')
+  DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS errors smallint')
+
   DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS gps
   (
     path  TEXT NOT NULL,
@@ -416,6 +424,12 @@ create_duck <- function(conn) {
     n_fixes smallint,
     PRIMARY KEY (gps_at, station_id)
   )")
+
+  DBI::dbExecute(conn, 'ALTER TABLE gps ADD COLUMN IF NOT EXISTS hdop NUMERIC (4,2)')
+  DBI::dbExecute(conn, 'ALTER TABLE gps ADD COLUMN IF NOT EXISTS vdop NUMERIC (4,2)')
+  DBI::dbExecute(conn, 'ALTER TABLE gps ADD COLUMN IF NOT EXISTS pdop NUMERIC (4,2)')
+  DBI::dbExecute(conn, 'ALTER TABLE gps ADD COLUMN IF NOT EXISTS on_time NUMERIC (6,1)')
+
 }
 
 querygen <- function(mycont) {
