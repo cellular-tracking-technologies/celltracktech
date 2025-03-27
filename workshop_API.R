@@ -1,103 +1,123 @@
 library(celltracktech)
 library(duckdb) # click no on pop up window
 library(devtools) # needs RTools
-library(tidyverse)
+library(readr)
 library(dotenv)
 
-load_dot_env(file='.env')
-Sys.getenv('MOUSE_BIRD')
-Sys.getenv('WORKSHOP')
-Sys.getenv('RODENT_TELEMETRY')
-
-# source('./R/api_postgres.R')
-# source('./R/filecatch.R')
-# source('./R/newdb.R')
-# source('./R/node.R')
-
-start <- Sys.time()
-
+devtools::load_all()
 ### Install DuckDB from R Universe ###
 # install.packages("duckdb", repos = c("https://duckdb.r-universe.dev", "https://cloud.r-project.org"))
 # install.packages("https://github.com/duckdb/duckdb/releases/download/master-builds/duckdb_r_src.tar.gz", repos = NULL)
 
-####SETTINGS#####
-myproject <- "Rodent Telemetry Project " #this is your project name on your CTT account
-outpath <- "./vignettes/rodent_telemetry/" #where your downloaded files are to go
-my_token <- Sys.getenv('RODENT_TELEMETRY') # token stored in .env file
 
+# Settings ----------------------------------------------------------------
+load_dot_env(file='.env')
 
-# List Projects -----------------------------------------------------------
-#
-# project_list(my_token)
+my_token <- Sys.getenv('API_KEY')
+myproject <- "Meadows V2" #this is your project name on your CTT account
+create_outpath(paste0('./examples/', myproject, '/'))
+outpath <-'./examples/'
 
-con <- DBI::dbConnect(
+# create duckdb database
+conn <- DBI::dbConnect(
   duckdb::duckdb(),
-  dbdir = "./vignettes/rodent_telemetry/rodent_telemetry.db",
+  dbdir = "./examples/Meadows V2/meadows.duckdb",
   read_only = FALSE
 )
+
+# create Postgres database
+conn <- DBI::dbConnect(
+  RPostgres::Postgres(),
+  dbname='meadows'
+)
+
+# List Projects -----------------------------------------------------------
+
+project_list(my_token)
 
 ################
 get_my_data(
   my_token,
   outpath,
-  con,
+  conn,
   myproject=myproject,
-  begin=as.Date("2024-08-19"),
-  end=as.Date("2024-08-20"),
-  filetypes=c("raw", "node_health", 'blu')
+  begin=as.Date("2023-08-01"),
+  end=as.Date("2023-08-03"),
+  # filetypes=c("raw", "node_health")
+  filetypes = c('raw', 'node_health','gps')
 )
 
-update_db(con, outpath, myproject)
-DBI::dbDisconnect(con)
+update_db(conn, outpath, myproject)
+DBI::dbDisconnect(conn)
 
-time_elapse <- Sys.time() - start
-print(time_elapse)
+# Import Node Data --------------------------------------------------------
+myproject <- "Meadows V2" #this is your project name on your CTT account
+create_outpath(paste0('./examples/', myproject, '/'))
+outpath <-'./examples/'
 
-#raw <- tbl(con, "node_health") |> collect()
+# add nodes folder to project folder
+create_outpath(paste0(outpath, myproject, '/', 'nodes', '/'))
+
+# add individual nodes to nodes folder (do this yourself)
+
+# create database connection
+conn <- DBI::dbConnect(
+  duckdb::duckdb(),
+  dbdir = "./examples/Meadows V2/meadows.duckdb",
+  read_only = FALSE
+)
+
+# create database from nodes
+create_node_db(outpath, myproject = myproject, db_name = conn)
+
+# import node data
+import_node_data(conn,
+                 outpath = outpath,
+                 myproject="Meadows V2")
+
+DBI::dbDisconnect(conn)
 
 # Database Functions ------------------------------------------------------
 
 # list tables in database
-DBI::dbListTables(con)
+DBI::dbListTables(conn)
 
 # list last 10 records in raw
-raw = DBI::dbGetQuery(con, "SELECT * FROM raw "); raw
-tail(raw)
+raw = DBI::dbGetQuery(conn, "SELECT * FROM raw LIMIT 5")
+raw = DBI::dbGetQuery(conn, 'SELECT * FROM raw ORDER BY time LIMIT 5')
+head(raw)
 
 # list last 10 records in blu
-blu = DBI::dbGetQuery(con, "SELECT * FROM raw "); blu
-tail(blu)
-head(blu)
+blu = DBI::dbGetQuery(conn, "SELECT * FROM blu ")
+blu = DBI::dbGetQuery(conn, 'SELECT * FROM blu ORDER BY time LIMIT 5')
 
+head(blu)
+tail(blu)
+blu05 = DBI::dbGetQuery(conn, 'SELECT * FROM blu LIMIT 5')
+blu05
+
+# using duckplyr
+tail(blu)
+
+# get gps records
+gps = DBI::dbGetQuery(conn, 'SELECT * FROM gps')
+gps
+
+# get node_health records
+node_health = DBI::dbGetQuery(conn, 'SELECT * FROM node_health ORDER BY blu_det DESC LIMIT 5')
+# node_health = DBI::dbGetQuery(con, 'SELECT * FROM node_health LIMIT 5')
+nh_v3 = DBI::dbGetQuery(conn, 'SELECT * FROM node_health WHERE blu_det>0')
 
 # list data in nodes table
-node_table = DBI::dbGetQuery(con, 'SELECT * FROM nodes')
+node_table = DBI::dbGetQuery(conn, 'SELECT * FROM nodes')
 
 # list data in data_file table
-df_table = DBI::dbGetQuery(con, 'SELECT * FROM data_file')
+df_table = DBI::dbGetQuery(conn, 'SELECT * FROM data_file')
 
+# change datatable type
+dbGetQuery(conn, 'ALTER TABLE node_health ALTER sd_free TYPE NUMERIC(6,2)')
 
-# Import Node Data --------------------------------------------------------
-source('./R/api_postgres.R')
-source('./R/filecatch.R')
-source('./R/newdb.R')
-source('./R/node.R')
-
-con <- DBI::dbConnect(
-  duckdb::duckdb(),
-  dbdir = "./vignettes/aos2024/meadows.db",
-  read_only = FALSE
-)
-
-import_node_data(con,
-                 outpath = outpath,
-                 myproject="Meadows V2")
-
-DBI::dbDisconnect(con)
-
-# colnames(contents) = c('node_id', 'time', 'radio_id', 'tag_id', 'tag_rssi', 'validated')
-# print(paste('colnames', tolower(colnames(contents))))
-
+DBI::dbDisconnect(conn)
 
 # Read Node CSV -----------------------------------------------------------
 
@@ -130,3 +150,27 @@ df$station_id = test$station_id[1]
 distinct_stations = DBI::dbGetQuery(con,
                                     "SELECT DISTINCT station_id FROM raw ")
 distinct_stations
+
+
+
+# Remove corrupted data ---------------------------------------------------
+
+e <- "./examples//Meadows V2/nodes/v3_node/health_0.csv"
+conn = con
+d = con
+
+df_filtered = for (i in 1:nrow(df)) {
+  gsub("[^\u0001-\u007F]+|<U\\+\\w+>","", i)
+}
+
+# Function to remove non-ASCII characters using iconv
+remove_non_ascii <- function(x) {
+  iconv(x, "UTF-8", "ASCII", sub = "")
+}
+
+# Apply function to the text column
+df$tag_id <- sapply(df$tag_id, remove_non_ascii)
+df$time <- sapply(df$time, remove_non_ascii)
+df$rssi <- sapply(df$rssi, remove_non_ascii)
+
+print(df)
