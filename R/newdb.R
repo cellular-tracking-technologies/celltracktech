@@ -406,7 +406,6 @@ load_node_data <- function(e, conn, outpath, myproject) {
 
       # only gets beeps from node, and not ones picked up by sensor station
       df2 <- df %>%
-        # select(time, radio_id, node_id, node_rssi, battery, celsius, recorded_at, firmware, solar_volts, solar_current, cumulative_solar_current, latitude, longitude, station_id, path) %>%
         distinct(time,
                  radio_id,
                  node_id,
@@ -465,7 +464,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
       # print(paste('df', df))
       # only gets beeps from node, and not ones picked up by sensor station
       df$path = y
-      df$station_id = NA
+      df$station_id = find_station_name(outpath, myproject)
       df$node_id = df$NodeId
       df$time = df$Time
       df$radio_id = 4
@@ -505,7 +504,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df3$product = NA
       df3$revision = NA
       df3$path = y
-      df3$station_id = NA
+      df3$station_id = find_station_name(outpath, myproject)
       df3$node_id = df3$NodeId
 
       z <- db_insert(contents=df3,
@@ -518,15 +517,10 @@ load_node_data <- function(e, conn, outpath, myproject) {
 }
 
 find_station_name <- function(outpath, myproject) {
-  # find name of sensor station
-  dirs = list.dirs(paste0(outpath, myproject, '/'), full.names = FALSE)
-  station = NULL
-  for (i in dirs) {
-    if (nchar(i) == 12) {
-      station = i
-      return(station)
-    }
-  }
+  # find sensor station id
+  station = unlist(dbGetQuery(conn, 'SELECT station_id FROM ctt_project_station'))
+
+  return(station)
 }
 
 Correct_Colnames <- function(df) {

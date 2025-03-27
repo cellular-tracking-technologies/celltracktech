@@ -20,12 +20,14 @@ outpath <-'./examples/'
 
 e = './examples/Meadows V2/nodes/v3_node/blu_beep_5.csv'
 
+# create duckdb database
 conn <- DBI::dbConnect(
   duckdb::duckdb(),
   dbdir = "./examples/Meadows V2/meadows.duckdb",
   read_only = FALSE
 )
 
+# create Postgres database
 conn <- DBI::dbConnect(
   RPostgres::Postgres(),
   dbname='meadows'
@@ -51,24 +53,26 @@ update_db(conn, outpath, myproject)
 DBI::dbDisconnect(conn)
 
 # Import Node Data --------------------------------------------------------
+myproject <- "Meadows V2" #this is your project name on your CTT account
+create_outpath(paste0('./examples/', myproject, '/'))
+outpath <-'./examples/'
+
+# add nodes folder to project folder
+create_outpath(paste0(outpath, myproject, '/', 'nodes', '/'))
+
+# add individual nodes to nodes folder (do this yourself)
+
+# create database connection
 conn <- DBI::dbConnect(
   duckdb::duckdb(),
   dbdir = "./examples/Meadows V2/meadows.duckdb",
   read_only = FALSE
 )
 
-create_outpath(paste0(outpath, myproject, '/', 'nodes', '/'))
+# create database from nodes
+create_node_db(outpath, myproject = myproject, db_name = conn)
 
-# add individual node folders to outpath created above!
-
-## need to create database and populate project in import_node_data!!!
-celltracktech::create_duck(conn)
-celltracktech::pop_proj(myproject, conn)
-
-e = './examples/Meadows V2/nodes/v3_node/blu_beep_9.csv'
-conn = con
-
-
+# import node data
 import_node_data(conn,
                  outpath = outpath,
                  myproject="Meadows V2")
@@ -99,6 +103,7 @@ tail(blu)
 
 # get gps records
 gps = DBI::dbGetQuery(conn, 'SELECT * FROM gps')
+gps
 
 # get node_health records
 node_health = DBI::dbGetQuery(conn, 'SELECT * FROM node_health ORDER BY blu_det DESC LIMIT 5')
