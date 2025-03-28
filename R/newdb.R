@@ -157,8 +157,9 @@ load_node_data <- function(e, conn, outpath, myproject) {
   y <- paste(file, collapse="/")
   print(paste('y file', y))
 
-  file_list = str_extract_all(y, c('434_mhz_beep',
-                                   '434',
+  file_list = str_extract_all(y, c(regex('434(?=_)'),
+                                   # '434_mhz_beep',
+                                   # '434_beep',
                                    regex('(?<!_)(beep)'),
                                    regex('blu(?=_beep_\\d+)'),
                                    '2p4_ghz_beep',
@@ -350,13 +351,11 @@ load_node_data <- function(e, conn, outpath, myproject) {
       # get other columns that exist in database
       df$path <- y
       df$quality <- NA
-      df$recorded_at <- ifelse("recorded_at" %in% colnames(df), df$recorded_at, NA)
-      df$station_id <- ifelse("station_id" %in% colnames(df),
-                              df$station_id,
-                              find_station_name(outpath, myproject))
-      df$mean_lat <- ifelse("mean_lat" %in% colnames(df), df$mean_lat, NA)
-      df$mean_lng <- ifelse("mean_lng" %in% colnames(df), df$mean_lng, NA)
-      df$n_fixes <- ifelse('n_fixes' %in% colnames(df), df$n_fixes, NA)
+      df$recorded_at <- NA
+      df$station_id <- find_station_name(outpath, myproject, conn)
+      df$mean_lat <- NA
+      df$mean_lng <- NA
+      df$n_fixes <- NA
 
       df2 <- dplyr::anti_join(df, test, by = c('gps_at', 'station_id'))
 
@@ -380,35 +379,33 @@ load_node_data <- function(e, conn, outpath, myproject) {
                                 "WHERE time >= '", start,
                                 "'AND time <= '", end, "'"))
 
-      df$radio_id = ifelse('radio_id' %in% colnames(df),
-                           df$radio_id,
-                           4)
+      df$radio_id = 4
       df$node_id = toupper(df$NodeId)
-      df$node_rssi = ifelse('node_rssi' %in% colnames(df),
-                            df$node_rssi,
-                            NA)
-      df$battery = ifelse('battery' %in% colnames(df),
-                          df$battery,
-                          df$batt_mv/1000)
-      df$celsius = ifelse('celsius' %in% colnames(df),
-                          df$celsius,
-                          df$node_temp_c)
+      df$node_rssi = NA
+      df$battery = df$batt_mv/1000
+      df$celsius = df$node_temp_c
       df$recorded_at = NA
       df$firmware = NA
-      df$solar_volts = ifelse('solar_volts' %in% colnames(df),
-                              df$solar_volts,
-                              df$charge_mv/1000)
-      df$solar_current = ifelse('solar_current' %in% colnames(df),
-                                df$solar_current,
-                                df$charge_ma)
-      df$cumulative_solar_current = ifelse('cumulative_solar_current' %in% colnames(df),
-                                           df$cumulative_solar_current,
-                                           df$energy_used_mah)
+      df$solar_volts = df$charge_mv/1000
+      df$solar_current = df$charge_ma
+      df$cumulative_solar_current = df$energy_used_mah
       df$latitude = NA
       df$longitude = NA
-      df$station_id = find_station_name(outpath, myproject)
+      df$station_id = find_station_name(outpath, myproject, conn)
       df$path = y
       df$time = df$Time
+
+      if ('sub_ghz_det' %in% colnames(df)) {
+        df$sub_ghz_det = df$sub_ghz_det
+      } else {
+        df$sub_ghz_det = df$`434_det`
+      }
+
+      if ('ble_det' %in% colnames(df)) {
+        df$ble_det = df$ble_det
+      } else {
+        df$ble_det = df$blu_det
+      }
 
       # only gets beeps from node, and not ones picked up by sensor station
       df2 <- df %>%
@@ -427,7 +424,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
                      y=y,
                      begin=begin)
 
-    } else if (filetype == 434 || filetype == 'beep' || filetype == '434_mhz_beep') {
+    } else if (filetype == 434 || filetype == 'beep') {
       filetype = 'raw'
       # df$RadioId <- 4 #https://bitbucket.org/cellulartrackingtechnologies/lifetag-system-report/src/master/beeps.py
       # df$TagId <- toupper(df$id)
@@ -437,8 +434,14 @@ load_node_data <- function(e, conn, outpath, myproject) {
         df <- df %>%
           filter(is.character(tag_id))
       }
-      # df$tag_id
-      df$tag_id <- ifelse('tag_id' %in% colnames(df), toupper(df$tag_id), toupper(df$id))
+
+      # rename id to tag_id
+      if ('tag_id' %in% colnames(df)) {
+        df$tag_id = toupper(df$tag_id)
+      } else {
+        df$tag_id = toupper(df$id)
+      }
+
       if ('id' %in% colnames(df)) {
         df <- df %>%
           mutate(id = NULL)
@@ -470,13 +473,12 @@ load_node_data <- function(e, conn, outpath, myproject) {
       # print(paste('df', df))
       # only gets beeps from node, and not ones picked up by sensor station
       df$path = y
-      df$station_id = find_station_name(outpath, myproject)
+      df$station_id = find_station_name(outpath, myproject, conn)
       df$node_id = df$NodeId
       df$time = df$Time
       df$radio_id = 4
 
       df2 <- dplyr::anti_join(df,test)
-
 
       z <- db_insert(contents=df2,
                      filetype=filetype,
@@ -493,7 +495,11 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df$radio_id <- 4
 
       # revision (type of blu tag) is from sensor station, payload_version is from node
-      df$revision = ifelse('revision' %in% colnames(df), df$revision, df$payload_version)
+      if ('revision' %in% colnames(df)) {
+        df$revision = df$revision
+      } else {
+        df$revision = df$payload_version
+      }
 
       start <- min(df$time, na.rm=T)
       end <- max(df$time, na.rm=T)
@@ -512,7 +518,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df3$blu_radio_id = NA
       df3$product = NA
       df3$path = y
-      df3$station_id = find_station_name(outpath, myproject)
+      df3$station_id = find_station_name(outpath, myproject, conn)
       df3$node_id = df3$NodeId
 
       z <- db_insert(contents=df3,
@@ -524,11 +530,14 @@ load_node_data <- function(e, conn, outpath, myproject) {
   }
 }
 
-find_station_name <- function(outpath, myproject) {
+find_station_name <- function(outpath, myproject, conn) {
   # find sensor station id
   station = unlist(dbGetQuery(conn, 'SELECT station_id FROM ctt_project_station'))
-
-  return(station)
+  if (length(station) == 0) {
+    return('no_station')
+  } else {
+    return(station)
+  }
 }
 
 Correct_Colnames <- function(df) {

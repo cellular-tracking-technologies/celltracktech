@@ -255,8 +255,8 @@ create_db <- function(conn) {
     charge_temp_c smallint,
     cumulative_solar_current integer,
     sd_free NUMERIC(6, 2),
-    "434_det" smallint,
-    blu_det smallint,
+    sub_ghz_det smallint,
+    ble_det smallint,
     errors smallint,
     latitude NUMERIC(8,6),
     longitude NUMERIC(9,6),
@@ -268,6 +268,12 @@ create_db <- function(conn) {
         ON UPDATE NO ACTION
   )')
 
+  DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS batt_temp_c smallint')
+  DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS charge_temp_c smallint')
+  DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS sd_free NUMERIC(6, 2)')
+  DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS sub_ghz_det smallint')
+  DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS ble_det smallint')
+  DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS errors smallint')
 
   DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS gps
   (
@@ -288,6 +294,11 @@ create_db <- function(conn) {
     n_fixes smallint,
     PRIMARY KEY (gps_at, station_id)
   )")
+
+  DBI::dbExecute(conn, 'ALTER TABLE gps ADD COLUMN IF NOT EXISTS hdop NUMERIC (4,2)')
+  DBI::dbExecute(conn, 'ALTER TABLE gps ADD COLUMN IF NOT EXISTS vdop NUMERIC (4,2)')
+  DBI::dbExecute(conn, 'ALTER TABLE gps ADD COLUMN IF NOT EXISTS pdop NUMERIC (4,2)')
+  DBI::dbExecute(conn, 'ALTER TABLE gps ADD COLUMN IF NOT EXISTS on_time NUMERIC (6,1)')
 }
 
 
@@ -384,8 +395,8 @@ create_duck <- function(conn) {
     charge_temp_c smallint,
     cumulative_solar_current integer,
     sd_free NUMERIC(6, 2),
-    "434_det" smallint,
-    blu_det smallint,
+    sub_ghz_det smallint,
+    ble_det smallint,
     errors smallint,
     latitude NUMERIC(8,6),
     longitude NUMERIC(9,6),
@@ -399,10 +410,9 @@ create_duck <- function(conn) {
 
   DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS batt_temp_c smallint')
   DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS charge_temp_c smallint')
-  DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS charge_temp_c smallint')
   DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS sd_free NUMERIC(6, 2)')
-  DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS "434_det" smallint')
-  DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS blu_det smallint')
+  DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS sub_ghz_det smallint')
+  DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS ble_det smallint')
   DBI::dbExecute(conn, 'ALTER TABLE node_health ADD COLUMN IF NOT EXISTS errors smallint')
 
   DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS gps
@@ -878,8 +888,8 @@ get_data <- function(thisproject,
               contents$batt_temp_c = NA
               contents$charge_temp_c = NA
               contents$sd_free = NA
-              contents$`434_det` = NA
-              contents$blu_det = NA
+              contents$sub_ghz_det = NA
+              contents$ble_det = NA
               contents$errors = NA
             }
             z <- db_insert(contents = contents, filetype = filetype, conn = f, y = y)
@@ -1327,8 +1337,8 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath = outpath) {
         contents$batt_temp_c = NA
         contents$charge_temp_c = NA
         contents$sd_free = NA
-        contents$`434_det` = NA
-        contents$blu_det = NA
+        contents$sub_ghz_det = NA
+        contents$ble_det = NA
         contents$errors = NA
       }
       attach(contents)
@@ -1452,17 +1462,24 @@ error_files <- function(dirin, dirout, conn = NULL) {
 #' @examples
 #' create_node_db(outpath = './data/', myproject = 'Meadows V2', db_name = conn)
 create_node_db = function(
+    my_token,
     outpath,
     myproject,
     db_name) {
 
-  projects <- project_list(my_token, myproject)
+  # if (is.null(my_token)) {
+  #   myList = list()
+  #   myList$id = as.integer(1)
+  #   myList$name = myproject
+  #   projects = list(myList)
+  # } else {
+  #   projects <- project_list(my_token, myproject)
+  # }
 
   # Checking if database is postgres, duckdb, or remote
   if (!is.null(db_name) && length(grep("postgresql", format(db_name))) > 0) {
     create_db(db_name) # EDIT TO TAKE NEW create_db() when you switch back!
     sapply(projects, pop_proj, conn = db_name)
-
     # failed <- import_node_data(conn,
     #                            outpath,
     #                            myproject=myproject)

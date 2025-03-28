@@ -18,8 +18,6 @@ myproject <- "Meadows V2" #this is your project name on your CTT account
 create_outpath(paste0('./examples/', myproject, '/'))
 outpath <-'./examples/'
 
-e = './examples/Meadows V2/nodes/v3_node/blu_beep_5.csv'
-
 # create duckdb database
 conn <- DBI::dbConnect(
   duckdb::duckdb(),
@@ -70,9 +68,14 @@ conn <- DBI::dbConnect(
 )
 
 # create database from nodes
-create_node_db(outpath, myproject = myproject, db_name = conn)
+create_node_db(my_token = my_token,
+               outpath = outpath,
+               myproject = myproject,
+               db_name = conn)
 
 # import node data
+
+# if you get: Error in files_loc[1, ] : incorrect number of dimensions, you most likely don't have your individual node folders in the 'nodes' folder
 import_node_data(conn,
                  outpath = outpath,
                  myproject="Meadows V2")
@@ -84,14 +87,28 @@ DBI::dbDisconnect(conn)
 # list tables in database
 DBI::dbListTables(conn)
 
+################### FIND A WAY TO GET THIS INFO INTO CREATE_NODE_DB!
+# create projects list
+
+myList = list()
+myList$id = as.integer(73)
+myList$name = 'Meadows V2'
+super_list = list(myList)
+
+ctt_project_station = dbGetQuery(conn, 'SELECT * FROM ctt_project_station')
+
+ctt_project = dbGetQuery(conn, 'SELECT * FROM ctt_project')
+
+
 # list last 10 records in raw
-raw = DBI::dbGetQuery(conn, "SELECT * FROM raw LIMIT 5")
+raw = DBI::dbGetQuery(conn, "SELECT * FROM raw") %>%
+  filter(node_id == 'V3_NODE')
 raw = DBI::dbGetQuery(conn, 'SELECT * FROM raw ORDER BY time LIMIT 5')
 head(raw)
 
 # list last 10 records in blu
 blu = DBI::dbGetQuery(conn, "SELECT * FROM blu ")
-blu = DBI::dbGetQuery(conn, 'SELECT * FROM blu ORDER BY time LIMIT 5')
+blu = DBI::dbGetQuery(conn, 'SELECT * FROM blu ORDER BY time DESC LIMIT 5')
 
 head(blu)
 tail(blu)
@@ -102,14 +119,16 @@ blu05
 tail(blu)
 
 # get gps records
-gps = DBI::dbGetQuery(conn, 'SELECT * FROM gps LIMIT 5')
+gps = DBI::dbGetQuery(conn, 'SELECT * FROM gps')
 gps
 
 # get node_health records
 node_health = DBI::dbGetQuery(conn,
                               'SELECT * FROM node_health ORDER BY blu_det DESC LIMIT 5')
-node_health = DBI::dbGetQuery(conn, 'SELECT * FROM node_health LIMIT 5')
-nh_v3 = DBI::dbGetQuery(conn, 'SELECT * FROM node_health WHERE blu_det>0')
+node_health = DBI::dbGetQuery(conn, 'SELECT * FROM node_health')
+# %>%
+  filter(node_id != 'V3_NODE')
+nh_v3 = node_health %>% filter(node_id == 'V3_NODE')
 
 # list data in nodes table
 node_table = DBI::dbGetQuery(conn, 'SELECT * FROM nodes')
