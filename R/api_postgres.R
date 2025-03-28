@@ -240,7 +240,7 @@ create_db <- function(conn) {
 
   DBI::dbExecute(conn, 'CREATE TABLE IF NOT EXISTS node_health
   (
-    PRIMARY KEY (radio_id, node_id, time, station_id),
+    UNIQUE (radio_id, node_id, time),
     time TIMESTAMP with time zone NOT NULL,
     radio_id smallint,
     node_id TEXT,
@@ -289,12 +289,14 @@ create_db <- function(conn) {
     gps_at TIMESTAMP with time zone,
     recorded_at TIMESTAMP with time zone,
     station_id TEXT,
+    node_id TEXT,
     mean_lat NUMERIC(8,6),
     mean_lng NUMERIC(9,6),
     n_fixes smallint,
-    PRIMARY KEY (gps_at, station_id)
+    UNIQUE (gps_at, node_id, station_id)
   )")
 
+  DBI::dbExecute(conn, 'ALTER TABLE gps ADD COLUMN IF NOT EXISTS node_id text')
   DBI::dbExecute(conn, 'ALTER TABLE gps ADD COLUMN IF NOT EXISTS hdop NUMERIC (4,2)')
   DBI::dbExecute(conn, 'ALTER TABLE gps ADD COLUMN IF NOT EXISTS vdop NUMERIC (4,2)')
   DBI::dbExecute(conn, 'ALTER TABLE gps ADD COLUMN IF NOT EXISTS pdop NUMERIC (4,2)')
@@ -380,7 +382,7 @@ create_duck <- function(conn) {
   # PRIMARY KEY (radio_id, node_id, time, station_id),
   DBI::dbExecute(conn, 'CREATE TABLE IF NOT EXISTS node_health
   (
-    PRIMARY KEY (radio_id, node_id, time),
+    UNIQUE (radio_id, node_id, time),
     time TIMESTAMP with time zone NOT NULL,
     radio_id smallint,
     node_id TEXT,
@@ -428,11 +430,12 @@ create_duck <- function(conn) {
     quality smallint,
     gps_at TIMESTAMP with time zone,
     recorded_at TIMESTAMP with time zone,
+    node_id TEXT,
     station_id TEXT,
     mean_lat NUMERIC(8,6),
     mean_lng NUMERIC(9,6),
     n_fixes smallint,
-    PRIMARY KEY (gps_at, station_id)
+    UNIQUE (gps_at, node_id, station_id)
   )")
 
   DBI::dbExecute(conn, 'ALTER TABLE gps ADD COLUMN IF NOT EXISTS hdop NUMERIC (4,2)')
@@ -686,8 +689,7 @@ db_insert <- function(contents, filetype, conn, sensor = NA, y, begin = NULL) {
                     sep = "",
                     collapse = ", $")
       names(contents) <- tolower(names(contents))
-      print(paste('contents names', names(contents)))
-      print(paste('contents colnames', colnames(contents)))
+
       contents <- contents[, DBI::dbListFields(conn, filetype)]
     }
 
@@ -884,6 +886,7 @@ get_data <- function(thisproject,
               contents$vdop = NA
               contents$pdop = NA
               contents$on_time = NA
+              contents$node_id = NA
             } else if (filetype == 'node_health') {
               contents$batt_temp_c = NA
               contents$charge_temp_c = NA
@@ -1333,6 +1336,7 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath = outpath) {
         contents$vdop = NA
         contents$pdop = NA
         contents$on_time = NA
+        contents$node_id = NA
       } else if (filetype == 'node_health') {
         contents$batt_temp_c = NA
         contents$charge_temp_c = NA
@@ -1475,6 +1479,8 @@ create_node_db = function(
   # } else {
   #   projects <- project_list(my_token, myproject)
   # }
+
+  projects <- project_list(my_token, myproject)
 
   # Checking if database is postgres, duckdb, or remote
   if (!is.null(db_name) && length(grep("postgresql", format(db_name))) > 0) {

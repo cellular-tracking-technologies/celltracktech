@@ -126,7 +126,6 @@ import_node_data <- function(d, outpath, myproject=NULL) {
   files <- paste(files_loc[1,],files_loc[2,],sep="/")
   print(paste('files', files))
   allnode <- DBI::dbReadTable(d, "data_file")
-  print(paste('allnode', allnode))
   filesdone <- allnode$path
   files_import <- myfiles[which(!files %in% filesdone)]
   print(files_import)
@@ -328,6 +327,8 @@ load_node_data <- function(e, conn, outpath, myproject) {
     # filetype conditional, modify the test (data from database) and df (data from file) column names for the anti_join function
     if (filetype == 'gps') {
 
+      df$node_id = toupper(df$NodeId)
+
       # get existing data table from database
       test <- dbGetQuery(conn,
                          paste0("SELECT * FROM gps ",
@@ -352,7 +353,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df$path <- y
       df$quality <- NA
       df$recorded_at <- NA
-      df$station_id <- find_station_name(outpath, myproject, conn)
+      df$station_id <- NA
       df$mean_lat <- NA
       df$mean_lng <- NA
       df$n_fixes <- NA
@@ -391,7 +392,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df$cumulative_solar_current = df$energy_used_mah
       df$latitude = NA
       df$longitude = NA
-      df$station_id = find_station_name(outpath, myproject, conn)
+      df$station_id = NA
       df$path = y
       df$time = df$Time
 
@@ -473,7 +474,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
       # print(paste('df', df))
       # only gets beeps from node, and not ones picked up by sensor station
       df$path = y
-      df$station_id = find_station_name(outpath, myproject, conn)
+      df$station_id = NA
       df$node_id = df$NodeId
       df$time = df$Time
       df$radio_id = 4
@@ -518,7 +519,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df3$blu_radio_id = NA
       df3$product = NA
       df3$path = y
-      df3$station_id = find_station_name(outpath, myproject, conn)
+      df3$station_id = NA
       df3$node_id = df3$NodeId
 
       z <- db_insert(contents=df3,
@@ -533,10 +534,10 @@ load_node_data <- function(e, conn, outpath, myproject) {
 find_station_name <- function(outpath, myproject, conn) {
   # find sensor station id
   station = unlist(dbGetQuery(conn, 'SELECT station_id FROM ctt_project_station'))
-  if (length(station) == 0) {
-    return('no_station')
-  } else {
+  if (length(station) == 1) {
     return(station)
+  } else {
+    return(NA)
   }
 }
 
