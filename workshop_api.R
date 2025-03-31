@@ -131,6 +131,11 @@ node_health = DBI::dbGetQuery(conn, 'SELECT * FROM node_health')
   filter(node_id != 'V3_NODE')
 nh_v3 = node_health %>% filter(node_id == 'V3_NODE')
 
+node_gps = DBI::dbGetQuery(conn, 'SELECT * FROM node_gps')
+
+node_raw = DBI::dbGetQuery(conn, 'SELECT * FROM node_raw')
+
+
 # list data in nodes table
 node_table = DBI::dbGetQuery(conn, 'SELECT * FROM nodes')
 
@@ -150,7 +155,6 @@ DBI::dbDisconnect(conn)
 dbGetQuery(conn, 'DELETE FROM data_file')
 
 # Remove corrupted data ---------------------------------------------------
-
 e <- "./examples//Meadows V2/nodes/v3_node/health_0.csv"
 conn = con
 d = con
@@ -161,8 +165,9 @@ df_filtered = for (i in 1:nrow(df)) {
 
 # Function to remove non-ASCII characters using iconv
 remove_non_ascii <- function(x) {
-  iconv(x, "UTF-8", "ASCII", sub = "")
-}
+  if (str_detect(x, "[^\\x00-\\x7F]") == TRUE) {
+    }
+  }
 
 # Apply function to the text column
 df$tag_id <- sapply(df$tag_id, remove_non_ascii)

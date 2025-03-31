@@ -456,7 +456,7 @@ create_duck <- function(conn) {
     sd_free smallint,
     sub_ghz_det smallint,
     ble_det smallint,
-    errors TEXT
+    errors TEXT,
     node_id TEXT,
     station_id TEXT,
     path  TEXT NOT NULL,
@@ -687,8 +687,8 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
   } else {
     nodeids <- c()
   }
-  if (filetype %in% c("raw", "node_health", "gps", "blu") & nrow(contents) > 0) {
-    if (filetype %in% c("raw", "blu")) {
+  if (filetype %in% c("raw", "node_health", "gps", "blu", 'node_raw', 'node_health_from_node', 'node_gps', 'node_blu') & nrow(contents) > 0) {
+    if (filetype %in% c("raw", "blu", 'node_raw', 'node_blu')) {
       vars <- paste(DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))], sep = "", collapse = ",")
       vals <- paste(seq_along(1:(length(DBI::dbListFields(conn, filetype)) - 1)), sep = "", collapse = ", $")
 
