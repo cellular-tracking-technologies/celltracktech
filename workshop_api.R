@@ -15,8 +15,8 @@ load_dot_env(file='.env')
 
 my_token <- Sys.getenv('API_KEY')
 myproject <- "Meadows V2" #this is your project name on your CTT account
-create_outpath(paste0('./examples/', myproject, '/'))
 outpath <-'./examples/'
+create_outpath(paste0(outpath, myproject, '/'))
 
 # create duckdb database
 conn <- DBI::dbConnect(
@@ -134,6 +134,10 @@ nh_v3 = node_health %>% filter(node_id == 'V3_NODE')
 node_gps = DBI::dbGetQuery(conn, 'SELECT * FROM node_gps')
 
 node_raw = DBI::dbGetQuery(conn, 'SELECT * FROM node_raw')
+
+node_blu = DBI::dbGetQuery(conn, 'SELECT * FROM node_blu')
+
+node_health_from_node = DBI::dbGetQuery(conn, 'SELECT * FROM node_health_from_node')
 
 
 # list data in nodes table

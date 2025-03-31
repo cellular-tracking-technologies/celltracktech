@@ -444,10 +444,10 @@ create_duck <- function(conn) {
   (
     PRIMARY KEY (node_id, time, station_id),
     time TIMESTAMP with time zone NOT NULL,
-    up_time smallint,
+    up_time BIGINT,
     power_ok smallint,
     batt_mv smallint,
-    batt_temp smallint,
+    batt_temp_c smallint,
     charge_mv smallint,
     charge_ma smallint,
     charge_temp_c smallint,

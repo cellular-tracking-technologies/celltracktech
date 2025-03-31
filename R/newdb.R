@@ -445,6 +445,7 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       } else {
         df$revision = df$payload_version
       }
+      df$product = df$family
 
       start <- min(df$time, na.rm=T)
       end <- max(df$time, na.rm=T)
@@ -464,7 +465,7 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       df2 <- dplyr::anti_join(df,test)
 
       z <- db_insert(contents=df2,
-                     filetype='blu',
+                     filetype='node_blu',
                      conn=conn,
                      y=y,
                      begin=begin)
