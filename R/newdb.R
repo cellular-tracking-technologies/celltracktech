@@ -110,7 +110,7 @@ print(Sys.time() - start)
 #' # "My Project"
 #' import_node_data(conn, outpath, myproject="My Project")
 
-import_node_data <- function(d, outpath, myproject=NULL) {
+import_node_data <- function(d, outpath, myproject=NULL, station_id) {
   myout <- outpath
   if(!is.null(myproject)) {
     myout <- file.path(outpath,myproject)
@@ -133,7 +133,8 @@ import_node_data <- function(d, outpath, myproject=NULL) {
          load_node_data,
          conn=d,
          outpath=outpath,
-         myproject=myproject)
+         myproject=myproject,
+         station_id = station_id)
 }
 
 
@@ -143,12 +144,13 @@ import_node_data <- function(d, outpath, myproject=NULL) {
 #' @param conn database connection
 #' @param outpath outpath directory
 #' @param myproject project name
+#' @param station_id sensor station id - string
 #'
 #' @returns
 #' @export
 #'
 #' @examples
-load_node_data <- function(e, conn, outpath, myproject) {
+load_node_data <- function(e, conn, outpath, myproject, station_id) {
   #e <- file.path(outpath, "nodes", e)
   print(paste('e file', e))
   file <- tail(unlist(strsplit(e, "/")), n=2)
@@ -353,7 +355,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df$path <- y
       df$quality <- NA
       df$recorded_at <- NA
-      df$station_id <- NA
+      df$station_id <- station_id
       df$mean_lat <- NA
       df$mean_lng <- NA
       df$n_fixes <- NA
@@ -392,7 +394,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df$cumulative_solar_current = df$energy_used_mah
       df$latitude = NA
       df$longitude = NA
-      df$station_id = NA
+      df$station_id = station_id
       df$path = y
       df$time = df$Time
 
@@ -474,7 +476,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
       # print(paste('df', df))
       # only gets beeps from node, and not ones picked up by sensor station
       df$path = y
-      df$station_id = NA
+      df$station_id = station_id
       df$node_id = df$NodeId
       df$time = df$Time
       df$radio_id = 4
@@ -519,7 +521,7 @@ load_node_data <- function(e, conn, outpath, myproject) {
       df3$blu_radio_id = NA
       df3$product = NA
       df3$path = y
-      df3$station_id = NA
+      df3$station_id = station_id
       df3$node_id = df3$NodeId
 
       z <- db_insert(contents=df3,

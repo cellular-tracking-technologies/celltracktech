@@ -78,7 +78,8 @@ create_node_db(my_token = my_token,
 # if you get: Error in files_loc[1, ] : incorrect number of dimensions, you most likely don't have your individual node folders in the 'nodes' folder
 import_node_data(conn,
                  outpath = outpath,
-                 myproject="Meadows V2")
+                 myproject="Meadows V2",
+                 station_id = '6CA25D375881')
 
 DBI::dbDisconnect(conn)
 
@@ -147,39 +148,6 @@ DBI::dbDisconnect(conn)
 # if you are updating the celltracktech package to the latest version, gps and node_health will have additional columns in their respective tables. Newly uploaded files will populate those columns, while previously uploaded files will have NA in them. If you want to populate those old files, you will need to delete your database and repupload everything, or delete the contents in the 'data_file' table:
 
 dbGetQuery(conn, 'DELETE FROM data_file')
-# Read Node CSV -----------------------------------------------------------
-
-nodes = read_csv('~/Documents/cellular-tracking-technologies/data-analysis/celltracktech/vignettes/mouse_bird/Mouse Bird/nodes/B796B2/sample_1_beep.csv')
-nodes
-max(nodes$time)
-max(raw_last10$time)
-
-start <- min(nodes$time, na.rm=T)
-end <- max(nodes$time, na.rm=T)
-print(paste('start', start, 'end', end))
-print(paste('time window query', paste0("select * from raw where time > '", start,"' and time < '",end,"'")))
-test <- dbGetQuery(con, paste0("select * from raw where time > '", start,"' and time < '",end,"'"))
-test
-
-test$Time <- test$time
-test$TagId <- test$tag_id
-test$RadioId <- test$radio_id
-test$NodeId <- test$node_id
-test$TagRSSI <- test$tag_rssi
-test$Validated <- test$validated
-test$id <- as.character(test$id)
-
-print(paste('test, from db, has station_id and path after indexing', test))
-print(paste('df from file', df)) # df has capitalized columns
-df <- dplyr::anti_join(nodes,test)
-df$path = nodes$path
-df$station_id = test$station_id[1]
-
-distinct_stations = DBI::dbGetQuery(con,
-                                    "SELECT DISTINCT station_id FROM raw ")
-distinct_stations
-
-
 
 # Remove corrupted data ---------------------------------------------------
 
