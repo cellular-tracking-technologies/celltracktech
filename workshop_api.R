@@ -149,6 +149,8 @@ df_table = DBI::dbGetQuery(conn, 'SELECT * FROM data_file')
 # change datatable type
 dbGetQuery(conn, 'ALTER TABLE node_health ALTER sd_free TYPE NUMERIC(6,2)')
 
+dbSendQuery(conn, 'ALTER TABLE node_health_from_node ALTER up_time SET DATA TYPE BIGINT')
+
 DBI::dbDisconnect(conn)
 
 
