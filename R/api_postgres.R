@@ -416,10 +416,12 @@ create_duck <- function(conn) {
   (
     id integer primary key default nextval('seq_id'),
     path  TEXT NOT NULL,
+    radio_id TEXT,
     tag_id TEXT,
     node_id TEXT,
     tag_rssi smallint,
     time TIMESTAMP with time zone NOT NULL,
+    validated smallint,
     station_id TEXT
   )")
 
@@ -429,6 +431,9 @@ create_duck <- function(conn) {
   (
     id integer primary key default nextval('seq_idb'),
     path  TEXT NOT NULL,
+    radio_id smallint,
+    usb_port smallint,
+    blu_radio_id smallint,
     tag_id TEXT,
     node_id TEXT,
     tag_rssi smallint,

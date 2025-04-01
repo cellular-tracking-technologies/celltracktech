@@ -41,8 +41,8 @@ get_my_data(
   outpath,
   conn,
   myproject=myproject,
-  begin=as.Date("2023-08-01"),
-  end=as.Date("2023-08-03"),
+  begin=as.Date("2024-08-13"),
+  end=as.Date("2024-09-06"),
   # filetypes=c("raw", "node_health")
   filetypes = c('raw', 'node_health','gps')
 )
@@ -102,8 +102,8 @@ ctt_project = dbGetQuery(conn, 'SELECT * FROM ctt_project')
 
 
 # list last 10 records in raw
-raw = DBI::dbGetQuery(conn, "SELECT * FROM raw") %>%
-  filter(node_id == 'V3_NODE')
+raw = DBI::dbGetQuery(conn, "SELECT * FROM raw")
+raw_after_insert = DBI::dbGetQuery(conn, "SELECT * FROM raw")
 raw = DBI::dbGetQuery(conn, 'SELECT * FROM raw ORDER BY time LIMIT 5')
 head(raw)
 
@@ -135,11 +135,22 @@ node_gps = DBI::dbGetQuery(conn, 'SELECT * FROM node_gps')
 
 node_raw = DBI::dbGetQuery(conn, 'SELECT * FROM node_raw')
 
+DBI::dbSendQuery(conn, 'ALTER TABLE node_raw ADD COLUMN radio_id smallint DEFAULT 4')
+
 node_blu = DBI::dbGetQuery(conn, 'SELECT * FROM node_blu')
 
 node_health_from_node = DBI::dbGetQuery(conn, 'SELECT * FROM node_health_from_node')
 
+raw_combined = DBI::dbGetQuery(conn, 'SELECT * FROM raw
+                                      INNER JOIN node_raw ON raw.time = node_raw.time
+                                      AND raw.station_id = node_raw.station_id
+                                      AND raw.tag_id = node_raw.tag_id')
 
+raw_combined = DBI::dbSendQuery(conn,
+                                'INSERT INTO raw (path, radio_id, tag_id, node_id, tag_rssi, time, station_id)
+                                SELECT path, radio_id, tag_id, node_id, tag_rssi, time, station_id FROM node_raw')
+
+rc_dplyr = anti_join(node_raw, raw, by = c('time', 'station_id', 'tag_id', 'radio_id'))
 # list data in nodes table
 node_table = DBI::dbGetQuery(conn, 'SELECT * FROM nodes')
 
@@ -150,6 +161,70 @@ df_table = DBI::dbGetQuery(conn, 'SELECT * FROM data_file')
 dbGetQuery(conn, 'ALTER TABLE node_health ALTER sd_free TYPE NUMERIC(6,2)')
 
 dbSendQuery(conn, 'ALTER TABLE node_health_from_node ALTER up_time SET DATA TYPE BIGINT')
+
+node_gps = DBI::dbGetQuery(con, 'SELECT * FROM node_gps')
+
+node_raw = DBI::dbGetQuery(con, 'SELECT * FROM node_raw')
+DBI::dbSendQuery(con, 'ALTER TABLE node_raw ADD COLUMN radio_id smallint DEFAULT 4')
+DBI::dbSendQuery(con, 'ALTER TABLE node_raw ADD COLUMN validated smallint')
+
+
+node_blu = DBI::dbGetQuery(con, 'SELECT * FROM node_blu')
+
+node_health_from_node = DBI::dbGetQuery(con, 'SELECT * FROM node_health_from_node')
+
+data_types = dbGetQuery(con, 'SELECT * FROM information_schema.columns')
+
+dbSendQuery(con,
+            'CREATE TABLE raw_combine
+            AS FROM raw')
+
+dbSendQuery(con,
+            'SELECT * FROM raw_combine
+            INSERT INTO
+            SELECT *
+            FROM node_raw')
+
+vars <- paste(DBI::dbListFields(con,
+                                'raw')[2:length(DBI::dbListFields(con,
+                                                                  'raw'))],
+              sep = "",
+              collapse = ",")
+
+vals <- paste(seq_along(1:(length(DBI::dbListFields(con,
+                                                    'raw')) - 1)),
+              sep = "",
+              collapse = ", $")
+
+# dbSendQuery(con,
+#             'SELECT * FROM raw_combine
+#             UNION ALL BY NAME
+#             SELECT node_raw.path,
+#                   node_raw.radio_id,
+#                   node_raw.time,
+#                   node_raw.tag_id,
+#                   node_raw.node_id,
+#                   node_raw.tag_rssi,
+#                   node_raw.validated,
+#                   node_raw.station_id
+#             FROM node_raw
+#             ')
+raw_combine = dbGetQuery(con, 'SELECT * FROM raw_combine')
+
+dbSendQuery(con, 'DROP TABLE raw_combine')
+
+raw_dplyr = raw %>%
+  bind_rows(node_raw) %>%
+  group_by(time, tag_id, station_id, node_id) %>%
+  distinct(time, tag_id, station_id, node_id, .keep_all = TRUE)
+
+DBI::dbWriteTable(con, 'raw_combine', raw_dplyr, overwrite = TRUE)
+dbSendQuery(con, 'ALTER TABLE raw_combine
+                  ALTER COLUMN time TYPE TIMESTAMP WITH TIME ZONE')
+
+raw_duplicates = raw_combine %>%
+  group_by(time, tag_id, station_id, node_id) %>%
+  filter(n() > 1)
 
 DBI::dbDisconnect(conn)
 

@@ -423,6 +423,8 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       df$station_id = station_id
       df$node_id = df$NodeId
       df$time = df$Time
+      df$radio_id = 4
+      df$validated = NA
 
       df2 <- dplyr::anti_join(df,test)
 
@@ -461,25 +463,19 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       df$path = y
       df$station_id = station_id
       df$node_id = df$NodeId
+      df$radio_id = NA
+      df$usb_port = NA
+      df$blu_radio_id = NA
 
-      df2 <- dplyr::anti_join(df,test)
+      df2 <- dplyr::anti_join(df, test)
 
       z <- db_insert(contents=df2,
                      filetype='node_blu',
                      conn=conn,
                      y=y,
                      begin=begin)
-    }
-  }
-}
 
-find_station_name <- function(outpath, myproject, conn) {
-  # find sensor station id
-  station = unlist(dbGetQuery(conn, 'SELECT station_id FROM ctt_project_station'))
-  if (length(station) == 1) {
-    return(station)
-  } else {
-    return(NA)
+    }
   }
 }
 
@@ -496,19 +492,40 @@ remove_non_ascii <- function(x) {
   if (str_detect(x, "[^\\x00-\\x7F]") == TRUE) {
 
   }
-  # original_type = class(x)[1]
-  # iconv(x, "UTF-8", "ASCII", sub = "")
+}
 
-  # if (original_type == 'numeric') {
-  #   x = as.integer(x)
-  # } else if (original_type == 'character') {
-  #   x = as.character(x)
-  # } else if (original_type == 'POSIXct') {
-  #   x = as.POSIXct(x,
-  #                  format="%Y-%m-%dT%H:%M:%SZ",
-  #                  tz = 'UTC',
-  #                  optional=TRUE)
-  # }
-  # print(paste('new type', class(x)[1]))
-  # return(x)
+# combine node data function
+combine_node_data() {
+
+  raw = DBI::dbGetQuery(conn, 'SELECT * FROM raw')
+
+  raw_dplyr = raw %>%
+    mutate(radio_id = as.numeric(radio_id))%>%
+    bind_rows(df2) %>%
+    group_by(time, tag_id, station_id, node_id) %>%
+    distinct(time, tag_id, station_id, node_id, .keep_all = TRUE)
+
+  DBI::dbWriteTable(con, 'raw_combine', raw_dplyr, overwrite = TRUE)
+
+  dbSendQuery(con, 'ALTER TABLE raw_combine
+                  ALTER COLUMN time TYPE TIMESTAMP WITH TIME ZONE')
+
+  remove(raw)
+  remove(raw_dplyr)
+
+  blu = DBI::dbGetQuery(conn, 'SELECT * FROM blu')
+
+  blu_dplyr = blu %>%
+    bind_rows(df2) %>%
+    group_by(time, tag_id, station_id, node_id) %>%
+    distinct(time, tag_id, station_id, node_id, .keep_all = TRUE)
+
+  DBI::dbWriteTable(con, 'blu', blu_dplyr, overwrite = TRUE)
+
+  dbSendQuery(con,
+              'ALTER TABLE blu
+                  ALTER COLUMN time TYPE TIMESTAMP WITH TIME ZONE')
+
+  remove(blu)
+  remove(blu_dplyr)
 }
