@@ -477,7 +477,7 @@ create_duck <- function(conn) {
     latitude NUMERIC(8,6),
     longitude NUMERIC(9,6),
     altitude NUMERIC(6,1),
-    time TIMESTAMP with time zone,
+    gps_at TIMESTAMP WITH TIME ZONE,
     hdop smallint,
     vdop smallint,
     pdop smallint,
@@ -486,7 +486,7 @@ create_duck <- function(conn) {
     on_time NUMERIC(3,0),
     station_id TEXT,
     node_id TEXT,
-    PRIMARY KEY (time, node_id)
+    PRIMARY KEY (gps_at, node_id)
   )")
 }
 
@@ -1179,6 +1179,30 @@ pop <- function(x) { # this was a function written before the data file table wa
 #' @examples
 #' update_db(conn, "~/mydata", myproject = "Project Name from CTT Account", fix = FALSE)
 update_db <- function(d, outpath, myproject, fix = FALSE) {
+
+  ### NEED TO ADD NODE COLUMN CONDITIONAL
+  if ('CumulativeSolarCurrent' %in% colnames(df)) {
+    df <- df %>%
+      rename(radio_id = 'RadioId',
+             node_id = 'NodeId',
+             node_rssi = 'NodeRSSI',
+             battery = 'Battery',
+             celsius = 'Celsius',
+             recorded_at = 'RecordedAt',
+             firmware = 'Firmware',
+             solar_volts = 'SolarVolts',
+             solar_current = 'SolarCurrent',
+             cumulative_solar_current = 'CumulativeSolarCurrent',
+             latitude = 'Latitude',
+             longitude = 'Longitude',
+             up_time = 'UpTime',
+             charge_ma = 'AverageChargerCurrentMa',
+             energy_used_mah = 'EnergyUsed',
+             sd_free = 'SdFree',
+             sub_ghz_det = 'Detections',
+             errors = 'Errors')
+  }
+
   myfiles <- list.files(file.path(outpath, myproject), recursive = TRUE, full.names = TRUE)
   files_loc <- basename(myfiles)
   allnode <- DBI::dbReadTable(d, "data_file")
@@ -1191,7 +1215,11 @@ update_db <- function(d, outpath, myproject, fix = FALSE) {
     filesdone <- allnode$path
   }
   files_import <- myfiles[which(!files_loc %in% filesdone)]
-  files_import <- files_import[unname(sapply(files_import, function(x) get_file_info(x)[[1]])) %in% c("gps", "node_health", "raw", "blu")]
+  files_import <- files_import[unname(sapply(files_import,
+                                             function(x) get_file_info(x)[[1]])) %in% c("gps",
+                                                                                        "node_health",
+                                                                                        "raw",
+                                                                                        "blu")]
   #files_import <- files_import[unname(sapply(files_import, function(x) get_file_info(x)[[2]])) == "FC16AD87C466"][1:10]
   write.csv(files_import, file.path(outpath, "files.csv"))
   failed2 <- lapply(files_import, get_files_import, conn = d, outpath=outpath) # outpath=outpath, myproject=myproject)

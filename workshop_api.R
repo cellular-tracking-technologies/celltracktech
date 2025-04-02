@@ -5,6 +5,7 @@ library(readr)
 library(dotenv)
 
 devtools::load_all()
+library(duckplyr)
 ### Install DuckDB from R Universe ###
 # install.packages("duckdb", repos = c("https://duckdb.r-universe.dev", "https://cloud.r-project.org"))
 # install.packages("https://github.com/duckdb/duckdb/releases/download/master-builds/duckdb_r_src.tar.gz", repos = NULL)
@@ -25,11 +26,11 @@ conn <- DBI::dbConnect(
   read_only = FALSE
 )
 
-# create Postgres database
-conn <- DBI::dbConnect(
-  RPostgres::Postgres(),
-  dbname='meadows'
-)
+# # create Postgres database
+# conn <- DBI::dbConnect(
+#   RPostgres::Postgres(),
+#   dbname='meadows'
+# )
 
 # List Projects -----------------------------------------------------------
 
@@ -41,13 +42,14 @@ get_my_data(
   outpath,
   conn,
   myproject=myproject,
-  begin=as.Date("2024-08-13"),
-  end=as.Date("2024-09-06"),
-  # filetypes=c("raw", "node_health")
-  filetypes = c('raw', 'node_health','gps')
+  begin=as.Date("2025-01-01"),
+  end=as.Date("2025-01-03"),
+  # filetypes=c("blu")
+  filetypes = c('raw', 'node_health','gps', 'blu')
 )
 
 update_db(conn, outpath, myproject)
+
 DBI::dbDisconnect(conn)
 
 # Import Node Data --------------------------------------------------------
@@ -102,8 +104,29 @@ ctt_project = dbGetQuery(conn, 'SELECT * FROM ctt_project')
 
 
 # list last 10 records in raw
-raw = DBI::dbGetQuery(conn, "SELECT * FROM raw")
-raw_after_insert = DBI::dbGetQuery(conn, "SELECT * FROM raw")
+raw = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM raw"))
+node_raw = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM node_raw"))
+combine_node_data('raw', conn)
+raw_after_insert = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM raw"))
+
+# blu = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM blu"))
+blu = tbl(conn, 'blu') |> as_duckdb_tibble()
+node_blu = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM node_blu"))
+combine_node_data('blu', conn)
+blu_after_insert = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM blu"))
+
+gps = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM gps"))
+node_gps = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM node_gps"))
+combine_node_data('gps', conn)
+gps_after_insert = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM gps"))
+
+# node_health = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM node_health"))
+node_health = tbl(conn, 'node_health') |> as_duckdb_tibble()
+
+node_health_from_node = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM node_health_from_node"))
+combine_node_data('health', conn)
+node_health_after_insert = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM node_health"))
+
 raw = DBI::dbGetQuery(conn, 'SELECT * FROM raw ORDER BY time LIMIT 5')
 head(raw)
 
@@ -209,18 +232,6 @@ vals <- paste(seq_along(1:(length(DBI::dbListFields(con,
 #                   node_raw.station_id
 #             FROM node_raw
 #             ')
-raw_combine = dbGetQuery(con, 'SELECT * FROM raw_combine')
-
-dbSendQuery(con, 'DROP TABLE raw_combine')
-
-raw_dplyr = raw %>%
-  bind_rows(node_raw) %>%
-  group_by(time, tag_id, station_id, node_id) %>%
-  distinct(time, tag_id, station_id, node_id, .keep_all = TRUE)
-
-DBI::dbWriteTable(con, 'raw_combine', raw_dplyr, overwrite = TRUE)
-dbSendQuery(con, 'ALTER TABLE raw_combine
-                  ALTER COLUMN time TYPE TIMESTAMP WITH TIME ZONE')
 
 raw_duplicates = raw_combine %>%
   group_by(time, tag_id, station_id, node_id) %>%
