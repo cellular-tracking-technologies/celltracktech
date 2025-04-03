@@ -42,9 +42,8 @@ get_my_data(
   outpath,
   conn,
   myproject=myproject,
-  begin=as.Date("2024-08-01"),
-  end=as.Date("2024-09-16"),
-  # filetypes=c("blu")
+  begin=as.Date("2025-01-01"),
+  end=as.Date("2025-01-03"),
   filetypes = c('raw', 'node_health','gps', 'blu')
 )
 

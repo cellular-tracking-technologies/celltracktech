@@ -758,7 +758,8 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
   files_loc <- sapply(strsplit(myfiles, "/"), tail, n = 1)
   my_stations <- getStations(project_id = id)
   if (!is.null(my_station)) {
-    my_stations[["stations"]] <- list(my_stations[[1]][[which(sapply(my_stations[[1]], function(x) x[["station"]][["id"]] == my_station))]])
+    my_stations[["stations"]] <- list(my_stations[[1]][[which(sapply(my_stations[[1]],
+                                                                     function(x) x[["station"]][["id"]] == my_station))]])
   }
   files_avail <- lapply(my_stations[["stations"]], function(station, mybeginning = beginning, myending = ending) {
     print(station)
@@ -1110,6 +1111,7 @@ file_handle <- function(e, filetype) {
       }
 
       file_err <- ifelse(rowtest[[2]] > 0, rowtest[[2]], file_err)
+
       if(file_err < 5) {
         if(filetype == 'gps' & all(is.na(contents[,2]))) {file_err <- 7}
       }
