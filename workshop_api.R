@@ -1,8 +1,8 @@
-library(celltracktech)
-library(duckdb) # click no on pop up window
-library(devtools) # needs RTools
-library(readr)
-library(dotenv)
+# library(celltracktech)
+# library(duckdb) # click no on pop up window
+# library(devtools) # needs RTools
+# library(readr)
+# library(dotenv)
 
 devtools::load_all()
 library(duckplyr)
@@ -42,8 +42,8 @@ get_my_data(
   outpath,
   conn,
   myproject=myproject,
-  begin=as.Date("2025-01-01"),
-  end=as.Date("2025-01-03"),
+  begin=as.Date("2024-08-01"),
+  end=as.Date("2024-09-16"),
   # filetypes=c("blu")
   filetypes = c('raw', 'node_health','gps', 'blu')
 )

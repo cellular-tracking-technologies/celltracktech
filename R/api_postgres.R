@@ -600,6 +600,7 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
         contents$CumulativeSolarCurrent <- NA
         contents$Latitude <- NA
         contents$Longitude <- NA
+
       } else if(ncol(contents) > 9) {
         contents <- contents[which(contents$Latitude < 90 & contents$Latitude > -90),]
         #contents <- contents[contents$CumulativeSolarCurrent < 2147483647,]
@@ -778,11 +779,10 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     }
 
     print(kwargs)
-    # print("getting station file list...")
+    print("getting station file list...")
     file_info <- do.call(getStationFileList, kwargs)
     outfiles <- file_info[["files"]]
-    # print(outfiles)
-    # print(paste(length(outfiles), "files available"))
+
     return(outfiles)
   })
   print("getting files available for those stations...")
@@ -1132,8 +1132,17 @@ file_handle <- function(e, filetype) {
 #' @export
 #' @examples
 #' get_my_data(token, "~/mydata", myproject = "Project Name from CTT Account")
-get_my_data <- function(my_token, outpath, db_name = NULL, myproject = NULL, mystation = NULL, begin = NULL, end = NULL, filetypes=NULL) {
+get_my_data <- function(my_token,
+                        outpath,
+                        db_name = NULL,
+                        myproject = NULL,
+                        mystation = NULL,
+                        begin = NULL,
+                        end = NULL,
+                        filetypes=NULL) {
+
   projects <- project_list(my_token, myproject)
+
   if (!is.null(db_name) & length(grep("postgresql", format(db_name))) > 0) {
     create_db(db_name) # EDIT TO TAKE NEW create_db() when you switch back!
     sapply(projects, pop_proj, conn = db_name)
@@ -1273,7 +1282,7 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
     # file_err <- fileimp[[2]]
     # print("inserting contents")
     #print(fix)
-    print(errtpe)
+    print(errtype)
     #print(filetype)
     print(y)
     contents <- db_prep(contents, filetype, sensor, y, begin)
