@@ -397,8 +397,18 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       # rename id to tag_id
       if ('tag_id' %in% colnames(df)) {
         df$tag_id = toupper(df$tag_id)
+        if (length(df$tag_id) > 8) {
+          df$tag_id = substr(df$tag_id, 1,8)
+        }
+        ### remove last two characters if length is 10 characters long
       } else {
         df$tag_id = toupper(df$id)
+        if (length(df$tag_id) > 8) {
+          df$tag_id = substr(df$tag_id, 1,8)
+        }
+        ### remove last two characters if length is 10 characters long
+
+
       }
 
       if ('id' %in% colnames(df)) {
@@ -551,8 +561,9 @@ combine_node_data <- function(filetype, conn) {
     dplyr_df = main_df %>%
       union(node_df) %>%
       # group_by(time, tag_id, station_id, node_id) %>%
-      distinct(time, tag_id, station_id, node_id, .keep_all = TRUE) |>
-      mutate(id = 1:n())
+      distinct(time, tag_id, station_id, node_id, .keep_all = TRUE)
+    # |>
+    #   mutate(id = 1:n())
 
     dbSendQuery(conn,
                 'SET preserve_insertion_order = false')
