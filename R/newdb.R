@@ -338,6 +338,12 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       df$path <- y
       df$station_id <- station_id
 
+      combine_node_data(df,
+                        'gps',
+                        conn,
+                        y,
+                        begin)
+
       df2 <- dplyr::anti_join(df, test, by = c('gps_at', 'station_id', 'node_id'))
 
       # remove any duplicates with same gps_at value
@@ -384,6 +390,12 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
                  path,
                  .keep_all = TRUE)
 
+      combine_node_data(df2,
+                        'node_health',
+                        conn,
+                        y,
+                        begin)
+
       df3 = dplyr::anti_join(df2, test, by = c('time', 'station_id', 'node_id'))
 
       z <- db_insert(contents=df3,
@@ -407,8 +419,6 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
           df$tag_id = substr(df$tag_id, 1,8)
         }
         ### remove last two characters if length is 10 characters long
-
-
       }
 
       if ('id' %in% colnames(df)) {
@@ -429,8 +439,8 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       # get existing data table from database
       test <- dbGetQuery(conn,
                          paste0("SELECT * FROM node_raw ",
-                                "WHERE Time > '", start,
-                                "' and Time < '", end, "'"))
+                                "WHERE time >= '", start,
+                                "'AND time <= '", end, "'"))
 
       df$path = y
       df$station_id = station_id
@@ -438,6 +448,12 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       df$time = df$Time
       df$radio_id = 4
       df$validated = NA
+
+      combine_node_data(df,
+                        'raw',
+                        conn,
+                        y,
+                        begin)
 
       # test$radio_id = as.numeric(test$radio_id)
 
@@ -471,8 +487,8 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       # get existing data table from database
       test <- dbGetQuery(conn,
                          paste0("SELECT * FROM node_blu ",
-                                "WHERE time > '", start,
-                                "'AND time < '", end, "'"))
+                                "WHERE time >= '", start,
+                                "'AND time <= '", end, "'"))
 
       # only get records that do not exist in database
       df$path = y
@@ -482,6 +498,12 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       df$usb_port = NA
       df$blu_radio_id = NA
 
+      combine_node_data(df,
+                        'blu',
+                        conn,
+                        y,
+                        begin)
+
       df2 <- dplyr::anti_join(df, test)
 
       z <- db_insert(contents=df2,
@@ -489,12 +511,6 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
                      conn=conn,
                      y=y,
                      begin=begin)
-
-      combine_node_data(df2,
-                        'blu',
-                        conn,
-                        y,
-                        begin)
 
     }
   }
@@ -519,68 +535,37 @@ remove_non_ascii <- function(x) {
 combine_node_data <- function(df, filetype, conn, y, begin) {
 
   if (filetype == 'blu') {
+    # get existing data table from database
+    start <- min(df$time, na.rm=T)
+    end <- max(df$time, na.rm=T)
 
-    # data_types = dbGetQuery(conn, 'SELECT * FROM information_schema.columns')
+    test <- dbGetQuery(conn,
+                       paste0("SELECT * FROM blu ",
+                              "WHERE time >= '", start,
+                              "'AND time <= '", end, "'"))
 
-    # main_df = tbl(conn, 'blu') |>
-    #   as_duckdb_tibble()
+    df2 = anti_join(df, test)
 
-    # node_df = tbl(conn, 'node_blu') |>
-    #   as_duckdb_tibble() |>
-    #   distinct(time, tag_id, station_id, node_id, .keep_all = TRUE) |>
-    #   arrange(time)
-
-
-    z <- db_insert(contents=df,
+    z <- db_insert(contents=df2,
                    filetype='blu',
                    conn=conn,
                    y=y,
                    begin=begin)
-
-    # dplyr_df = main_df %>%
-    #   union(node_df) %>%
-    #   # group_by(time, tag_id, station_id, node_id) %>%
-    #   distinct(time, tag_id, station_id, node_id, .keep_all = TRUE) |>
-    #   arrange(time) |>
-    #   mutate(id = 1:n())
-    #
-    # DBI::dbWriteTable(conn, 'blu', as.data.frame(dplyr_df), overwrite = TRUE)
 
     dbSendQuery(conn,
                 'ALTER TABLE blu
                 ALTER COLUMN time
                 TYPE TIMESTAMP WITH TIME ZONE')
 
-    # remove(main_df)
-    # remove(node_df)
-    # remove(dplyr_df)
-    # gc()
-
   } else if (filetype == 'raw') {
     DBI::dbSendQuery(conn, 'ALTER TABLE node_raw ALTER radio_id TYPE smallint')
+    start <- min(df$time, na.rm=T)
+    end <- max(df$time, na.rm=T)
 
-    # data_types = dbGetQuery(conn, 'SELECT * FROM information_schema.columns')
-    #
-    # dbSendQuery(conn,
-    #             'SET preserve_insertion_order = false')
-    #
-    # main_df = tbl(conn, 'raw') |>
-    #   as_duckdb_tibble()
-
-    # node_df = tbl(conn, 'node_raw') |>
-    #   as_duckdb_tibble()
-
-    # dplyr_df = main_df %>%
-    #   union(node_df) %>%
-    #   # group_by(time, tag_id, station_id, node_id) %>%
-    #   distinct(time, tag_id, station_id, node_id, .keep_all = TRUE)
-    # |>
-    #   mutate(id = 1:n())
-
-    # dbSendQuery(conn,
-    #             'SET preserve_insertion_order = false')
-
-    # DBI::dbWriteTable(conn, 'raw', as.data.frame(dplyr_df), overwrite = TRUE)
+    test <- DBI::dbGetQuery(conn,
+                       paste0("SELECT * FROM raw ",
+                              "WHERE time >= '", start,
+                              "'AND time <= '", end, "'"))
 
     z <- db_insert(contents=df,
                    filetype='raw',
@@ -593,49 +578,24 @@ combine_node_data <- function(df, filetype, conn, y, begin) {
                 ALTER COLUMN time
                 TYPE TIMESTAMP WITH TIME ZONE')
 
-    # remove(main_df)
-    # remove(node_df)
-    # remove(dplyr_df)
-    # gc()
-
   } else if (filetype == 'gps') {
+    start <- min(df$gps_at, na.rm=T)
+    end <- max(df$gps_at, na.rm=T)
 
-    gps_colnames = tbl(conn,
-                       'information_schema.columns') |>
-                        as_duckdb_tibble()
+    test <- dbGetQuery(conn,
+                       paste0("SELECT * FROM gps ",
+                              "WHERE gps_at >= '", start,
+                              "'AND gps_at <= '", end, "'"))
 
-    gps_colnames = dbGetQuery(conn, "SELECT * FROM information_schema.columns
-                                    WHERE TABLE_NAME = N'gps'")
-                      # 'SELECT * FROM information_schema.columns
-                      # WHERE TABLE_NAME = "gps"')
-    # DBI::dbSendQuery(conn, 'ALTER TABLE node_raw ALTER radio_id TYPE smallint')
-    #
-    # data_types = dbGetQuery(conn, 'SELECT * FROM information_schema.columns')
-    #
-    # main_df = tbl(conn, 'gps') |>
-    #   as_duckdb_tibble()
-    #
-    # node_df = tbl(conn, 'node_gps') |>
-    #   as_duckdb_tibble() |>
-    #   mutate(quality = NA,
-    #          recorded_at = NA,
-    #          mean_lat = NA,
-    #          mean_lng = NA,
-    #          n_fixes = NA) |>
-    #   select(colnames(main_df))
-    #
-    # dplyr_df = main_df |>
-    #   union(node_df) |>
-    #   distinct(gps_at, station_id, .keep_all = TRUE)
-    #
-    # DBI::dbWriteTable(conn, 'gps', as.data.frame(dplyr_df), overwrite = TRUE)
     df = df |>
           mutate(quality = NA,
                   recorded_at = NA,
                   mean_lat = NA,
                   mean_lng = NA,
                   n_fixes = NA) |>
-                  select(gps_colnames$column_name)
+                  select(colnames(test))
+
+    df2 = anti_join(df, test, by = c('gps_at', 'station_id'))
 
     z <- db_insert(contents=df,
                    filetype='gps',
@@ -643,42 +603,14 @@ combine_node_data <- function(df, filetype, conn, y, begin) {
                    y=y,
                    begin=begin)
 
-    dbSendQuery(conn,
-                'ALTER TABLE gps
-                ALTER COLUMN gps_at
-                TYPE TIMESTAMP WITH TIME ZONE')
+  } else if (filetype == 'node_health') {
+    start <- min(df$time, na.rm=T)
+    end <- max(df$time, na.rm=T)
 
-    # remove(main_df)
-    # remove(node_df)
-    # remove(dplyr_df)
-    # gc()
-
-  } else if (filetype == 'health') {
-    # DBI::dbSendQuery(con, 'ALTER TABLE node_raw ALTER radio_id TYPE smallint')
-
-    # data_types = dbGetQuery(conn, 'SELECT * FROM information_schema.columns')
-
-    # main_df = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, 'SELECT * FROM node_health'))
-    # node_df = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, 'SELECT * FROM node_health_from_node'))
-    # main_df = tbl(conn, 'node_health') |>
-    #   as_duckdb_tibble()
-    #
-    # node_df = tbl(conn, 'node_health_from_node') |>
-    #   as_duckdb_tibble() |>
-    #   rename(celsius = 'node_temp_c',
-    #          solar_volts = 'charge_mv',
-    #          solar_current = 'charge_ma',
-    #          cumulative_solar_current = 'energy_used_mah',
-    #          battery = 'batt_mv') |>
-    #   mutate(radio_id = 4,
-    #          latitude = NA,
-    #          longitude = NA,
-    #          solar_volts = solar_volts/1000,
-    #          battery = battery/1000,
-    #          node_rssi = NA,
-    #          recorded_at = NA,
-    #          firmware = NA) |>
-    #   select(colnames(main_df))
+    test <- dbGetQuery(conn,
+                       paste0("SELECT * FROM node_health ",
+                              "WHERE time >= '", start,
+                              "'AND time <= '", end, "'"))
 
     df = df |>
       rename(celsius = 'node_temp_c',
@@ -694,34 +626,15 @@ combine_node_data <- function(df, filetype, conn, y, begin) {
              node_rssi = NA,
              recorded_at = NA,
              firmware = NA) |>
-      select(colnames(main_df))
+      select(colnames(test))
 
-    z <- db_insert(contents=df,
+    df2 = anti_join(df, test, by = c('time', 'station_id', 'node_id'))
+
+    z <- db_insert(contents=df2,
                    filetype='node_health',
                    conn=conn,
                    y=y,
                    begin=begin)
 
-#
-#     dplyr_df = main_df |>
-#       union(node_df) |>
-#       # bind_rows(node_df) %>%
-#       # group_by(time, station_id) %>%
-#       distinct(time, station_id, .keep_all = TRUE) |>
-#       as_duckdb_tibble()
-#
-#     DBI::dbWriteTable(conn, 'node_health', as.data.frame(dplyr_df), overwrite = TRUE)
-
-    dbSendQuery(conn,
-                'ALTER TABLE node_health
-                ALTER COLUMN time
-                TYPE TIMESTAMP WITH TIME ZONE')
-
-    # remove(main_df)
-    # remove(node_df)
-    # remove(dplyr_df)
-    # gc()
   }
-  # gc()
-
 }

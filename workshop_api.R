@@ -103,27 +103,24 @@ ctt_project = dbGetQuery(conn, 'SELECT * FROM ctt_project')
 
 
 # list last 10 records in raw
-raw = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM raw"))
-node_raw = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM node_raw"))
-combine_node_data('raw', conn)
-raw_after_insert = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM raw"))
+raw = tbl(conn, 'raw') |> as_duckdb_tibble()
+node_raw = tbl(conn, 'node_raw') |> as_duckdb_tibble()
 
-# blu = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM blu"))
 blu = tbl(conn, 'blu') |> as_duckdb_tibble()
+node_blu = tbl(conn, 'node_blu') |> as_duckdb_tibble()
+
 node_blu = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM node_blu"))
-combine_node_data('blu', conn)
 blu_after_insert = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM blu"))
 
 gps = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM gps"))
+gps = tbl(conn, 'gps') |> as_duckdb_tibble()
+
 node_gps = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM node_gps"))
-combine_node_data('gps', conn)
 gps_after_insert = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM gps"))
 
-# node_health = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM node_health"))
 node_health = tbl(conn, 'node_health') |> as_duckdb_tibble()
 
 node_health_from_node = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM node_health_from_node"))
-combine_node_data('health', conn)
 node_health_after_insert = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM node_health"))
 
 raw = DBI::dbGetQuery(conn, 'SELECT * FROM raw ORDER BY time LIMIT 5')
@@ -163,16 +160,6 @@ node_blu = DBI::dbGetQuery(conn, 'SELECT * FROM node_blu')
 
 node_health_from_node = DBI::dbGetQuery(conn, 'SELECT * FROM node_health_from_node')
 
-raw_combined = DBI::dbGetQuery(conn, 'SELECT * FROM raw
-                                      INNER JOIN node_raw ON raw.time = node_raw.time
-                                      AND raw.station_id = node_raw.station_id
-                                      AND raw.tag_id = node_raw.tag_id')
-
-raw_combined = DBI::dbSendQuery(conn,
-                                'INSERT INTO raw (path, radio_id, tag_id, node_id, tag_rssi, time, station_id)
-                                SELECT path, radio_id, tag_id, node_id, tag_rssi, time, station_id FROM node_raw')
-
-rc_dplyr = anti_join(node_raw, raw, by = c('time', 'station_id', 'tag_id', 'radio_id'))
 # list data in nodes table
 node_table = DBI::dbGetQuery(conn, 'SELECT * FROM nodes')
 
@@ -191,46 +178,7 @@ DBI::dbSendQuery(con, 'ALTER TABLE node_raw ADD COLUMN radio_id smallint DEFAULT
 DBI::dbSendQuery(con, 'ALTER TABLE node_raw ADD COLUMN validated smallint')
 
 
-node_blu = DBI::dbGetQuery(con, 'SELECT * FROM node_blu')
-
-node_health_from_node = DBI::dbGetQuery(con, 'SELECT * FROM node_health_from_node')
-
-data_types = dbGetQuery(con, 'SELECT * FROM information_schema.columns')
-
-dbSendQuery(con,
-            'CREATE TABLE raw_combine
-            AS FROM raw')
-
-dbSendQuery(con,
-            'SELECT * FROM raw_combine
-            INSERT INTO
-            SELECT *
-            FROM node_raw')
-
-vars <- paste(DBI::dbListFields(con,
-                                'raw')[2:length(DBI::dbListFields(con,
-                                                                  'raw'))],
-              sep = "",
-              collapse = ",")
-
-vals <- paste(seq_along(1:(length(DBI::dbListFields(con,
-                                                    'raw')) - 1)),
-              sep = "",
-              collapse = ", $")
-
-# dbSendQuery(con,
-#             'SELECT * FROM raw_combine
-#             UNION ALL BY NAME
-#             SELECT node_raw.path,
-#                   node_raw.radio_id,
-#                   node_raw.time,
-#                   node_raw.tag_id,
-#                   node_raw.node_id,
-#                   node_raw.tag_rssi,
-#                   node_raw.validated,
-#                   node_raw.station_id
-#             FROM node_raw
-#             ')
+data_types = dbGetQuery(conn, 'SELECT * FROM information_schema.columns')
 
 raw_duplicates = raw_combine %>%
   group_by(time, tag_id, station_id, node_id) %>%
