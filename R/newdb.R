@@ -490,6 +490,12 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
                      y=y,
                      begin=begin)
 
+      combine_node_data(df2,
+                        'blu',
+                        conn,
+                        y,
+                        begin)
+
     }
   }
 }
@@ -510,121 +516,171 @@ remove_non_ascii <- function(x) {
 }
 
 # combine node data function
-combine_node_data <- function(filetype, conn) {
-  library(duckplyr)
+combine_node_data <- function(df, filetype, conn, y, begin) {
 
   if (filetype == 'blu') {
 
-    DBI::dbSendQuery(conn, 'ALTER TABLE node_blu ALTER radio_id TYPE smallint')
+    # data_types = dbGetQuery(conn, 'SELECT * FROM information_schema.columns')
 
-    data_types = dbGetQuery(conn, 'SELECT * FROM information_schema.columns')
+    # main_df = tbl(conn, 'blu') |>
+    #   as_duckdb_tibble()
 
-    main_df = tbl(conn, 'blu') |>
-      as_duckdb_tibble()
+    # node_df = tbl(conn, 'node_blu') |>
+    #   as_duckdb_tibble() |>
+    #   distinct(time, tag_id, station_id, node_id, .keep_all = TRUE) |>
+    #   arrange(time)
 
-    node_df = tbl(conn, 'node_blu') |>
-      as_duckdb_tibble()
 
-    dplyr_df = main_df %>%
-      union(node_df) %>%
-      # group_by(time, tag_id, station_id, node_id) %>%
-      distinct(time, tag_id, station_id, node_id, .keep_all = TRUE) |>
-      arrange(time) |>
-      mutate(id = 1:n())
+    z <- db_insert(contents=df,
+                   filetype='blu',
+                   conn=conn,
+                   y=y,
+                   begin=begin)
 
-    DBI::dbWriteTable(conn, 'blu', as.data.frame(dplyr_df), overwrite = TRUE)
+    # dplyr_df = main_df %>%
+    #   union(node_df) %>%
+    #   # group_by(time, tag_id, station_id, node_id) %>%
+    #   distinct(time, tag_id, station_id, node_id, .keep_all = TRUE) |>
+    #   arrange(time) |>
+    #   mutate(id = 1:n())
+    #
+    # DBI::dbWriteTable(conn, 'blu', as.data.frame(dplyr_df), overwrite = TRUE)
 
     dbSendQuery(conn,
                 'ALTER TABLE blu
                 ALTER COLUMN time
                 TYPE TIMESTAMP WITH TIME ZONE')
 
-    remove(main_df)
-    remove(node_df)
-    remove(dplyr_df)
-    gc()
+    # remove(main_df)
+    # remove(node_df)
+    # remove(dplyr_df)
+    # gc()
 
   } else if (filetype == 'raw') {
     DBI::dbSendQuery(conn, 'ALTER TABLE node_raw ALTER radio_id TYPE smallint')
 
-    data_types = dbGetQuery(conn, 'SELECT * FROM information_schema.columns')
+    # data_types = dbGetQuery(conn, 'SELECT * FROM information_schema.columns')
+    #
+    # dbSendQuery(conn,
+    #             'SET preserve_insertion_order = false')
+    #
+    # main_df = tbl(conn, 'raw') |>
+    #   as_duckdb_tibble()
 
-    dbSendQuery(conn,
-                'SET preserve_insertion_order = false')
+    # node_df = tbl(conn, 'node_raw') |>
+    #   as_duckdb_tibble()
 
-    main_df = tbl(conn, 'raw') |>
-      as_duckdb_tibble()
-
-    node_df = tbl(conn, 'node_raw') |>
-      as_duckdb_tibble()
-
-    dplyr_df = main_df %>%
-      union(node_df) %>%
-      # group_by(time, tag_id, station_id, node_id) %>%
-      distinct(time, tag_id, station_id, node_id, .keep_all = TRUE)
+    # dplyr_df = main_df %>%
+    #   union(node_df) %>%
+    #   # group_by(time, tag_id, station_id, node_id) %>%
+    #   distinct(time, tag_id, station_id, node_id, .keep_all = TRUE)
     # |>
     #   mutate(id = 1:n())
 
-    dbSendQuery(conn,
-                'SET preserve_insertion_order = false')
+    # dbSendQuery(conn,
+    #             'SET preserve_insertion_order = false')
 
-    DBI::dbWriteTable(conn, 'raw', as.data.frame(dplyr_df), overwrite = TRUE)
+    # DBI::dbWriteTable(conn, 'raw', as.data.frame(dplyr_df), overwrite = TRUE)
+
+    z <- db_insert(contents=df,
+                   filetype='raw',
+                   conn=conn,
+                   y=y,
+                   begin=begin)
 
     dbSendQuery(conn,
                 'ALTER TABLE raw
                 ALTER COLUMN time
                 TYPE TIMESTAMP WITH TIME ZONE')
 
-    remove(main_df)
-    remove(node_df)
-    remove(dplyr_df)
-    gc()
+    # remove(main_df)
+    # remove(node_df)
+    # remove(dplyr_df)
+    # gc()
 
   } else if (filetype == 'gps') {
-    DBI::dbSendQuery(conn, 'ALTER TABLE node_raw ALTER radio_id TYPE smallint')
 
-    data_types = dbGetQuery(conn, 'SELECT * FROM information_schema.columns')
+    gps_colnames = tbl(conn,
+                       'information_schema.columns') |>
+                        as_duckdb_tibble()
 
-    main_df = tbl(conn, 'gps') |>
-      as_duckdb_tibble()
+    gps_colnames = dbGetQuery(conn, "SELECT * FROM information_schema.columns
+                                    WHERE TABLE_NAME = N'gps'")
+                      # 'SELECT * FROM information_schema.columns
+                      # WHERE TABLE_NAME = "gps"')
+    # DBI::dbSendQuery(conn, 'ALTER TABLE node_raw ALTER radio_id TYPE smallint')
+    #
+    # data_types = dbGetQuery(conn, 'SELECT * FROM information_schema.columns')
+    #
+    # main_df = tbl(conn, 'gps') |>
+    #   as_duckdb_tibble()
+    #
+    # node_df = tbl(conn, 'node_gps') |>
+    #   as_duckdb_tibble() |>
+    #   mutate(quality = NA,
+    #          recorded_at = NA,
+    #          mean_lat = NA,
+    #          mean_lng = NA,
+    #          n_fixes = NA) |>
+    #   select(colnames(main_df))
+    #
+    # dplyr_df = main_df |>
+    #   union(node_df) |>
+    #   distinct(gps_at, station_id, .keep_all = TRUE)
+    #
+    # DBI::dbWriteTable(conn, 'gps', as.data.frame(dplyr_df), overwrite = TRUE)
+    df = df |>
+          mutate(quality = NA,
+                  recorded_at = NA,
+                  mean_lat = NA,
+                  mean_lng = NA,
+                  n_fixes = NA) |>
+                  select(gps_colnames$column_name)
 
-    node_df = tbl(conn, 'node_gps') |>
-      as_duckdb_tibble() |>
-      mutate(quality = NA,
-             recorded_at = NA,
-             mean_lat = NA,
-             mean_lng = NA,
-             n_fixes = NA) |>
-      select(colnames(main_df))
-
-    dplyr_df = main_df |>
-      union(node_df) |>
-      distinct(gps_at, station_id, .keep_all = TRUE)
-
-    DBI::dbWriteTable(conn, 'gps', as.data.frame(dplyr_df), overwrite = TRUE)
+    z <- db_insert(contents=df,
+                   filetype='gps',
+                   conn=conn,
+                   y=y,
+                   begin=begin)
 
     dbSendQuery(conn,
                 'ALTER TABLE gps
                 ALTER COLUMN gps_at
                 TYPE TIMESTAMP WITH TIME ZONE')
 
-    remove(main_df)
-    remove(node_df)
-    remove(dplyr_df)
-    gc()
+    # remove(main_df)
+    # remove(node_df)
+    # remove(dplyr_df)
+    # gc()
 
   } else if (filetype == 'health') {
     # DBI::dbSendQuery(con, 'ALTER TABLE node_raw ALTER radio_id TYPE smallint')
 
-    data_types = dbGetQuery(conn, 'SELECT * FROM information_schema.columns')
+    # data_types = dbGetQuery(conn, 'SELECT * FROM information_schema.columns')
 
     # main_df = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, 'SELECT * FROM node_health'))
     # node_df = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, 'SELECT * FROM node_health_from_node'))
-    main_df = tbl(conn, 'node_health') |>
-      as_duckdb_tibble()
+    # main_df = tbl(conn, 'node_health') |>
+    #   as_duckdb_tibble()
+    #
+    # node_df = tbl(conn, 'node_health_from_node') |>
+    #   as_duckdb_tibble() |>
+    #   rename(celsius = 'node_temp_c',
+    #          solar_volts = 'charge_mv',
+    #          solar_current = 'charge_ma',
+    #          cumulative_solar_current = 'energy_used_mah',
+    #          battery = 'batt_mv') |>
+    #   mutate(radio_id = 4,
+    #          latitude = NA,
+    #          longitude = NA,
+    #          solar_volts = solar_volts/1000,
+    #          battery = battery/1000,
+    #          node_rssi = NA,
+    #          recorded_at = NA,
+    #          firmware = NA) |>
+    #   select(colnames(main_df))
 
-    node_df = tbl(conn, 'node_health_from_node') |>
-      as_duckdb_tibble() |>
+    df = df |>
       rename(celsius = 'node_temp_c',
              solar_volts = 'charge_mv',
              solar_current = 'charge_ma',
@@ -640,26 +696,32 @@ combine_node_data <- function(filetype, conn) {
              firmware = NA) |>
       select(colnames(main_df))
 
+    z <- db_insert(contents=df,
+                   filetype='node_health',
+                   conn=conn,
+                   y=y,
+                   begin=begin)
 
-    dplyr_df = main_df |>
-      union(node_df) |>
-      # bind_rows(node_df) %>%
-      # group_by(time, station_id) %>%
-      distinct(time, station_id, .keep_all = TRUE) |>
-      as_duckdb_tibble()
-
-    DBI::dbWriteTable(conn, 'node_health', as.data.frame(dplyr_df), overwrite = TRUE)
+#
+#     dplyr_df = main_df |>
+#       union(node_df) |>
+#       # bind_rows(node_df) %>%
+#       # group_by(time, station_id) %>%
+#       distinct(time, station_id, .keep_all = TRUE) |>
+#       as_duckdb_tibble()
+#
+#     DBI::dbWriteTable(conn, 'node_health', as.data.frame(dplyr_df), overwrite = TRUE)
 
     dbSendQuery(conn,
                 'ALTER TABLE node_health
                 ALTER COLUMN time
                 TYPE TIMESTAMP WITH TIME ZONE')
 
-    remove(main_df)
-    remove(node_df)
-    remove(dplyr_df)
-    gc()
+    # remove(main_df)
+    # remove(node_df)
+    # remove(dplyr_df)
+    # gc()
   }
-  gc()
+  # gc()
 
 }
