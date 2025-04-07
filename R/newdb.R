@@ -216,7 +216,10 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
   df_bad = df %>%
     filter(if_any(everything(), ~ str_detect(., "[^\\x00-\\x7F]+") == TRUE))
 
+  print('removing corrupted data')
   df_anti_join = anti_join(df, df_bad)
+  print('corrupted data removed'
+        )
   df = df_anti_join
   # badlines <- grep("[^ -~]", df$id)
 
