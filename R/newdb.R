@@ -341,11 +341,11 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       df$path <- y
       df$station_id <- station_id
 
-      combine_node_data(df,
-                        'gps',
-                        conn,
-                        y,
-                        begin)
+      # combine_node_data(df,
+      #                   'gps',
+      #                   conn,
+      #                   y,
+      #                   begin)
 
       df2 <- dplyr::anti_join(df, test, by = c('gps_at', 'station_id', 'node_id'))
 
@@ -599,6 +599,7 @@ combine_node_data <- function(df, filetype, conn, y, begin) {
                   select(colnames(test))
 
     df2 = anti_join(df, test, by = c('gps_at', 'station_id'))
+    print(paste0('number of rows going into gps table ', nrow(df2)))
 
     z <- db_insert(contents=df,
                    filetype='gps',
