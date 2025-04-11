@@ -53,6 +53,7 @@ update_db(con, outpath, myproject)
 
 DBI::dbDisconnect(con)
 
+node_health_from_node = tbl(con, 'node_health_from_node') |> as_duckdb_tibble()
 
 # Plot Node Battery over Time ---------------------------------------------
 
