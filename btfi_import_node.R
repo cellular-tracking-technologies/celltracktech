@@ -55,10 +55,16 @@ DBI::dbDisconnect(con)
 
 node_health_from_node = tbl(con, 'node_health_from_node') |> as_duckdb_tibble()
 
+gps = tbl(con,
+          'gps') |>
+  as_duckdb_tibble()
+
+
 # Plot Node Battery over Time ---------------------------------------------
 
 # load node_health table into RStudio and only load the data between the set start and stop times
 node_health_df <- tbl(con, "node_health") |>
+  filter(year(time) > 2020) |>
   # filter(time >= start_time & time <= stop_time) |>
   collect()
 
@@ -89,7 +95,9 @@ node_fords = node_health_df |>
   filter(year(time) > 2020)
 
 ggplot(node_fords) +
-  geom_point(aes(x=time,y=battery,colour = node_id)) +
+  geom_point(aes(x=time,
+                 y=battery,
+                 colour = node_id)) +
   classic_plot_theme
 
 # Plot the Battery & Solar voltage vs. time for a specific node
@@ -99,7 +107,7 @@ batt_solar_plot <- plot_battery_solar(node_health_df = node_health_df, selected_
 batt_solar_plot
 
 # based on the Battery voltage vs. time plot, Node 32909D has a low battery voltage
-selected_node_id <- '32909D'
+selected_node_id <- 'NODE_3'
 batt_solar_plot <- plot_battery_solar(node_health_df = node_health_df, selected_node_id = selected_node_id)
 batt_solar_plot
 
