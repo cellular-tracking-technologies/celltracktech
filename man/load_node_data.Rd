@@ -4,7 +4,7 @@
 \alias{load_node_data}
 \title{Load Node Data}
 \usage{
-load_node_data(e, conn, outpath, myproject)
+load_node_data(e, conn, outpath, myproject, station_id)
 }
 \arguments{
 \item{e}{file path}
@@ -14,6 +14,8 @@ load_node_data(e, conn, outpath, myproject)
 \item{outpath}{outpath directory}
 
 \item{myproject}{project name}
+
+\item{station_id}{sensor station id - string}
 }
 \description{
 Load Node Data
