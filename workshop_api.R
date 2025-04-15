@@ -19,18 +19,18 @@ myproject <- "Meadows V2" #this is your project name on your CTT account
 outpath <-'./examples/'
 create_outpath(paste0(outpath, myproject, '/'))
 
-# create duckdb database
-conn <- DBI::dbConnect(
-  duckdb::duckdb(),
-  dbdir = "./examples/Meadows V2/meadows.duckdb",
-  read_only = FALSE
-)
-
-# # create Postgres database
+# # create duckdb database
 # conn <- DBI::dbConnect(
-#   RPostgres::Postgres(),
-#   dbname='meadows'
+#   duckdb::duckdb(),
+#   dbdir = "./examples/Meadows V2/meadows.duckdb",
+#   read_only = FALSE
 # )
+
+# create Postgres database
+conn <- DBI::dbConnect(
+  RPostgres::Postgres(),
+  dbname="meadows1"
+)
 
 # List Projects -----------------------------------------------------------
 

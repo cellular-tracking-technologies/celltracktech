@@ -274,20 +274,24 @@ create_db <- function(conn) {
     PRIMARY KEY (gps_at, station_id)
   )")
 
-  DBI::dbExecute(conn, 'CREATE TABLE IF NOT EXISTS node_raw
+  DBI::dbExecute(conn, "
+  CREATE TABLE IF NOT EXISTS node_raw
   (
-    id	SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     path  TEXT NOT NULL,
+    radio_id TEXT,
     tag_id TEXT,
     node_id TEXT,
     tag_rssi smallint,
     time TIMESTAMP with time zone NOT NULL,
+    validated smallint,
     station_id TEXT
-  )')
+  )")
 
-  DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS blu
+  DBI::dbExecute(conn, "
+  CREATE TABLE IF NOT EXISTS node_blu
   (
-    id	SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     path  TEXT NOT NULL,
     radio_id smallint,
     usb_port smallint,
@@ -301,6 +305,50 @@ create_db <- function(conn) {
     payload text,
     time TIMESTAMP with time zone NOT NULL,
     station_id TEXT
+  )")
+
+  DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS node_health_from_node
+  (
+    PRIMARY KEY (node_id, time, station_id),
+    time TIMESTAMP with time zone NOT NULL,
+    up_time BIGINT,
+    power_ok smallint,
+    batt_mv smallint,
+    batt_temp_c smallint,
+    charge_mv smallint,
+    charge_ma smallint,
+    charge_temp_c smallint,
+    node_temp_c smallint,
+    energy_used_mah smallint,
+    sd_free smallint,
+    sub_ghz_det smallint,
+    ble_det smallint,
+    errors TEXT,
+    node_id TEXT,
+    station_id TEXT,
+    path  TEXT NOT NULL,
+    FOREIGN KEY (node_id)
+      REFERENCES nodes (node_id)
+        ON DELETE NO ACTION
+        ON UPDATE NO ACTION
+  )")
+
+  DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS node_gps
+  (
+    path  TEXT NOT NULL,
+    latitude NUMERIC(8,6),
+    longitude NUMERIC(9,6),
+    altitude NUMERIC(6,1),
+    gps_at TIMESTAMP WITH TIME ZONE,
+    hdop smallint,
+    vdop smallint,
+    pdop smallint,
+    navigation_mode smallint,
+    satellites NUMERIC(5,2),
+    on_time NUMERIC(3,0),
+    station_id TEXT,
+    node_id TEXT,
+    PRIMARY KEY (gps_at, node_id)
   )")
 }
 
