@@ -12,19 +12,18 @@ library(devtools)
 # Settings ----------------------------------------------------------------
 # Load functions
 # DEFS
-source("aos_functions/defs/plot_themes.R")
-# UTILS
-source("aos_functions/functions/utils/get_time_value.R")
-# NODE
-source("aos_functions/functions/node/node_functions.R")
-source('aos_functions/functions/node/node_functions.R')
+# source("aos_functions/defs/plot_themes.R")
+# # UTILS
+# source("aos_functions/functions/utils/get_time_value.R")
+# # NODE
+# source("aos_functions/functions/node/node_functions.R")
+# source('aos_functions/functions/node/node_functions.R')
 
 load_dot_env(file='.env')
 
 my_token <- Sys.getenv('BTFI')
 db_name <- "btfi.duckdb"
 myproject <- "Black-throated finches in Australia" #this is your project name on your CTT account
-create_outpath('./examples/btfi')
 outpath <-'./examples/'
 
 # List Projects -----------------------------------------------------------
@@ -48,8 +47,6 @@ import_node_data(con,
                  outpath = outpath,
                  myproject= myproject,
                  station_id = 'V3023D36B0FC')
-
-update_db(con, outpath, myproject)
 
 DBI::dbDisconnect(con)
 
