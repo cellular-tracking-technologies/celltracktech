@@ -340,9 +340,9 @@ create_db <- function(conn) {
     longitude NUMERIC(9,6),
     altitude NUMERIC(6,1),
     gps_at TIMESTAMP WITH TIME ZONE,
-    hdop smallint,
-    vdop smallint,
-    pdop smallint,
+    hdop NUMERIC(6,2),
+    vdop NUMERIC(6,2),
+    pdop NUMERIC(6,2),
     navigation_mode smallint,
     satellites NUMERIC(5,2),
     on_time NUMERIC(3,0),
@@ -733,24 +733,41 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
     contents$node_id <- toupper(contents$node_id)
     if (length(which(!is.na(contents$node_id))) > 0) {
       nodeids <- contents$node_id[which(!is.na(contents$node_id))]
-      insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "nodes (node_id)", " VALUES ($1)
-                                           ON CONFLICT DO NOTHING", sep = ""))
+      insertnew <- DBI::dbSendQuery(conn,
+                                    paste("INSERT INTO ",
+                                    "nodes (node_id)",
+                                    " VALUES ($1)
+                                    ON CONFLICT DO NOTHING", sep = ""))
+
       DBI::dbBind(insertnew, params = list(unique(nodeids)))
       DBI::dbClearResult(insertnew)
     }
   } else {
     nodeids <- c()
   }
-  if (filetype %in% c("raw", "node_health", "gps", "blu", 'node_raw', 'node_health_from_node', 'node_gps', 'node_blu') & nrow(contents) > 0) {
+  if (filetype %in% c("raw",
+                      "node_health",
+                      "gps",
+                      "blu",
+                      'node_raw',
+                      'node_health_from_node',
+                      'node_gps',
+                      'node_blu') & nrow(contents) > 0) {
     if (filetype %in% c("raw", "blu", 'node_raw', 'node_blu')) {
-      vars <- paste(DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))], sep = "", collapse = ",")
-      vals <- paste(seq_along(1:(length(DBI::dbListFields(conn, filetype)) - 1)), sep = "", collapse = ", $")
+      vars <- paste(DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))],
+                    sep = "",
+                    collapse = ",")
+      vals <- paste(seq_along(1:(length(DBI::dbListFields(conn, filetype)) - 1)),
+                    sep = "",
+                    collapse = ", $")
 
       contents <- contents[, DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]] # need path and station_id columns
       contents
     } else {
       vars <- paste(DBI::dbListFields(conn, filetype), sep = "", collapse = ",")
-      vals <- paste(seq_along(1:length(DBI::dbListFields(conn, filetype))), sep = "", collapse = ", $")
+      vals <- paste(seq_along(1:length(DBI::dbListFields(conn, filetype))),
+                    sep = "",
+                    collapse = ", $")
       names(contents) <- tolower(names(contents))
       contents <- contents[, DBI::dbListFields(conn, filetype)]
     }

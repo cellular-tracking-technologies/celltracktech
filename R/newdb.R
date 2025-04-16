@@ -354,7 +354,10 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
         distinct(gps_at,
                  node_id,
                  station_id,
-                 .keep_all = TRUE)
+                 .keep_all = TRUE) %>%
+        mutate(hdop = round(hdop, 2),
+               vdop = round(vdop, 2),
+               pdop = round(pdop, 2))
 
       z <- db_insert(contents=df3,
                      filetype='node_gps',
@@ -393,11 +396,11 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
                  path,
                  .keep_all = TRUE)
 
-      combine_node_data(df2,
-                        'node_health',
-                        conn,
-                        y,
-                        begin)
+      check_db_type(df2,
+                    'node_health',
+                     conn,
+                     y,
+                     begin)
 
       df3 = dplyr::anti_join(df2, test, by = c('time', 'station_id', 'node_id'))
 
@@ -437,13 +440,17 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       end <- max(df$Time, na.rm=T)
       print(paste(start, end))
 
-      DBI::dbSendQuery(conn, 'ALTER TABLE node_raw ALTER radio_id TYPE smallint')
+      # DBI::dbSendQuery(conn,
+      #                  'ALTER TABLE node_raw
+      #                  ALTER COLUMN radio_id TYPE smallint')
 
       # get existing data table from database
       test <- dbGetQuery(conn,
                          paste0("SELECT * FROM node_raw ",
                                 "WHERE time >= '", start,
                                 "'AND time <= '", end, "'"))
+
+      test$radio_id = as.numeric(test$radio_id)
 
       df$path = y
       df$station_id = station_id
@@ -452,11 +459,11 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       df$radio_id = 4
       df$validated = NA
 
-      combine_node_data(df,
-                        'raw',
-                        conn,
-                        y,
-                        begin)
+      check_db_type(df,
+                    'raw',
+                     conn,
+                     y,
+                     begin)
 
       # test$radio_id = as.numeric(test$radio_id)
 
@@ -501,11 +508,11 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       df$usb_port = NA
       df$blu_radio_id = NA
 
-      combine_node_data(df,
-                        'blu',
-                        conn,
-                        y,
-                        begin)
+      check_db_type(df,
+                    'blu',
+                     conn,
+                     y,
+                     begin)
 
       df2 <- dplyr::anti_join(df, test)
 
@@ -535,7 +542,11 @@ remove_non_ascii <- function(x) {
 }
 
 # combine node data function
-combine_node_data <- function(df, filetype, conn, y, begin) {
+combine_data_duck <- function(df,
+                              filetype,
+                              conn,
+                              y,
+                              begin) {
 
   if (filetype == 'blu') {
     # get existing data table from database
@@ -640,5 +651,142 @@ combine_node_data <- function(df, filetype, conn, y, begin) {
                    y=y,
                    begin=begin)
 
+  }
+}
+
+# combine node data function
+combine_data_postgres <- function(df,
+                              filetype,
+                              conn,
+                              y,
+                              begin) {
+
+  if (filetype == 'blu') {
+    # get existing data table from database
+    start <- min(df$time, na.rm=T)
+    end <- max(df$time, na.rm=T)
+
+    test <- dbGetQuery(conn,
+                       paste0("SELECT * FROM blu ",
+                              "WHERE time >= '", start,
+                              "'AND time <= '", end, "'"))
+
+    df2 = anti_join(df, test)
+
+    z <- db_insert(contents=df2,
+                   filetype='blu',
+                   conn=conn,
+                   y=y,
+                   begin=begin)
+
+    dbSendQuery(conn,
+                'ALTER TABLE blu
+                ALTER COLUMN time
+                TYPE TIMESTAMP WITH TIME ZONE')
+
+  } else if (filetype == 'raw') {
+    DBI::dbSendQuery(conn,
+                     'ALTER TABLE node_raw
+                     ALTER COLUMN radio_id
+                     TYPE smallint
+                     USING radio_id::smallint')
+    start <- min(df$time, na.rm=T)
+    end <- max(df$time, na.rm=T)
+
+    test <- DBI::dbGetQuery(conn,
+                            paste0("SELECT * FROM raw ",
+                                   "WHERE time >= '", start,
+                                   "'AND time <= '", end, "'"))
+
+    z <- db_insert(contents=df,
+                   filetype='raw',
+                   conn=conn,
+                   y=y,
+                   begin=begin)
+
+    dbSendQuery(conn,
+                'ALTER TABLE raw
+                ALTER COLUMN time
+                TYPE TIMESTAMP WITH TIME ZONE')
+
+  } else if (filetype == 'gps') {
+    start <- min(df$gps_at, na.rm=T)
+    end <- max(df$gps_at, na.rm=T)
+
+    test <- dbGetQuery(conn,
+                       paste0("SELECT * FROM gps ",
+                              "WHERE gps_at >= '", start,
+                              "'AND gps_at <= '", end, "'"))
+
+    df = df |>
+      mutate(quality = NA,
+             recorded_at = NA,
+             mean_lat = NA,
+             mean_lng = NA,
+             n_fixes = NA) |>
+      select(colnames(test))
+
+    df2 = anti_join(df, test, by = c('gps_at', 'station_id'))
+    print(paste0('number of rows going into gps table ', nrow(df2)))
+
+    z <- db_insert(contents=df,
+                   filetype='gps',
+                   conn=conn,
+                   y=y,
+                   begin=begin)
+
+  } else if (filetype == 'node_health') {
+    start <- min(df$time, na.rm=T)
+    end <- max(df$time, na.rm=T)
+
+    test <- dbGetQuery(conn,
+                       paste0("SELECT * FROM node_health ",
+                              "WHERE time >= '", start,
+                              "'AND time <= '", end, "'"))
+
+    df = df |>
+      rename(celsius = 'node_temp_c',
+             solar_volts = 'charge_mv',
+             solar_current = 'charge_ma',
+             cumulative_solar_current = 'energy_used_mah',
+             battery = 'batt_mv') |>
+      mutate(radio_id = 4,
+             latitude = NA,
+             longitude = NA,
+             solar_volts = solar_volts/1000,
+             battery = battery/1000,
+             node_rssi = NA,
+             recorded_at = NA,
+             firmware = NA) |>
+      select(colnames(test))
+
+    df2 = anti_join(df, test, by = c('time', 'station_id', 'node_id'))
+
+    z <- db_insert(contents=df2,
+                   filetype='node_health',
+                   conn=conn,
+                   y=y,
+                   begin=begin)
+
+  }
+}
+
+check_db_type <- function(df,
+                          filetype,
+                          conn,
+                          y,
+                          begin) {
+  if (!is.null(conn) & length(grep("duckdb", format(conn))) > 0) {
+    combine_data_duck(df,
+                      filetype,
+                      conn,
+                      y,
+                      begin)
+  } else {
+    combine_data_postgres(df,
+                          filetype,
+                          conn,
+                          y,
+                          begin)
   }
 }
