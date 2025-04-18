@@ -36,7 +36,8 @@ conn <- DBI::dbConnect(
 
 project_list(my_token)
 
-################
+
+# Get Data from CTT server ------------------------------------------------
 get_my_data(
   my_token,
   outpath,
@@ -46,6 +47,17 @@ get_my_data(
   end=as.Date("2025-01-03"),
   filetypes = c('raw', 'node_health','gps', 'blu')
 )
+
+# add downloaded data to database
+update_db(conn, outpath, myproject)
+
+
+# Create database from files on local computer ----------------------------
+
+create_database(my_token = my_token,
+                outpath = outpath,
+                myproject = myproject,
+                db_name = conn)
 
 update_db(conn, outpath, myproject)
 
@@ -69,7 +81,7 @@ conn <- DBI::dbConnect(
 )
 
 # create database from nodes
-create_node_db(my_token = my_token,
+create_database(my_token = my_token,
                outpath = outpath,
                myproject = myproject,
                db_name = conn)
@@ -123,8 +135,22 @@ node_health = tbl(conn, 'node_health') |> as_duckdb_tibble()
 node_health_from_node = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM node_health_from_node"))
 node_health_after_insert = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM node_health"))
 
+unique_tags = tbl(conn, 'raw') |>
+  group_by(tag_id) |>
+  summarize(num_detect = n()) |>
+  select(tag_id, num_detect) |>
+  arrange(desc(num_detect)) |>
+  as_duckdb_tibble()
+
+
 raw = DBI::dbGetQuery(conn, 'SELECT * FROM raw ORDER BY time LIMIT 5')
 head(raw)
+
+unique_tags_sql= dbGetQuery(conn,
+                            'SELECT tag_id, COUNT(*) AS num_detect
+                            FROM raw
+                            GROUP BY tag_id
+                            ORDER BY num_detect DESC')
 
 # list last 10 records in blu
 blu = DBI::dbGetQuery(conn, "SELECT * FROM blu ")

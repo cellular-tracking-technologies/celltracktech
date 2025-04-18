@@ -1470,8 +1470,8 @@ error_files <- function(dirin, dirout, conn = NULL) {
 #' @export
 #'
 #' @examples
-#' create_node_db(outpath = './data/', myproject = 'Meadows V2', db_name = conn)
-create_node_db = function(
+#' create_database(outpath = './data/', myproject = 'Meadows V2', db_name = conn)
+create_database = function(
     my_token,
     outpath,
     myproject,
