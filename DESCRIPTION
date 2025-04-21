@@ -8,7 +8,7 @@ Authors@R:
            email = "jessica.gorzo@celltracktech.com",
            comment = c(ORCID = "0000-0002-3715-8229"))
 Description: Tools for analyzing data from CTT products.
-Depends: R (>= 3.1.0), httr, DBI, RPostgres, tidyverse (>= 0.4.2), rjson, dplyr, tidyr, tibble, readr, duckdb, duckplyr, dotenv
+Depends: R (>= 3.1.0), httr, DBI, RPostgres, tidyverse (>= 0.4.2), rjson, dplyr, tidyr, tibble, readr, duckdb, duckplyr, dotenv, leaflet, mapview, viridis
 License: GPL-3
 Encoding: UTF-8
 LazyData: true

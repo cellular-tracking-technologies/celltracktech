@@ -2,7 +2,7 @@
 
 export(calculate_track)
 export(create_db)
-export(create_node_db)
+export(create_database)
 export(create_outpath)
 export(db_cleanup)
 export(error_files)
