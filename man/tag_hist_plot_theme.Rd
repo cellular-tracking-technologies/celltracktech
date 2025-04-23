@@ -4,7 +4,7 @@
 \alias{tag_hist_plot_theme}
 \title{Title}
 \usage{
-tag_hist_plot_theme(base_size = 12, base_family = "sans")
+tag_hist_plot_theme()
 }
 \arguments{
 \item{base_family}{}
