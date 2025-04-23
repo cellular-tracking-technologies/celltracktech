@@ -13,8 +13,8 @@ library(ggplot2)
 tag_hist_plot_theme <- function(
   base_size = 12,
   base_family = 'sans') {
-    (theme_foundation(base_size = base_size,
-                      base_family = base_family)) +
+    # (theme_foundation(base_size = base_size,
+    #                   base_family = base_family)) +
     theme(
     # axis.text.x = element_text(size = 20, vjust = 0.5),
     axis.text.y = element_text(family = "courier"),

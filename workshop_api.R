@@ -130,7 +130,7 @@ gps = tbl(conn, 'gps') |> as_duckdb_tibble()
 node_gps = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM node_gps"))
 gps_after_insert = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM gps"))
 
-node_health = tbl(conn, 'node_health') |> as_duckdb_tibble()
+node_health = tbl(conn, 'node_health') |> collect()
 
 node_health_from_node = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM node_health_from_node"))
 node_health_after_insert = duckplyr::as_duckdb_tibble(DBI::dbGetQuery(conn, "SELECT * FROM node_health"))
@@ -240,3 +240,21 @@ df$time <- sapply(df$time, remove_non_ascii)
 df$rssi <- sapply(df$rssi, remove_non_ascii)
 
 print(df)
+
+# Look at the number of health records received from each node
+node_record_counts <- node_health |>
+  count(node_id)
+
+# sort the node_record_counts by decreasing number
+node_record_counts <- node_record_counts[order(node_record_counts$n, decreasing = TRUE),]
+
+# plot the number of node health records based on node id
+ggplot(node_record_counts,
+       aes(x = factor(node_id,
+                      node_record_counts$node_id),
+           y = n)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(x = "Health Record Count",
+       y = "Node Id") +
+  tag_hist_plot_theme()
