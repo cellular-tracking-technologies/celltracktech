@@ -1,6 +1,14 @@
-library(ggplot2)
-
-plot_node_locations <- function(node_health_df, 
+#' Title
+#'
+#' @param node_health_df
+#' @param node_locs
+#' @param theme
+#'
+#' @returns plot
+#' @export
+#'
+#' @examples
+plot_node_locations <- function(node_health_df,
                                 node_locs,
                                 theme = NULL) {
     plot <- ggplot() +

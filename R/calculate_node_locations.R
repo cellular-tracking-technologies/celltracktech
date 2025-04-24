@@ -1,3 +1,11 @@
+#' Title
+#'
+#' @param node_health_df
+#'
+#' @returns
+#' @export result dataframe
+#'
+#' @examples
 calculate_node_locations <- function(node_health_df) {
     node_ids <- sort(unique(node_health_df$node_id))
 
