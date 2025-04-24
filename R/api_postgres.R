@@ -1466,7 +1466,7 @@ error_files <- function(dirin, dirout, conn = NULL) {
 #' @param myproject the name of your project on our system
 #' @param db_name the connection to your local database
 #'
-#' @returns
+#' @returns database
 #' @export
 #'
 #' @examples

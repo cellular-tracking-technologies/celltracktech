@@ -2,6 +2,16 @@ library(dplyr)
 
 source("./R/haversine.R")
 
+#' Title
+#'
+#' @param grid_df
+#' @param rec_df
+#' @param rssi_coefs
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 calc_grid_values <- function(grid_df, rec_df, rssi_coefs) {
     calc_bin_value <- function(bin_lat, bin_lon, rec_df, rssi_coefs) {
         total_diff2 <- 0

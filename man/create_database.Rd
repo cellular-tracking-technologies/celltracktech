@@ -13,6 +13,9 @@ create_database(my_token, outpath, myproject, db_name)
 
 \item{db_name}{the connection to your local database}
 }
+\value{
+database
+}
 \description{
 Create database from Node Data files from SD card
 }

@@ -9,9 +9,6 @@ plot_node_locations(node_health_df, node_locs, theme = NULL)
 \arguments{
 \item{theme}{}
 }
-\value{
-plot
-}
 \description{
 Title
 }

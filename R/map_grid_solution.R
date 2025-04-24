@@ -1,8 +1,20 @@
-library(leaflet)
-library(mapview)
-library(viridis)
-library(lubridate)
+# library(leaflet)
+# library(mapview)
+# library(viridis)
+# library(lubridate)
 
+#' Title
+#'
+#' @param node_locs
+#' @param rec_df
+#' @param grid_values
+#' @param solution
+#' @param tile_url
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 map_single_solution <- function(node_locs, rec_df, grid_values, solution, tile_url) {
     library(leaflet)
     library(viridis)
@@ -78,6 +90,19 @@ map_single_solution <- function(node_locs, rec_df, grid_values, solution, tile_u
     return(map)
 }
 
+#' Title
+#'
+#' @param node_locs
+#' @param rec_df
+#' @param grid_values
+#' @param solution
+#' @param track_df
+#' @param tile_url
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 map_latest_solution <- function(node_locs, rec_df, grid_values, solution, track_df, tile_url) {
     mypal <- colorRampPalette(viridis(1000, option = "D"))(100)
 

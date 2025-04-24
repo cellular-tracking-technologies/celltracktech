@@ -1,5 +1,20 @@
-library(dplyr)
+# library(dplyr)
 
+#' Title
+#'
+#' @param current_time
+#' @param det_window
+#' @param station_tag_df
+#' @param node_locs
+#' @param node_t_offset
+#' @param rssi_coefs
+#' @param filter_alpha
+#' @param filter_time_range
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 calc_receiver_values <- function(
     current_time,
     det_window,

@@ -1,3 +1,11 @@
+#' Title
+#'
+#' @param time_string
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 get_time_value <- function(time_string) {
     time_posix <- as.POSIXct(
         time_string,
