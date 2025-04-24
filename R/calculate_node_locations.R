@@ -3,7 +3,7 @@
 #' @param node_health_df
 #'
 #' @returns
-#' @export result dataframe
+#' @export
 #'
 #' @examples
 calculate_node_locations <- function(node_health_df) {

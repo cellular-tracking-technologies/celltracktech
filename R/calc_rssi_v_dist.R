@@ -1,4 +1,4 @@
-source("./R/haversine.R")
+# source("./R/haversine.R")
 
 calc_rssi_v_dist <- function(node_locs, sidekick_tag_df, detection_df, use_sync = TRUE) {
     result <- data.frame(
