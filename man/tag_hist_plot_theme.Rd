@@ -6,9 +6,6 @@
 \usage{
 tag_hist_plot_theme()
 }
-\arguments{
-\item{base_family}{}
-}
 \description{
 Title
 }

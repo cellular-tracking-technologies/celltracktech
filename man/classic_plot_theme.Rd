@@ -8,7 +8,7 @@
 An object of class \code{theme} (inherits from \code{gg}) of length 10.
 }
 \usage{
-classic_plot_theme
+classic_plot_theme()
 }
 \description{
 Title

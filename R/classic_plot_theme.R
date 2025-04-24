@@ -2,11 +2,12 @@ library(ggplot2)
 
 #' Title
 #'
+#' @usage classic_plot_theme()
 #' @returns
 #' @export
 #'
 #' @examples
-classic_plot_theme <-function() {
+classic_plot_theme <- function() {
   theme(
     axis.text.x = element_text(size = 20, vjust = 0.5),
     axis.text.y = element_text(size = 20, vjust = 0.5),
