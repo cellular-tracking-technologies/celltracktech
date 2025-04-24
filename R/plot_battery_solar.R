@@ -1,8 +1,17 @@
 library(ggplot2)
 
 # DEFS
-source("aos_functions/defs/plot_themes.R")
+# source("./R/classic_plot_theme.R")
 
+#' Title
+#'
+#' @param node_health_df
+#' @param selected_node_id
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 plot_battery_solar <- function(node_health_df, selected_node_id) {
     selected_records <- subset.data.frame(node_health_df, node_id == selected_node_id)
     plot <- ggplot(selected_records) +
@@ -14,7 +23,7 @@ plot_battery_solar <- function(node_health_df, selected_node_id) {
         ggtitle(paste("Battery & Solar: ", selected_node_id)) +
         xlab("Time (UTC)") +
         ylab("Voltage (V)") +
-        classic_plot_theme +
+        classic_plot_theme() +
         theme(legend.title = element_blank(),
               legend.position = 'bottom')
 
