@@ -5,7 +5,7 @@
 \alias{classic_plot_theme}
 \title{Title}
 \format{
-An object of class \code{theme} (inherits from \code{gg}) of length 10.
+dataframe
 }
 \usage{
 classic_plot_theme()

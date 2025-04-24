@@ -3,6 +3,7 @@ library(ggplot2)
 #' Title
 #'
 #' @usage classic_plot_theme()
+#' @format dataframe
 #' @returns
 #' @export
 #'
