@@ -4,7 +4,7 @@
 #' @param node_locs
 #' @param theme
 #'
-#' @returns plot
+#' @returns
 #' @export
 #'
 #' @examples
