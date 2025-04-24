@@ -1,5 +1,3 @@
-library(ggplot2)
-
 #' Title
 #'
 #' @returns
@@ -9,9 +7,7 @@ library(ggplot2)
 tag_hist_plot_theme <- function() {
   theme(
     # axis.text.x = element_text(size = 20, vjust = 0.5),
-    # axis.text.y = element_text(family = "courier"),
-    axis.text.y = element_text(size = 20, vjust = 0.5),
-
+    axis.text.y = element_text(family = "courier"),
     # axis.title.x = element_text(size = 20, vjust = 0.5),
     # axis.title.y = element_text(size = 20, vjust = 0.5),
     axis.line = element_line(colour = "black", linewidth = 0.5),

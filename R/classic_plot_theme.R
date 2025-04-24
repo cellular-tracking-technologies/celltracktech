@@ -2,8 +2,6 @@ library(ggplot2)
 
 #' Title
 #'
-#' @usage classic_plot_theme()
-#' @format dataframe
 #' @returns
 #' @export
 #'
@@ -20,9 +18,9 @@ classic_plot_theme <- function() {
     panel.background = element_rect(fill = "white"),
     plot.margin = unit(c(1, 1, 0.5, 0.5), "inches"),
     plot.title = element_text(
-      size = 25,
-      face = "bold",
-      hjust = 0.5
+        size = 25,
+        face = "bold",
+        hjust = 0.5
     ),
   )
 }
