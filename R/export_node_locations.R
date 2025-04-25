@@ -1,3 +1,12 @@
+#' Title
+#'
+#' @param output_file_path
+#' @param node_locs
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 export_node_locations <- function(
     output_file_path,
     node_locs) {

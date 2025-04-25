@@ -1,3 +1,14 @@
+#' Title
+#'
+#' @param lat1
+#' @param lon1
+#' @param lat2
+#' @param lon2
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 haversine <- function(lat1, lon1, lat2, lon2) {
   # print(paste('lat1', lat1, 'lon1', lon1, 'lat2', lon2))
     pi <- 3.1415926535897932

@@ -1,6 +1,18 @@
-library(leaflet)
-library(viridis)
+# library(leaflet)
+# library(viridis)
 
+#' Title
+#'
+#' @param rec_df
+#' @param grid_values
+#' @param solution
+#' @param multilat_sol
+#' @param tile_url
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 draw_single_solution <- function(rec_df, grid_values, solution, multilat_sol, tile_url) {
     mypal <- colorRampPalette(viridis(1000, option = "D"))(100)
 

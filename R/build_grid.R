@@ -1,8 +1,21 @@
-build_grid <- function(node_locs, 
-                       center_lat, 
-                       center_lon, 
-                       x_size_meters, 
-                       y_size_meters, 
+#' Title
+#'
+#' @param node_locs dataframe of node locations
+#' @param center_lat grid center latitude
+#' @param center_lon grid centerlongitude
+#' @param x_size_meters grid size x-coord, in meters
+#' @param y_size_meters grid size y-coord, in meters
+#' @param bin_size number of bins in grid
+#'
+#' @returns
+#' @export
+#'
+#' @examples
+build_grid <- function(node_locs,
+                       center_lat,
+                       center_lon,
+                       x_size_meters,
+                       y_size_meters,
                        bin_size) {
     get_delta_lat <- function(lat, dist) {
         pi <- 3.1415926535897932

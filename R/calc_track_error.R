@@ -1,5 +1,14 @@
-source("./R/haversine.R")
+# source("./R/haversine.R")
 
+#' Title
+#'
+#' @param sidekick_df
+#' @param track_df
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 calc_track_error <- function(sidekick_df, track_df) {
     solution_compare_df <- data.frame(
         i = integer(),

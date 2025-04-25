@@ -1,4 +1,12 @@
-library(dplyr)
+#' Title
+#'
+#' @param grid_df
+#' @param locations_df
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 calc_location_density <- function(grid_df, locations_df) {
     loc_density_df <- data.frame(
         i = integer(),

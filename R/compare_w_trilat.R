@@ -1,7 +1,19 @@
-library(dplyr)
-library(leaflet)
-library(lubridate)
+# library(dplyr)
+# library(leaflet)
+# library(lubridate)
 
+#' Title
+#'
+#' @param node_locs
+#' @param track_error_df
+#' @param sidekick_df
+#' @param multilat_df
+#' @param tile_url
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 map_multilat <- function(
     node_locs,
     track_error_df,

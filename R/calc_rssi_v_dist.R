@@ -1,5 +1,16 @@
 # source("./R/haversine.R")
 
+#' Title
+#'
+#' @param node_locs
+#' @param sidekick_tag_df
+#' @param detection_df
+#' @param use_sync
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 calc_rssi_v_dist <- function(node_locs, sidekick_tag_df, detection_df, use_sync = TRUE) {
     result <- data.frame(
         node_id = character(),

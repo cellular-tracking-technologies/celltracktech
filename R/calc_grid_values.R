@@ -1,10 +1,10 @@
-library(dplyr)
-
-source("./R/haversine.R")
+# library(dplyr)
+#
+# source("./R/haversine.R")
 
 #' Title
 #'
-#' @param grid_df
+#' @param grid_df grid dataframe
 #' @param rec_df
 #' @param rssi_coefs
 #'

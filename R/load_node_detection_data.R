@@ -1,7 +1,17 @@
-library(readr)
-library(dplyr)
-library(data.table)
+# library(readr)
+# library(dplyr)
+# library(data.table)
 
+#' Title
+#'
+#' @param directory
+#' @param start_time
+#' @param stop_time
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 load_node_detection_data <- function(directory, start_time = NULL, stop_time = NULL) {
     run_start_time <- Sys.time()
     files <- list.files(path = directory, pattern = "*.csv")
