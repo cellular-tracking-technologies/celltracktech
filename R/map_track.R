@@ -1,7 +1,17 @@
-library(dplyr)
-library(leaflet)
-library(lubridate)
+# library(dplyr)
+# library(leaflet)
+# library(lubridate)
 
+#' Title
+#'
+#' @param node_locs
+#' @param track_df
+#' @param tile_url
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 map_track <- function(node_locs, track_df, tile_url = "https://tile.openstreetmap.org/{z}/{x}/{y}.png") {
     map <- leaflet() %>%
         addTiles(

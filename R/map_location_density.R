@@ -1,6 +1,15 @@
-library(leaflet)
-library(viridis)
+# library(leaflet)
+# library(viridis)
 
+#' Title
+#'
+#' @param loc_density_df
+#' @param tile_url
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 map_location_density <- function(loc_density_df, tile_url = "https://tile.openstreetmap.org/{z}/{x}/{y}.png") {
     mypal <- colorRampPalette(viridis(100, option = "D"))(100)
 

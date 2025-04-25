@@ -1,3 +1,11 @@
+#' Title
+#'
+#' @param sidekick_file_path
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 load_sidekick_data <- function(sidekick_file_path) {
     df <- read.csv(sidekick_file_path)
 

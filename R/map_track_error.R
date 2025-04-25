@@ -1,7 +1,18 @@
-library(dplyr)
-library(leaflet)
-library(lubridate)
+# library(dplyr)
+# library(leaflet)
+# library(lubridate)
 
+#' Title
+#'
+#' @param node_locs
+#' @param track_error_df
+#' @param sidekick_df
+#' @param tile_url
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 map_track_error <- function(
     node_locs,
     track_error_df,
@@ -76,7 +87,7 @@ map_track_error <- function(
             fillColor = "red",
             fillOpacity = 1.0,
             label = paste(track_error_df$i, ":", as_datetime(track_error_df$time), " : ", track_error_df$error)
-        ) 
+        )
         # %>%
         # Multilat Solutions
         # addPolylines(

@@ -1,5 +1,14 @@
-library(leaflet)
+# library(leaflet)
 
+#' Title
+#'
+#' @param node_locs
+#' @param grid_df
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 draw_grid <- function(node_locs, grid_df) {
     map <- leaflet() %>%
         addTiles(

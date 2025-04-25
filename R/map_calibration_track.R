@@ -1,5 +1,15 @@
-library(leaflet)
+# library(leaflet)
 
+#' Title
+#'
+#' @param node_locs
+#' @param sidekick_tag_df
+#' @param tile_url
+#'
+#' @returns
+#' @export
+#'
+#' @examples
 map_calibration_track <- function(node_locs, sidekick_tag_df, tile_url = "https://tile.openstreetmap.org/{z}/{x}/{y}.png") {
     map <- leaflet() %>%
         addTiles(

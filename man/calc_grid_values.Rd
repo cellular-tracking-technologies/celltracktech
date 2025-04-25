@@ -7,6 +7,8 @@
 calc_grid_values(grid_df, rec_df, rssi_coefs)
 }
 \arguments{
+\item{grid_df}{grid dataframe}
+
 \item{rssi_coefs}{}
 }
 \description{
