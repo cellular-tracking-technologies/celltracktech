@@ -1219,7 +1219,7 @@ get_my_data <- function(my_token,
     sapply(projects, pop_proj, conn = db_name)
     failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
   } else {
-    failed <- lapply(projects, get_data, outpath = outpath, my_station = mystation, beginning = begin, ending = end)
+    failed <- lapply(projects, get_data, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
   }
   faul <- which(!sapply(failed[[1]], is.null))
   if (length(faul > 0)) {
