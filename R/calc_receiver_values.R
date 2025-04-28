@@ -44,7 +44,7 @@ calc_receiver_values <- function(
         this_node_id <- node$node_id
         if (!is.null(node_t_offset)) {
             # Get this node's time offset
-            t_off <- subset.data.frame(node_t_offset, toupper(node_t_offset$node_id) == node$node_id)$time_offset
+            t_off <- subset.data.frame(node_t_offset, toupper(node_t_offset$node_id) == node$node_id)$mean_time_offset
             # Use time offset to adjust time window for detection cut
             new_df <- station_tag_df %>%
                 filter(station_tag_df$time_value - t_off >= current_time - filter_time_range & station_tag_df$time_value - t_off <= current_time)
