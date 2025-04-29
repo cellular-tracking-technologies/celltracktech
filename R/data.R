@@ -14,5 +14,4 @@
 #'   \item{heading}{Cardinal direction}
 #'   \item{antenna_angle}{Angle of antenna}
 #' }
-#'
 "sidekick_cal"
