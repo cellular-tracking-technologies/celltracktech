@@ -5,8 +5,6 @@
 \alias{sidekick_cal}
 \title{Sidekick Calibration Data}
 \format{
-\subsection{\code{sidekick_cal}}{
-
 A data frame with 716 rows and 8 columns:
 \describe{
 \item{tag_type}{Tag type detected}
@@ -17,7 +15,6 @@ A data frame with 716 rows and 8 columns:
 \item{lon}{Longitude}
 \item{heading}{Cardinal direction}
 \item{antenna_angle}{Angle of antenna}
-}
 }
 }
 \usage{

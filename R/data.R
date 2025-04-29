@@ -2,8 +2,7 @@
 #'
 #' An example of the sidekick calibration in the Meadows V2 field site.
 #'
-#' @format ## `sidekick_cal`
-#' A data frame with 716 rows and 8 columns:
+#' @format A data frame with 716 rows and 8 columns:
 #' \describe{
 #'   \item{tag_type}{Tag type detected}
 #'   \item{tag_id}{Tag ID}
