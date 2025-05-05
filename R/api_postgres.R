@@ -134,6 +134,7 @@ getStations <- function(project_id) {
 getStationFileList <- function(station_id, begin, filetypes = NULL, end = NULL) {
   endpoint <- files
   payload <- list("station-id" = station_id, begin = as.Date(begin))
+  print(paste('getStationFileList payload', payload))
   if (!is.null(filetypes)) {
     add_types <- filetypes[filetypes %in% file_types]
     if (length(which(!filetypes %in% file_types)) > 0) {
@@ -150,6 +151,8 @@ getStationFileList <- function(station_id, begin, filetypes = NULL, end = NULL) 
 downloadFiles <- function(file_id) {
   endpoint <- "/station/api/download-file/"
   payload <- list("file-id" = file_id)
+  print(paste('downloadFiles payload', payload))
+
   response <- tryCatch(
     {
       post(endpoint = endpoint, payload = payload)
