@@ -41,7 +41,7 @@ project_list(my_token)
 get_my_data(
   my_token,
   outpath,
-  conn,
+  # conn,
   myproject=myproject,
   begin=as.Date("2025-01-01"),
   end=as.Date("2025-01-03"),

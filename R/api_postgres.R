@@ -43,6 +43,7 @@ fixrow <- function(rowlen, rowfix, e, correct, DatePattern, filetype) {
 }
 
 host <- "https://api.internetofwildlife.com/"
+# host <- "http://10.1.10.252:8033"
 project <- "/station/api/projects"
 stations <- "/station/api/stations/"
 files <- "/station/api/file-list"
@@ -120,13 +121,16 @@ post <- function(endpoint, payload = NULL) {
   if (!is.null(payload)) {
     payload_to_send <- c(payload_to_send, payload)
   }
-  # print(endpoint)
-  response <- httr::POST(host, path = endpoint, body = payload_to_send, encode = "json", httr::timeout(300)) # encode="json",
+  print('payload to send')
+  print(payload_to_send)
+  response <- httr::POST(host, path = endpoint, body = payload_to_send, encode = "json", httr::timeout(3000))
   httr::stop_for_status(response)
   return(response)
 }
 
 getStations <- function(project_id) {
+  print('getStations payload')
+  print(project_id)
   out <- post(endpoint = stations, payload = list("project-id" = project_id))
   return(httr::content(out))
 }
@@ -1226,6 +1230,7 @@ get_my_data <- function(my_token,
   } else {
     failed <- lapply(projects, get_data, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
   }
+  print(paste('failed', failed[[1]]))
   faul <- which(!sapply(failed[[1]], is.null))
   if (length(faul > 0)) {
     failed <- Map(`[`, failed, faul)
