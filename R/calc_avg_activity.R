@@ -1,4 +1,4 @@
-#' Title
+#' Calculate Average Activity
 #'
 #' @param tag_activity
 #' @param start_time
