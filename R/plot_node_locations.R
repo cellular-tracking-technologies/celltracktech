@@ -1,10 +1,10 @@
-#' Title
+#' Plot Node Locations
 #'
 #' @param node_health_df
 #' @param node_locs
 #' @param theme
 #'
-#' @returns
+#' @returns plot
 #' @export
 #'
 #' @examples

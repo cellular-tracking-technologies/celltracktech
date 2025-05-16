@@ -11,6 +11,11 @@ node_file(health)
 \arguments{
 \item{health}{}
 }
+\value{
+wells_sf - dataframe
+
+health - dataframe
+}
 \description{
 This function allows you to create the node location spatial data frame from your node health data.
 }

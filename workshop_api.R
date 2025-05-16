@@ -43,9 +43,9 @@ get_my_data(
   outpath,
   # conn,
   myproject=myproject,
-  begin=as.Date("2025-01-01"),
-  end=as.Date("2025-01-03"),
-  filetypes = c('raw', 'node_health','gps', 'blu')
+  begin=as.Date("2023-10-04"),
+  end=as.Date("2023-10-16"),
+  filetypes = c('raw')
 )
 
 # add downloaded data to database

@@ -9,6 +9,13 @@ calc_avg_activity(tag_activity, start_time, stop_time)
 \arguments{
 \item{stop_time}{}
 }
+\value{
+result
+}
 \description{
 Title
+}
+\examples{
+calc_avg_activity(tag_activity, start_time, stop_time)
+
 }

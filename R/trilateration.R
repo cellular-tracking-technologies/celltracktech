@@ -1,14 +1,16 @@
-#' Title
+#' Trilateration
 #'
 #' @param x
 #' @param nodes
 #' @param RSS.FILTER
 #'
-#' @returns
+#' @returns estimated.location_results
 #' @export
 #'
 #' @examples
-trilateration <- function(x, nodes, RSS.FILTER) {
+trilateration <- function(x,
+                          nodes,
+                          RSS.FILTER) {
 
   # supress warnings
   options(warn = -1)

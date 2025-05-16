@@ -2,13 +2,16 @@
 % Please edit documentation in R/load_node_health.R
 \name{load_node_health_files}
 \alias{load_node_health_files}
-\title{Title}
+\title{Load Node Health}
 \usage{
 load_node_health_files(directory, start_time = NULL, stop_time = NULL)
 }
 \arguments{
 \item{stop_time}{}
 }
+\value{
+df
+}
 \description{
-Title
+Load Node Health
 }

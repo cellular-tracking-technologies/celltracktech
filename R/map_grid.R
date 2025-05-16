@@ -1,11 +1,10 @@
-# library(leaflet)
 
-#' Title
+#' Map Grid
 #'
 #' @param node_locs
 #' @param grid_df
 #'
-#' @returns
+#' @returns map
 #' @export
 #'
 #' @examples

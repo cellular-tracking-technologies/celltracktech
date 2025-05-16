@@ -2,13 +2,16 @@
 % Please edit documentation in R/trilateration.R
 \name{trilateration}
 \alias{trilateration}
-\title{Title}
+\title{Trilateration}
 \usage{
 trilateration(x, nodes, RSS.FILTER)
 }
 \arguments{
 \item{RSS.FILTER}{}
 }
+\value{
+estimated.location_results
+}
 \description{
-Title
+Trilateration
 }

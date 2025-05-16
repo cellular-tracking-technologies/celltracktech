@@ -1,14 +1,4 @@
-#test <- mytest
-#tag_col="Tag.Id"
-#tagid="072A6633"
-#time_col="Time..UTC."
-#timezone="UTC"
-#x="Longitude"
-#y="Latitude"
-#node_ids=node_ids
-#loc_precision=6)
-#fileloc <- "/home/jess/Documents/radio_projects/data/radio_projects/meadows/meadows.duckdb"
-#' Title
+#' Combine Detection Data and Sidekick Calibration Data
 #'
 #' @param test
 #' @param testdata_in
@@ -25,7 +15,7 @@
 #' @param fileloc
 #' @param filetype
 #'
-#' @returns
+#' @returns combined.data - dataframe
 #' @export
 #'
 #' @examples

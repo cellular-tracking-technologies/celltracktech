@@ -2,13 +2,20 @@
 % Please edit documentation in R/trilateration.TestData.RSS.Filter.R
 \name{trilateration.TestData.RSS.Filter}
 \alias{trilateration.TestData.RSS.Filter}
-\title{Title}
+\title{Trilateration - Test Data RSS Filter}
 \usage{
 trilateration.TestData.RSS.Filter(x, RSS.FILTER)
 }
 \arguments{
+\item{x}{\itemize{
+\item dataframe
+}}
+
 \item{RSS.FILTER}{}
 }
+\value{
+list
+}
 \description{
-Title
+Trilateration - Test Data RSS Filter
 }

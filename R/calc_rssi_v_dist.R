@@ -1,6 +1,4 @@
-# source("./R/haversine.R")
-
-#' Title
+#' Calculate RSSI vs. Distance
 #'
 #' @param node_locs
 #' @param sidekick_tag_df

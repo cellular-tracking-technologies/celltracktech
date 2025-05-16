@@ -1,18 +1,17 @@
-# library(readr)
-# library(dplyr)
-# library(data.table)
 
-#' Title
+#' Load Node Health
 #'
 #' @param directory
 #' @param start_time
 #' @param stop_time
 #'
-#' @returns
+#' @returns df
 #' @export
 #'
 #' @examples
-load_node_health_files <- function(directory, start_time = NULL, stop_time = NULL) {
+load_node_health_files <- function(directory,
+                                   start_time = NULL,
+                                   stop_time = NULL) {
     run_start_time <- Sys.time()
     files <- list.files(path = directory, pattern = "*.csv")
     print(length(files))

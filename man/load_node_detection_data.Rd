@@ -2,13 +2,16 @@
 % Please edit documentation in R/load_node_detection_data.R
 \name{load_node_detection_data}
 \alias{load_node_detection_data}
-\title{Title}
+\title{Load Node Detection Data}
 \usage{
 load_node_detection_data(directory, start_time = NULL, stop_time = NULL)
 }
 \arguments{
 \item{stop_time}{}
 }
+\value{
+df
+}
 \description{
-Title
+Load Node Detection Data
 }

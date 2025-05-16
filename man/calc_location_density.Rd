@@ -2,7 +2,7 @@
 % Please edit documentation in R/calc_location_density.R
 \name{calc_location_density}
 \alias{calc_location_density}
-\title{Title}
+\title{Calculate Location Density}
 \usage{
 calc_location_density(grid_df, locations_df)
 }
@@ -10,5 +10,8 @@ calc_location_density(grid_df, locations_df)
 \item{locations_df}{}
 }
 \description{
-Title
+Calculate Location Density
+}
+\examples{
+calc_location_density(grid_df, locations_df)
 }

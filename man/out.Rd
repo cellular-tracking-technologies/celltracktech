@@ -2,13 +2,20 @@
 % Please edit documentation in R/out.R
 \name{out}
 \alias{out}
-\title{Title}
+\title{Out}
 \usage{
 out(x, contents, timezone)
 }
 \arguments{
+\item{x}{\itemize{
+\item dataframe
+}}
+
 \item{timezone}{}
 }
+\value{
+newtimecol
+}
 \description{
-Title
+Out
 }

@@ -1,8 +1,6 @@
-# library(ggplot2)
-
-#' Title
+#' Classic Plot Theme
 #'
-#' @returns
+#' @returns creates classic theme for ggplots
 #' @export
 #'
 #' @examples

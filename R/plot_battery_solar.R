@@ -1,9 +1,9 @@
-#' Title
+#' Plot Battery and Solar Voltage
 #'
 #' @param node_health_df
 #' @param selected_node_id
 #'
-#' @returns
+#' @returns plot
 #' @export
 #'
 #' @examples

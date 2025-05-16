@@ -2,13 +2,16 @@
 % Please edit documentation in R/load_sidekick_data.R
 \name{load_sidekick_data}
 \alias{load_sidekick_data}
-\title{Title}
+\title{Load Sidekick Data}
 \usage{
 load_sidekick_data(sidekick_file_path)
 }
 \arguments{
 \item{sidekick_file_path}{}
 }
+\value{
+df
+}
 \description{
-Title
+Load Sidekick Data
 }

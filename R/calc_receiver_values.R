@@ -1,6 +1,4 @@
-# library(dplyr)
-
-#' Title
+#' Calculate Receiver Values
 #'
 #' @param current_time
 #' @param det_window
@@ -15,6 +13,15 @@
 #' @export
 #'
 #' @examples
+#' calc_receiver_values(
+#'     current_time,
+#'     det_window,
+#'     station_tag_df,
+#'     node_locs,
+#'     node_t_offset = NULL,
+#'     rssi_coefs,
+#'     filter_alpha,
+#'     filter_time_range)
 calc_receiver_values <- function(
     current_time,
     det_window,

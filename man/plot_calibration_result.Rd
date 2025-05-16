@@ -2,13 +2,16 @@
 % Please edit documentation in R/plot_calibration_result.R
 \name{plot_calibration_result}
 \alias{plot_calibration_result}
-\title{Title}
+\title{Plot Calibration Result}
 \usage{
 plot_calibration_result(rssi_v_dist, theme = NULL)
 }
 \arguments{
 \item{theme}{}
 }
+\value{
+plot
+}
 \description{
-Title
+Plot Calibration Result
 }

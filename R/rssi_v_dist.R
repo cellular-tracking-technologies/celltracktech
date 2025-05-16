@@ -2,12 +2,12 @@
 ## RSSI = a - b * exp(-c * DISTANCE)
 ## rssi_coefs = [a,b,c]
 
-#' Title
+#' RSSI Coefficients
 #'
 #' @param rssi_coefs
 #' @param dist
 #'
-#' @returns
+#' @returns rssi_coefs
 #' @export
 #'
 #' @examples
@@ -15,12 +15,12 @@ predict_rssi <- function(rssi_coefs, dist) {
     return(rssi_coefs[1] - rssi_coefs[2] * exp(-rssi_coefs[3] * dist))
 }
 
-#' Title
+#' Predict Distance
 #'
 #' @param rssi_coefs
 #' @param rssi
 #'
-#' @returns
+#' @returns rssi_coefs
 #' @export
 #'
 #' @examples

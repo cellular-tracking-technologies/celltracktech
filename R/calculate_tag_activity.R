@@ -1,14 +1,13 @@
-# library(dplyr)
-
-#' Title
+#' Calculate Tag Activity
 #'
 #' @param tag_dets
 #' @param tag_beep_interval
 #'
-#' @returns
+#' @returns result - dataframe with node id and activity
 #' @export
 #'
 #' @examples
+#' calculate_tag_activity(tag_dets, tag_beep_interval)
 calculate_tag_activity <- function(tag_dets, tag_beep_interval) {
     start_time <- Sys.time()
     tag_activity <- data.frame(
@@ -32,7 +31,10 @@ calculate_tag_activity <- function(tag_dets, tag_beep_interval) {
         node_tag_dets <- subset.data.frame(node_tag_dets, node_tag_dets$delta_time <= 2 * tag_beep_interval)
         node_tag_dets <- node_tag_dets %>% mutate(act_time = node_tag_dets$time - node_tag_dets$delta_time / 2)
 
-        result <- data.frame(node_id = node_tag_dets$node_id, time = node_tag_dets$act_time, activity = node_tag_dets$activity, abs_act = abs(node_tag_dets$activity))
+        result <- data.frame(node_id = node_tag_dets$node_id,
+                             time = node_tag_dets$act_time,
+                             activity = node_tag_dets$activity,
+                             abs_act = abs(node_tag_dets$activity))
 
         tag_activity <- rbind(tag_activity, result)
     }

@@ -1,14 +1,11 @@
-# library(dplyr)
-# library(leaflet)
-# library(lubridate)
 
-#' Title
+#' Map Track
 #'
 #' @param node_locs
 #' @param track_df
 #' @param tile_url
 #'
-#' @returns
+#' @returns map
 #' @export
 #'
 #' @examples

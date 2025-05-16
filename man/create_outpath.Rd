@@ -2,7 +2,7 @@
 % Please edit documentation in R/create_outpath.R
 \name{create_outpath}
 \alias{create_outpath}
-\title{Title}
+\title{Create Outpath for CTT data}
 \usage{
 create_outpath(outpath)
 }
@@ -13,7 +13,7 @@ create_outpath(outpath)
 creates directory/directories in your current working directory
 }
 \description{
-Title
+Create Outpath for CTT data
 }
 \examples{
 create_outpath('./data/')

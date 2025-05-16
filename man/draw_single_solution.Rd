@@ -2,13 +2,16 @@
 % Please edit documentation in R/draw_single_solution.R
 \name{draw_single_solution}
 \alias{draw_single_solution}
-\title{Title}
+\title{Draw Single Solution}
 \usage{
 draw_single_solution(rec_df, grid_values, solution, multilat_sol, tile_url)
 }
 \arguments{
 \item{tile_url}{}
 }
+\value{
+map - map with grid
+}
 \description{
-Title
+Draw Single Solution
 }

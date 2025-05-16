@@ -2,13 +2,16 @@
 % Please edit documentation in R/map_grid_solution.R
 \name{map_single_solution}
 \alias{map_single_solution}
-\title{Title}
+\title{Map Single Solution}
 \usage{
 map_single_solution(node_locs, rec_df, grid_values, solution, tile_url)
 }
 \arguments{
 \item{tile_url}{}
 }
+\value{
+map
+}
 \description{
-Title
+Map Single Solution
 }

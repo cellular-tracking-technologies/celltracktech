@@ -2,13 +2,20 @@
 % Please edit documentation in R/trilateration.TestData.Distance.Filter.R
 \name{trilateration.TestData.Distance.Filter}
 \alias{trilateration.TestData.Distance.Filter}
-\title{Title}
+\title{Trilateration - Test Data Distance Filter}
 \usage{
 trilateration.TestData.Distance.Filter(x, DIST.FILTER)
 }
 \arguments{
+\item{x}{\itemize{
+\item dataframe
+}}
+
 \item{DIST.FILTER}{}
 }
+\value{
+list
+}
 \description{
-Title
+Trilateration - Test Data Distance Filter
 }

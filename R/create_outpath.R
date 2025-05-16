@@ -1,4 +1,4 @@
-#' Title
+#' Create Outpath for CTT data
 #'
 #' @param outpath a string of the directory or nested directories where you want to save your data
 #'

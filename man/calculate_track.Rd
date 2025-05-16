@@ -2,7 +2,7 @@
 % Please edit documentation in R/calc_track.R
 \name{calculate_track}
 \alias{calculate_track}
-\title{Title}
+\title{Calculate Track}
 \usage{
 calculate_track(
   start_time,
@@ -24,5 +24,5 @@ calculate_track(
 \item{tile_url}{}
 }
 \description{
-Title
+Calculate Track
 }

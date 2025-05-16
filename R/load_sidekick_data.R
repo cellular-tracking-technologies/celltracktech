@@ -1,8 +1,8 @@
-#' Title
+#' Load Sidekick Data
 #'
 #' @param sidekick_file_path
 #'
-#' @returns
+#' @returns df
 #' @export
 #'
 #' @examples

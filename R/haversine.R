@@ -1,11 +1,11 @@
-#' Title
+#' Haversine
 #'
-#' @param lat1
-#' @param lon1
-#' @param lat2
-#' @param lon2
+#' @param lat1 - latitude of point 1
+#' @param lon1 - longitude of point 1
+#' @param lat2 - latitude of point 2
+#' @param lon2 - longitude of point 2
 #'
-#' @returns
+#' @returns d - great circle distance bewteen two points
 #' @export
 #'
 #' @examples

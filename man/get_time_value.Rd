@@ -2,13 +2,16 @@
 % Please edit documentation in R/get_time_value.R
 \name{get_time_value}
 \alias{get_time_value}
-\title{Title}
+\title{Get Time Value}
 \usage{
 get_time_value(time_string)
 }
 \arguments{
 \item{time_string}{}
 }
+\value{
+time_value
+}
 \description{
-Title
+Get Time Value
 }

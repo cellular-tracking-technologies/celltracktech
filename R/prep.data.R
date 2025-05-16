@@ -1,4 +1,4 @@
-#' Title
+#' Prepare Data
 #'
 #' @param x
 #' @param y
@@ -9,7 +9,7 @@
 #' @param S
 #' @param startval
 #'
-#' @returns
+#' @returns dataframe
 #' @export
 #'
 #' @examples

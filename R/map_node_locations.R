@@ -1,16 +1,15 @@
-# library(dplyr)
-# library(leaflet)
 
-#' Title
+#' Map Node Locations
 #'
-#' @param node_locs
-#' @param tile_url
+#' @param node_locs - data frame
+#' @param tile_url - url to map
 #'
-#' @returns
+#' @returns - map
 #' @export
 #'
 #' @examples
-map_node_locations <- function(node_locs, tile_url = "https://tile.openstreetmap.org/{z}/{x}/{y}.png") {
+map_node_locations <- function(node_locs,
+                               tile_url = "https://tile.openstreetmap.org/{z}/{x}/{y}.png") {
     map <- leaflet() %>%
         addTiles(
             urlTemplate = tile_url,

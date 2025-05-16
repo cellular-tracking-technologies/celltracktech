@@ -2,7 +2,7 @@
 % Please edit documentation in R/map_calibration_track.R
 \name{map_calibration_track}
 \alias{map_calibration_track}
-\title{Title}
+\title{Map Calibration Track}
 \usage{
 map_calibration_track(
   node_locs,
@@ -13,6 +13,9 @@ map_calibration_track(
 \arguments{
 \item{tile_url}{}
 }
+\value{
+map
+}
 \description{
-Title
+Map Calibration Track
 }

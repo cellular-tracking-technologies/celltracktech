@@ -2,13 +2,20 @@
 % Please edit documentation in R/get_tag_detections.R
 \name{get_tag_detection_count}
 \alias{get_tag_detection_count}
-\title{Title}
+\title{Get Tag Detections}
 \usage{
 get_tag_detection_count(detection_df, min_det_count)
 }
 \arguments{
 \item{min_det_count}{}
 }
+\value{
+tag_counts - dataframe
+}
 \description{
-Title
+Get Tag Detections
+}
+\examples{
+get_tag_detection_count(detection_df, min_det_count)
+
 }

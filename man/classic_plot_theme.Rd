@@ -2,10 +2,13 @@
 % Please edit documentation in R/classic_plot_theme.R
 \name{classic_plot_theme}
 \alias{classic_plot_theme}
-\title{Title}
+\title{Classic Plot Theme}
 \usage{
 classic_plot_theme()
 }
+\value{
+creates classic theme for ggplots
+}
 \description{
-Title
+Classic Plot Theme
 }

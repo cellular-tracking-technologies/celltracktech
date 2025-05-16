@@ -2,13 +2,16 @@
 % Please edit documentation in R/calculate_node_locations.R
 \name{calculate_node_locations}
 \alias{calculate_node_locations}
-\title{Title}
+\title{Calculate Node Locations}
 \usage{
 calculate_node_locations(node_health_df)
 }
 \arguments{
 \item{node_health_df}{}
 }
+\value{
+result - dataframe with average and standard deviations of latitude and longitude
+}
 \description{
-Title
+Calculate Node Locations
 }

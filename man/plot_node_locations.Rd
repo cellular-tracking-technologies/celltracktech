@@ -2,13 +2,16 @@
 % Please edit documentation in R/plot_node_locations.R
 \name{plot_node_locations}
 \alias{plot_node_locations}
-\title{Title}
+\title{Plot Node Locations}
 \usage{
 plot_node_locations(node_health_df, node_locs, theme = NULL)
 }
 \arguments{
 \item{theme}{}
 }
+\value{
+plot
+}
 \description{
-Title
+Plot Node Locations
 }

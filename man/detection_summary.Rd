@@ -2,7 +2,7 @@
 % Please edit documentation in R/detection_summary.R
 \name{detection_summary}
 \alias{detection_summary}
-\title{Title}
+\title{Detection Summary}
 \usage{
 detection_summary(detection_df, tag_list)
 }
@@ -10,5 +10,8 @@ detection_summary(detection_df, tag_list)
 \item{tag_list}{}
 }
 \description{
-Title
+Detection Summary
+}
+\examples{
+det_summary - dataframe
 }

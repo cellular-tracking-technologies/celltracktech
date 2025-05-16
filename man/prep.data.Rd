@@ -2,13 +2,16 @@
 % Please edit documentation in R/prep.data.R
 \name{prep.data}
 \alias{prep.data}
-\title{Title}
+\title{Prepare Data}
 \usage{
 prep.data(x, y, SLIDE.TIME, GROUP.TIME, K, a, S, startval = NULL)
 }
 \arguments{
 \item{startval}{}
 }
+\value{
+dataframe
+}
 \description{
-Title
+Prepare Data
 }

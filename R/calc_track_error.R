@@ -1,14 +1,13 @@
-# source("./R/haversine.R")
-
-#' Title
+#' Calculate Track Errors
 #'
 #' @param sidekick_df
 #' @param track_df
 #'
-#' @returns
+#' @returns solution_compare_df
 #' @export
 #'
 #' @examples
+#' calc_track_error(sidekick_df, track_df)
 calc_track_error <- function(sidekick_df, track_df) {
     solution_compare_df <- data.frame(
         i = integer(),

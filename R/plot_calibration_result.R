@@ -1,15 +1,15 @@
-# library(ggplot2)
 
-#' Title
+#' Plot Calibration Result
 #'
 #' @param rssi_v_dist
 #' @param theme
 #'
-#' @returns
+#' @returns plot
 #' @export
 #'
 #' @examples
-plot_calibration_result <- function(rssi_v_dist, theme = NULL) {
+plot_calibration_result <- function(rssi_v_dist,
+                                    theme = NULL) {
     plot <- ggplot() +
         geom_point(
             data = rssi_v_dist,

@@ -2,13 +2,19 @@
 % Please edit documentation in R/calculate_tag_activity.R
 \name{calculate_tag_activity}
 \alias{calculate_tag_activity}
-\title{Title}
+\title{Calculate Tag Activity}
 \usage{
 calculate_tag_activity(tag_dets, tag_beep_interval)
 }
 \arguments{
 \item{tag_beep_interval}{}
 }
+\value{
+result - dataframe with node id and activity
+}
 \description{
-Title
+Calculate Tag Activity
+}
+\examples{
+calculate_tag_activity(tag_dets, tag_beep_interval)
 }

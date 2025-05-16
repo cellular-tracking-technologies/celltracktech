@@ -2,7 +2,7 @@
 % Please edit documentation in R/calc_rssi_v_dist.R
 \name{calc_rssi_v_dist}
 \alias{calc_rssi_v_dist}
-\title{Title}
+\title{Calculate RSSI vs. Distance}
 \usage{
 calc_rssi_v_dist(node_locs, sidekick_tag_df, detection_df, use_sync = TRUE)
 }
@@ -10,5 +10,5 @@ calc_rssi_v_dist(node_locs, sidekick_tag_df, detection_df, use_sync = TRUE)
 \item{use_sync}{}
 }
 \description{
-Title
+Calculate RSSI vs. Distance
 }

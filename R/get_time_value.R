@@ -1,8 +1,8 @@
-#' Title
+#' Get Time Value
 #'
 #' @param time_string
 #'
-#' @returns
+#' @returns time_value
 #' @export
 #'
 #' @examples

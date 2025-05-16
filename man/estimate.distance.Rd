@@ -2,13 +2,22 @@
 % Please edit documentation in R/estimate.distance.R
 \name{estimate.distance}
 \alias{estimate.distance}
-\title{Title}
+\title{Estimate Distance}
 \usage{
 estimate.distance(x, K, a, S)
 }
 \arguments{
-\item{S}{}
+\item{x}{combined_data dataframe}
+
+\item{K}{horizontal asymptote}
+
+\item{a}{intercept}
+
+\item{S}{decay factor}
+}
+\value{
+combined.data
 }
 \description{
-Title
+Estimate Distance
 }

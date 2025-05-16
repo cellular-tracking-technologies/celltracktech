@@ -2,7 +2,7 @@
 % Please edit documentation in R/data.setup.R
 \name{data.setup}
 \alias{data.setup}
-\title{Title}
+\title{Combine Detection Data and Sidekick Calibration Data}
 \usage{
 data.setup(
   test,
@@ -24,6 +24,9 @@ data.setup(
 \arguments{
 \item{filetype}{}
 }
+\value{
+combined.data - dataframe
+}
 \description{
-Title
+Combine Detection Data and Sidekick Calibration Data
 }

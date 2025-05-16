@@ -2,7 +2,7 @@
 % Please edit documentation in R/map_location_density.R
 \name{map_location_density}
 \alias{map_location_density}
-\title{Title}
+\title{Map Location Density}
 \usage{
 map_location_density(
   loc_density_df,
@@ -12,6 +12,9 @@ map_location_density(
 \arguments{
 \item{tile_url}{}
 }
+\value{
+map
+}
 \description{
-Title
+Map Location Density
 }

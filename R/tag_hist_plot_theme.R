@@ -1,6 +1,6 @@
-#' Title
+#' Tag Histogram Plot Theme
 #'
-#' @returns
+#' @returns plot
 #' @export
 #'
 #' @examples

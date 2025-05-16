@@ -2,13 +2,15 @@
 % Please edit documentation in R/export_node_locations.R
 \name{export_node_locations}
 \alias{export_node_locations}
-\title{Title}
+\title{Export Node Locations}
 \usage{
 export_node_locations(output_file_path, node_locs)
 }
 \arguments{
-\item{node_locs}{}
+\item{output_file_path}{.csv file name}
+
+\item{node_locs}{dataframe}
 }
 \description{
-Title
+Export Node Locations
 }

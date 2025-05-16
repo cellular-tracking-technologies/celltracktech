@@ -1,4 +1,4 @@
-#' Title
+#' Calculate Location Density
 #'
 #' @param grid_df
 #' @param locations_df
@@ -7,6 +7,7 @@
 #' @export
 #'
 #' @examples
+#' calc_location_density(grid_df, locations_df)
 calc_location_density <- function(grid_df, locations_df) {
     loc_density_df <- data.frame(
         i = integer(),

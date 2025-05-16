@@ -1,14 +1,16 @@
-#' Title
+#' Mapping
 #'
 #' @param node_locs
 #' @param track_error_df
 #' @param tile_url
 #'
-#' @returns
+#' @returns map
 #' @export
 #'
 #' @examples
-mapping <- function(node_locs, track_error_df, tile_url = "https://tile.openstreetmap.org/{z}/{x}/{y}.png") {
+mapping <- function(node_locs,
+                    track_error_df,
+                    tile_url = "https://tile.openstreetmap.org/{z}/{x}/{y}.png") {
   map <- leaflet() %>%
     addTiles(
       urlTemplate = tile_url,

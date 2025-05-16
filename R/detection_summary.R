@@ -1,6 +1,4 @@
-# library(dplyr)
-
-#' Title
+#' Detection Summary
 #'
 #' @param detection_df
 #' @param tag_list
@@ -8,7 +6,7 @@
 #' @returns
 #' @export
 #'
-#' @examples
+#' @examples det_summary - dataframe
 detection_summary <- function(detection_df, tag_list) {
     my_dets <- subset.data.frame(detection_df, detection_df$tag_id %in% tag_list)
 

@@ -1,9 +1,9 @@
-#' Title
+#' Trilateration - Test Data Distance Filter
 #'
-#' @param x
+#' @param x - dataframe
 #' @param DIST.FILTER
 #'
-#' @returns
+#' @returns list
 #' @export
 #'
 #' @examples
@@ -31,9 +31,16 @@ trilateration.TestData.Distance.Filter <- function(x, DIST.FILTER){
 
 
   # Empty data frame to populate with summary results
-  summary.stats_results <- data.frame(n.est.tests = numeric(), avg.no.nodes = numeric(), avg.diff = numeric(), sd.diff = numeric(),
-                                      lower.ci = numeric(), upper.ci = numeric(), med.diff = numeric(),
-                                      min.diff = numeric(), max.diff = numeric(), filter = character())
+  summary.stats_results <- data.frame(n.est.tests = numeric(),
+                                      avg.no.nodes = numeric(),
+                                      avg.diff = numeric(),
+                                      sd.diff = numeric(),
+                                      lower.ci = numeric(),
+                                      upper.ci = numeric(),
+                                      med.diff = numeric(),
+                                      min.diff = numeric(),
+                                      max.diff = numeric(),
+                                      filter = character())
 
 
   # loop through distances
@@ -41,8 +48,14 @@ trilateration.TestData.Distance.Filter <- function(x, DIST.FILTER){
   for(i in 1:length(DIST.FILTER)) {
 
     # Create a dataframe for output estimates
-    estimated.location_results <- data.frame(TestId=character(), No.Nodes = numeric(), x.est=numeric(), y.est=numeric(),
-                                             x.ci.lower =numeric(), x.ci.upper =numeric(), y.ci.lower = numeric(), y.ci.upper = numeric())
+    estimated.location_results <- data.frame(TestId=character(),
+                                             No.Nodes = numeric(),
+                                             x.est=numeric(),
+                                             y.est=numeric(),
+                                             x.ci.lower =numeric(),
+                                             x.ci.upper =numeric(),
+                                             y.ci.lower = numeric(),
+                                             y.ci.upper = numeric())
 
     # identify the distance
     dist.no <- DIST.FILTER[i]

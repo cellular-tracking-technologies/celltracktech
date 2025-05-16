@@ -2,7 +2,7 @@
 % Please edit documentation in R/mapping.R
 \name{mapping}
 \alias{mapping}
-\title{Title}
+\title{Mapping}
 \usage{
 mapping(
   node_locs,
@@ -13,6 +13,9 @@ mapping(
 \arguments{
 \item{tile_url}{}
 }
+\value{
+map
+}
 \description{
-Title
+Mapping
 }

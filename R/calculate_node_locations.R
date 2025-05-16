@@ -1,8 +1,8 @@
-#' Title
+#' Calculate Node Locations
 #'
 #' @param node_health_df
 #'
-#' @returns
+#' @returns result - dataframe with average and standard deviations of latitude and longitude
 #' @export
 #'
 #' @examples

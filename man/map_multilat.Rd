@@ -2,7 +2,7 @@
 % Please edit documentation in R/compare_w_trilat.R
 \name{map_multilat}
 \alias{map_multilat}
-\title{Title}
+\title{Compare with Trilateration Results}
 \usage{
 map_multilat(
   node_locs,
@@ -15,6 +15,9 @@ map_multilat(
 \arguments{
 \item{tile_url}{}
 }
+\value{
+map
+}
 \description{
-Title
+Compare with Trilateration Results
 }

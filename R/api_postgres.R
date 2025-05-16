@@ -121,16 +121,12 @@ post <- function(endpoint, payload = NULL) {
   if (!is.null(payload)) {
     payload_to_send <- c(payload_to_send, payload)
   }
-  print('payload to send')
-  print(payload_to_send)
   response <- httr::POST(host, path = endpoint, body = payload_to_send, encode = "json", httr::timeout(3000))
   httr::stop_for_status(response)
   return(response)
 }
 
 getStations <- function(project_id) {
-  print('getStations payload')
-  print(project_id)
   out <- post(endpoint = stations, payload = list("project-id" = project_id))
   return(httr::content(out))
 }
@@ -138,8 +134,6 @@ getStations <- function(project_id) {
 getStationFileList <- function(station_id, begin, filetypes = NULL, end = NULL) {
   endpoint <- files
   payload <- list("station-id" = station_id, begin = as.Date(begin))
-  print(paste('getStationFileList payload', payload))
-  print(paste('getStationFileList endpoint', endpoint))
 
   if (!is.null(filetypes)) {
     add_types <- filetypes[filetypes %in% file_types]
@@ -880,8 +874,6 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
   # x = file ids
   # y = file names
   get_files <- function(x, y) {
-    print(x)
-    print(y)
     splitfile <- unlist(strsplit(y, "CTT-"))
     fileinfo <- splitfile[2]
     sensorid <- unlist(strsplit(fileinfo, "-"))
@@ -1367,7 +1359,6 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
     if (errtype < 7 & errtype != 2) {
       # z <- db_insert(contents, filetype, conn, y)
       z <- db_insert(contents=contents, filetype=filetype, conn=conn, y=y, begin=begin)
-      print(paste('get files import z', z))
     } else if(errtype == 7) {
       dir.create(file.path(outpath, "ignore_files"), showWarnings = FALSE)
       file.copy(e, file.path(outpath, "ignore_files"))

@@ -2,15 +2,23 @@
 % Please edit documentation in R/calc_grid_values.R
 \name{calc_grid_values}
 \alias{calc_grid_values}
-\title{Title}
+\title{Calculate Grid Values}
 \usage{
 calc_grid_values(grid_df, rec_df, rssi_coefs)
 }
 \arguments{
 \item{grid_df}{grid dataframe}
 
+\item{rec_df}{recorded detections dataframe}
+
 \item{rssi_coefs}{}
 }
+\value{
+grid_value_data_frame
+}
 \description{
-Title
+Calculate Grid Values
+}
+\examples{
+calc_grid_values(grid_df, rec_df, rssi_coefs)
 }

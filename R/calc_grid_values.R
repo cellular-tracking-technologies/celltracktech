@@ -1,17 +1,14 @@
-# library(dplyr)
-#
-# source("./R/haversine.R")
-
-#' Title
+#' Calculate Grid Values
 #'
 #' @param grid_df grid dataframe
-#' @param rec_df
+#' @param rec_df recorded detections dataframe
 #' @param rssi_coefs
 #'
-#' @returns
+#' @returns grid_value_data_frame
 #' @export
 #'
 #' @examples
+#' calc_grid_values(grid_df, rec_df, rssi_coefs)
 calc_grid_values <- function(grid_df, rec_df, rssi_coefs) {
     calc_bin_value <- function(bin_lat, bin_lon, rec_df, rssi_coefs) {
         total_diff2 <- 0

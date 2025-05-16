@@ -2,13 +2,16 @@
 % Please edit documentation in R/map_grid.R
 \name{draw_grid}
 \alias{draw_grid}
-\title{Title}
+\title{Map Grid}
 \usage{
 draw_grid(node_locs, grid_df)
 }
 \arguments{
 \item{grid_df}{}
 }
+\value{
+map
+}
 \description{
-Title
+Map Grid
 }

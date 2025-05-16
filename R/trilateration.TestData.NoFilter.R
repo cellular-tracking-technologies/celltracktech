@@ -1,8 +1,8 @@
-#' Title
+#' Trilateration - Test Data No Filter
 #'
-#' @param x
+#' @param x - dataframe
 #'
-#' @returns
+#' @returns list
 #' @export
 #'
 #' @examples

@@ -2,13 +2,19 @@
 % Please edit documentation in R/calc_track_error.R
 \name{calc_track_error}
 \alias{calc_track_error}
-\title{Title}
+\title{Calculate Track Errors}
 \usage{
 calc_track_error(sidekick_df, track_df)
 }
 \arguments{
 \item{track_df}{}
 }
+\value{
+solution_compare_df
+}
 \description{
-Title
+Calculate Track Errors
+}
+\examples{
+calc_track_error(sidekick_df, track_df)
 }

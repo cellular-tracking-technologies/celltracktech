@@ -1,7 +1,4 @@
-# library(leaflet)
-# library(viridis)
-
-#' Title
+#' Draw Single Solution
 #'
 #' @param rec_df
 #' @param grid_values
@@ -9,11 +6,15 @@
 #' @param multilat_sol
 #' @param tile_url
 #'
-#' @returns
+#' @returns map - map with grid
 #' @export
 #'
 #' @examples
-draw_single_solution <- function(rec_df, grid_values, solution, multilat_sol, tile_url) {
+draw_single_solution <- function(rec_df,
+                                 grid_values,
+                                 solution,
+                                 multilat_sol,
+                                 tile_url) {
     mypal <- colorRampPalette(viridis(1000, option = "D"))(100)
 
     map2color <- function(x, pal, limits = NULL) {

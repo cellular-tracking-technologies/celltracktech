@@ -2,7 +2,7 @@
 % Please edit documentation in R/map_grid_solution.R
 \name{map_latest_solution}
 \alias{map_latest_solution}
-\title{Title}
+\title{Map Latest Solution}
 \usage{
 map_latest_solution(
   node_locs,
@@ -17,5 +17,5 @@ map_latest_solution(
 \item{tile_url}{}
 }
 \description{
-Title
+Map Latest Solution
 }

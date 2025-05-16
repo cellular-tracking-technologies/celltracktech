@@ -2,7 +2,7 @@
 % Please edit documentation in R/map_track.R
 \name{map_track}
 \alias{map_track}
-\title{Title}
+\title{Map Track}
 \usage{
 map_track(
   node_locs,
@@ -13,6 +13,9 @@ map_track(
 \arguments{
 \item{tile_url}{}
 }
+\value{
+map
+}
 \description{
-Title
+Map Track
 }

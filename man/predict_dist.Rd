@@ -2,13 +2,16 @@
 % Please edit documentation in R/rssi_v_dist.R
 \name{predict_dist}
 \alias{predict_dist}
-\title{Title}
+\title{Predict Distance}
 \usage{
 predict_dist(rssi_coefs, rssi)
 }
 \arguments{
 \item{rssi}{}
 }
+\value{
+rssi_coefs
+}
 \description{
-Title
+Predict Distance
 }

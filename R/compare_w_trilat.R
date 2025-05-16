@@ -1,8 +1,4 @@
-# library(dplyr)
-# library(leaflet)
-# library(lubridate)
-
-#' Title
+#' Compare with Trilateration Results
 #'
 #' @param node_locs
 #' @param track_error_df
@@ -10,7 +6,7 @@
 #' @param multilat_df
 #' @param tile_url
 #'
-#' @returns
+#' @returns map
 #' @export
 #'
 #' @examples

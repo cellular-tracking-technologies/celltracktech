@@ -1,14 +1,14 @@
-# library(dplyr)
-
-#' Title
+#' Get Tag Detections
 #'
 #' @param detection_df
 #' @param min_det_count
 #'
-#' @returns
+#' @returns tag_counts - dataframe
 #' @export
 #'
 #' @examples
+#' get_tag_detection_count(detection_df, min_det_count)
+#'
 get_tag_detection_count <- function(detection_df, min_det_count) {
     tag_counts <- detection_df %>% count(tag_id)
     tag_counts <- subset.data.frame(tag_counts, tag_counts$n > min_det_count)

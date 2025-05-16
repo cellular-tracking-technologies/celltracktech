@@ -2,13 +2,16 @@
 % Please edit documentation in R/plot_battery_solar.R
 \name{plot_battery_solar}
 \alias{plot_battery_solar}
-\title{Title}
+\title{Plot Battery and Solar Voltage}
 \usage{
 plot_battery_solar(node_health_df, selected_node_id)
 }
 \arguments{
 \item{selected_node_id}{}
 }
+\value{
+plot
+}
 \description{
-Title
+Plot Battery and Solar Voltage
 }

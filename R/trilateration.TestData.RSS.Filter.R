@@ -1,9 +1,9 @@
-#' Title
+#' Trilateration - Test Data RSS Filter
 #'
-#' @param x
+#' @param x - dataframe
 #' @param RSS.FILTER
 #'
-#' @returns
+#' @returns list
 #' @export
 #'
 #' @examples

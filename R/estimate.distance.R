@@ -1,11 +1,11 @@
-#' Title
+#' Estimate Distance
 #'
-#' @param x
-#' @param K
-#' @param a
-#' @param S
+#' @param x combined_data dataframe
+#' @param K horizontal asymptote
+#' @param a intercept
+#' @param S decay factor
 #'
-#' @returns
+#' @returns combined.data
 #' @export
 #'
 #' @examples

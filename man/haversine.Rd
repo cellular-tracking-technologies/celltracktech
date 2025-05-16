@@ -2,13 +2,30 @@
 % Please edit documentation in R/haversine.R
 \name{haversine}
 \alias{haversine}
-\title{Title}
+\title{Haversine}
 \usage{
 haversine(lat1, lon1, lat2, lon2)
 }
 \arguments{
-\item{lon2}{}
+\item{lat1}{\itemize{
+\item latitude of point 1
+}}
+
+\item{lon1}{\itemize{
+\item longitude of point 1
+}}
+
+\item{lat2}{\itemize{
+\item latitude of point 2
+}}
+
+\item{lon2}{\itemize{
+\item longitude of point 2
+}}
+}
+\value{
+d - great circle distance bewteen two points
 }
 \description{
-Title
+Haversine
 }

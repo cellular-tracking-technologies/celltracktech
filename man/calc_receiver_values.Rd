@@ -2,7 +2,7 @@
 % Please edit documentation in R/calc_receiver_values.R
 \name{calc_receiver_values}
 \alias{calc_receiver_values}
-\title{Title}
+\title{Calculate Receiver Values}
 \usage{
 calc_receiver_values(
   current_time,
@@ -19,5 +19,16 @@ calc_receiver_values(
 \item{filter_time_range}{}
 }
 \description{
-Title
+Calculate Receiver Values
+}
+\examples{
+calc_receiver_values(
+    current_time,
+    det_window,
+    station_tag_df,
+    node_locs,
+    node_t_offset = NULL,
+    rssi_coefs,
+    filter_alpha,
+    filter_time_range)
 }

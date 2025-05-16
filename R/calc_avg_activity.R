@@ -4,10 +4,12 @@
 #' @param start_time
 #' @param stop_time
 #'
-#' @returns
+#' @returns result
 #' @export
 #'
 #' @examples
+#' calc_avg_activity(tag_activity, start_time, stop_time)
+#'
 calc_avg_activity <- function(tag_activity, start_time, stop_time) {
   result <- data.frame(
     time = as.POSIXct(character()),

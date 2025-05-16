@@ -7,10 +7,11 @@
 #' @param y_size_meters grid size y-coord, in meters
 #' @param bin_size number of bins in grid
 #'
-#' @returns
+#' @returns grid_data_frame
 #' @export
 #'
 #' @examples
+#' build_grid(node_locs, center_lat, center_lon, x_size_meters, y_size_meters, bin_size)
 build_grid <- function(node_locs,
                        center_lat,
                        center_lon,

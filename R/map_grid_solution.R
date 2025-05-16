@@ -1,9 +1,5 @@
-# library(leaflet)
-# library(mapview)
-# library(viridis)
-# library(lubridate)
 
-#' Title
+#' Map Single Solution
 #'
 #' @param node_locs
 #' @param rec_df
@@ -11,13 +7,15 @@
 #' @param solution
 #' @param tile_url
 #'
-#' @returns
+#' @returns map
 #' @export
 #'
 #' @examples
-map_single_solution <- function(node_locs, rec_df, grid_values, solution, tile_url) {
-    library(leaflet)
-    library(viridis)
+map_single_solution <- function(node_locs,
+                                rec_df,
+                                grid_values,
+                                solution,
+                                tile_url) {
 
     mypal <- colorRampPalette(viridis(1000, option = "D"))(100)
 
@@ -90,7 +88,7 @@ map_single_solution <- function(node_locs, rec_df, grid_values, solution, tile_u
     return(map)
 }
 
-#' Title
+#' Map Latest Solution
 #'
 #' @param node_locs
 #' @param rec_df
@@ -103,7 +101,12 @@ map_single_solution <- function(node_locs, rec_df, grid_values, solution, tile_u
 #' @export
 #'
 #' @examples
-map_latest_solution <- function(node_locs, rec_df, grid_values, solution, track_df, tile_url) {
+map_latest_solution <- function(node_locs,
+                                rec_df,
+                                grid_values,
+                                solution,
+                                track_df,
+                                tile_url) {
     mypal <- colorRampPalette(viridis(1000, option = "D"))(100)
 
     map2color <- function(x, pal, limits = NULL) {

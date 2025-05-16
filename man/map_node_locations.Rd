@@ -2,7 +2,7 @@
 % Please edit documentation in R/map_node_locations.R
 \name{map_node_locations}
 \alias{map_node_locations}
-\title{Title}
+\title{Map Node Locations}
 \usage{
 map_node_locations(
   node_locs,
@@ -10,8 +10,19 @@ map_node_locations(
 )
 }
 \arguments{
-\item{tile_url}{}
+\item{node_locs}{\itemize{
+\item data frame
+}}
+
+\item{tile_url}{\itemize{
+\item url to map
+}}
+}
+\value{
+\itemize{
+\item map
+}
 }
 \description{
-Title
+Map Node Locations
 }

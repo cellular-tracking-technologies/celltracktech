@@ -2,7 +2,7 @@
 % Please edit documentation in R/map_track_error.R
 \name{map_track_error}
 \alias{map_track_error}
-\title{Title}
+\title{Map Track Error}
 \usage{
 map_track_error(
   node_locs,
@@ -14,6 +14,9 @@ map_track_error(
 \arguments{
 \item{tile_url}{}
 }
+\value{
+map
+}
 \description{
-Title
+Map Track Error
 }

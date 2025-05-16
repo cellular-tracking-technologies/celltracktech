@@ -1,15 +1,12 @@
-# library(dplyr)
-# library(leaflet)
-# library(lubridate)
 
-#' Title
+#' Map Track Error
 #'
 #' @param node_locs
 #' @param track_error_df
 #' @param sidekick_df
 #' @param tile_url
 #'
-#' @returns
+#' @returns map
 #' @export
 #'
 #' @examples

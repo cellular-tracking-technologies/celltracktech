@@ -2,10 +2,13 @@
 % Please edit documentation in R/tag_hist_plot_theme.R
 \name{tag_hist_plot_theme}
 \alias{tag_hist_plot_theme}
-\title{Title}
+\title{Tag Histogram Plot Theme}
 \usage{
 tag_hist_plot_theme()
 }
+\value{
+plot
+}
 \description{
-Title
+Tag Histogram Plot Theme
 }

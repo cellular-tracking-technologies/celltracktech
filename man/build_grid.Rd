@@ -26,6 +26,12 @@ build_grid(
 
 \item{bin_size}{number of bins in grid}
 }
+\value{
+grid_data_frame
+}
 \description{
 Title
+}
+\examples{
+build_grid(node_locs, center_lat, center_lon, x_size_meters, y_size_meters, bin_size)
 }
