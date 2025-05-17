@@ -7,15 +7,16 @@
 trilateration.TestData.RSS.Filter(x, RSS.FILTER)
 }
 \arguments{
-\item{x}{\itemize{
-\item dataframe
-}}
+\item{x}{combined.data dataframe produced by estimate.distance function}
 
-\item{RSS.FILTER}{}
+\item{RSS.FILTER}{List}
 }
 \value{
 list
 }
 \description{
 Trilateration - Test Data RSS Filter
+}
+\examples{
+RSS.filters <- trilateration.TestData.RSS.Filter(combined_data, c(-80, -85, -90, -95))
 }

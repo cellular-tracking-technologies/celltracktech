@@ -29,3 +29,10 @@ d - great circle distance bewteen two points
 \description{
 Haversine
 }
+\examples{
+haversine(reduced_rec_df$lat,
+          reduced_rec_df$lon,
+          ml_lat,
+          ml_lon)
+
+}

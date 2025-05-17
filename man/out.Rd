@@ -7,11 +7,9 @@
 out(x, contents, timezone)
 }
 \arguments{
-\item{x}{\itemize{
-\item dataframe
-}}
+\item{x}{Dataframe}
 
-\item{timezone}{}
+\item{timezone}{Timezone, UTC}
 }
 \value{
 newtimecol

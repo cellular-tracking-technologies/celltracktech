@@ -2,18 +2,22 @@
 % Please edit documentation in R/calc_avg_activity.R
 \name{calc_avg_activity}
 \alias{calc_avg_activity}
-\title{Title}
+\title{Calculate Average Activity}
 \usage{
 calc_avg_activity(tag_activity, start_time, stop_time)
 }
 \arguments{
-\item{stop_time}{}
+\item{tag_activity}{Activity value for 5min bin. Calculated from calc_tag_activity function}
+
+\item{start_time}{POSIXct datetime, in UTC/GMT timezone}
+
+\item{stop_time}{POSIXct datetime, in UTC/GMT timezone}
 }
 \value{
 result
 }
 \description{
-Title
+Calculate Average Activity
 }
 \examples{
 calc_avg_activity(tag_activity, start_time, stop_time)

@@ -11,11 +11,18 @@ map_track(
 )
 }
 \arguments{
-\item{tile_url}{}
+\item{node_locs}{Node locations database}
+
+\item{track_df}{Dataframe produced by calculate_track function}
+
+\item{tile_url}{Map URL}
 }
 \value{
 map
 }
 \description{
 Map Track
+}
+\examples{
+track_map <- map_track(node_locs, track_df, my_tile_url)
 }

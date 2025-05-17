@@ -7,11 +7,16 @@
 plot_calibration_result(rssi_v_dist, theme = NULL)
 }
 \arguments{
-\item{theme}{}
+\item{rssi_v_dist}{Dataframe produced by calc_rssi_v_dist function}
+
+\item{theme}{ggplot2 theme}
 }
 \value{
 plot
 }
 \description{
 Plot Calibration Result
+}
+\examples{
+calibration_plot <- plot_calibration_result(rssi_v_dist, classic_plot_theme())
 }

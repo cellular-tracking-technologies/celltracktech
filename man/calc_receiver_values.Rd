@@ -16,12 +16,39 @@ calc_receiver_values(
 )
 }
 \arguments{
-\item{filter_time_range}{}
+\item{current_time}{POSIXct datetime value, in UTC/GMT timezone}
+
+\item{det_window}{Detection time window (s)}
+
+\item{station_tag_df}{Dataframe of tag detections, obtained from 'raw' data table}
+
+\item{node_locs}{Node locations dataframe}
+
+\item{node_t_offset}{Node time offset, obtained from Node Time Offset functions (Ch. 5)}
+
+\item{rssi_coefs}{RSSI vs Distance fit coefficients from calibration}
+
+\item{filter_alpha}{Alpha value used to filter RSSI values}
+
+\item{filter_time_range}{Time (s), used to get detections up to current time}
+}
+\value{
+rec_df
 }
 \description{
 Calculate Receiver Values
 }
 \examples{
+test_rec_df <- calc_receiver_values(
+    current_time = test_time,
+    det_window = 60,
+    station_tag_df = detection_df,
+    node_locs = node_locs,
+    node_t_offset = node_toff_df,
+    rssi_coefs = rssi_coefs,
+    filter_alpha = 0.7,
+    filter_time_range = 120
+)
 calc_receiver_values(
     current_time,
     det_window,

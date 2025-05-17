@@ -1,15 +1,20 @@
 
 #' Map Track Error
 #'
-#' @param node_locs
-#' @param track_error_df
-#' @param sidekick_df
-#' @param tile_url
+#' @param node_locs Node locations dataframe
+#' @param track_error_df Track error dataframe obtained by calc_track_error function
+#' @param sidekick_df Sidekick calibration test
+#' @param tile_url Map URL
 #'
 #' @returns map
 #' @export
 #'
 #' @examples
+#' compare_map <- map_track_error(node_locs,
+#'                                track_error_df,
+#'                                sidekick_df,
+#'                                my_tile_url)
+#'
 map_track_error <- function(
     node_locs,
     track_error_df,

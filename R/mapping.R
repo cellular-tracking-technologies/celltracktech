@@ -1,13 +1,15 @@
 #' Mapping
 #'
-#' @param node_locs
-#' @param track_error_df
-#' @param tile_url
+#' @param node_locs Node locations dataframe
+#' @param track_error_df Dataframe produced by calc_track_error function
+#' @param tile_url Map URL
 #'
 #' @returns map
 #' @export
 #'
 #' @examples
+#' mapping(nodes, location.estimates)
+
 mapping <- function(node_locs,
                     track_error_df,
                     tile_url = "https://tile.openstreetmap.org/{z}/{x}/{y}.png") {

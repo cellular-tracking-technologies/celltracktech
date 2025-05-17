@@ -7,11 +7,17 @@
 detection_summary(detection_df, tag_list)
 }
 \arguments{
-\item{tag_list}{}
+\item{detection_df}{Tag detection dataframe}
+
+\item{tag_list}{Tag IDs from deployment list}
+}
+\value{
+det_summary
 }
 \description{
 Detection Summary
 }
 \examples{
-det_summary - dataframe
+detection_summary(detection_df, tag_list)
+
 }

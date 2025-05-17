@@ -4,6 +4,9 @@
 #' @param health a data frame of node health data pulled from your local database
 #' @return wells_sf - dataframe
 #' @export
+#'
+#' @examples
+#' nodes <- node_file(nodehealth)
 
 node_file <- function(health) {
   if (nrow(health) < 1) {

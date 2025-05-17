@@ -26,3 +26,6 @@ map_node_locations(
 \description{
 Map Node Locations
 }
+\examples{
+node_map <- map_node_locations(node_locs, tile_url = my_tile_url)
+}

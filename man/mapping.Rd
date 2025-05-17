@@ -11,11 +11,18 @@ mapping(
 )
 }
 \arguments{
-\item{tile_url}{}
+\item{node_locs}{Node locations dataframe}
+
+\item{track_error_df}{Dataframe produced by calc_track_error function}
+
+\item{tile_url}{Map URL}
 }
 \value{
 map
 }
 \description{
 Mapping
+}
+\examples{
+mapping(nodes, location.estimates)
 }

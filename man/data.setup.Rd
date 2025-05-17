@@ -22,11 +22,51 @@ data.setup(
 )
 }
 \arguments{
-\item{filetype}{}
+\item{test}{Sidekick calibration dataframe (loaded from file)}
+
+\item{testdata_in}{Tag detection dataframe (from 'raw' data table)}
+
+\item{nodes}{Dataframe of Nodes with lat/lon}
+
+\item{tag_col}{Tag ID column}
+
+\item{tagid}{Specific Tag ID you want to use for analysis}
+
+\item{time_col}{Time column}
+
+\item{timezone}{Timezone, set to UTC}
+
+\item{x}{Longitude}
+
+\item{y}{Latitude}
+
+\item{node_ids}{NULL}
+
+\item{loc_precision}{Location precision}
+
+\item{latlon}{Boolean, set to True}
+
+\item{fileloc}{filepath}
+
+\item{filetype}{Data filetype; from CTT account (raw, blu)}
 }
 \value{
 combined.data - dataframe
 }
 \description{
 Combine Detection Data and Sidekick Calibration Data
+}
+\examples{
+combined_data <- data.setup(mytest,
+                            testdata,
+                            nodes,
+                            tag_col = "tag_id",
+                            tagid = "072A6633",
+                            time_col = "Time",
+                            timezone = "UTC",
+                            x = "lon",
+                            y = "lat",
+                            loc_precision = 6,
+                            fileloc = "./data/Meadows V2/meadows.duckdb",
+                            filetype = "raw")
 }

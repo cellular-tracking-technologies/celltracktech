@@ -13,7 +13,15 @@ map_multilat(
 )
 }
 \arguments{
-\item{tile_url}{}
+\item{node_locs}{Node locations dataframe}
+
+\item{track_error_df}{Track error dataframe}
+
+\item{sidekick_df}{Sidekick detections dataframe}
+
+\item{multilat_df}{Multilateration dataframe}
+
+\item{tile_url}{Map URL}
 }
 \value{
 map

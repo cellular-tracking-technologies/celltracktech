@@ -7,11 +7,14 @@
 calculate_node_locations(node_health_df)
 }
 \arguments{
-\item{node_health_df}{}
+\item{node_health_df}{Node Health dataframe, obtained from 'node_health' data table}
 }
 \value{
 result - dataframe with average and standard deviations of latitude and longitude
 }
 \description{
 Calculate Node Locations
+}
+\examples{
+node_locs <- calculate_node_locations(node_health_df)
 }

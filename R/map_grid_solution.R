@@ -1,11 +1,11 @@
 
 #' Map Single Solution
 #'
-#' @param node_locs
-#' @param rec_df
-#' @param grid_values
-#' @param solution
-#' @param tile_url
+#' @param node_locs Node locations dataframe
+#' @param rec_df Receiver dataframe
+#' @param grid_values Grid values
+#' @param solution Subset of test_grid_values for max test_grid_values$value
+#' @param tile_url Map URL
 #'
 #' @returns map
 #' @export
@@ -90,12 +90,12 @@ map_single_solution <- function(node_locs,
 
 #' Map Latest Solution
 #'
-#' @param node_locs
-#' @param rec_df
-#' @param grid_values
-#' @param solution
-#' @param track_df
-#' @param tile_url
+#' @param node_locs Node location dataframe
+#' @param rec_df Receiver dataframe
+#' @param grid_values Grid values dataframe
+#' @param solution Subset of test_grid dataframe
+#' @param track_df Tracks dataframe
+#' @param tile_url Map URL
 #'
 #' @returns
 #' @export

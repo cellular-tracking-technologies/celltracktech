@@ -7,7 +7,9 @@
 get_tag_detection_count(detection_df, min_det_count)
 }
 \arguments{
-\item{min_det_count}{}
+\item{detection_df}{Tag detection dataframe}
+
+\item{min_det_count}{Minimum number of detections to include}
 }
 \value{
 tag_counts - dataframe
@@ -17,5 +19,6 @@ Get Tag Detections
 }
 \examples{
 get_tag_detection_count(detection_df, min_det_count)
+
 
 }

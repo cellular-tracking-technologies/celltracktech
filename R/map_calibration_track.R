@@ -1,14 +1,17 @@
 
 #' Map Calibration Track
 #'
-#' @param node_locs
-#' @param sidekick_tag_df
-#' @param tile_url
+#' @param node_locs Node locations dataframe
+#' @param sidekick_tag_df Sidekick tag dataframe of a specific tag ID
+#' @param tile_url Map URL
 #'
 #' @returns map
 #' @export
 #'
 #' @examples
+#' calibration_map <- map_calibration_track(node_locs,
+#'                                          sidekick_tag_df,
+#'                                          tile_url = my_tile_url)
 map_calibration_track <- function(node_locs,
                                   sidekick_tag_df,
                                   tile_url = "https://tile.openstreetmap.org/{z}/{x}/{y}.png") {

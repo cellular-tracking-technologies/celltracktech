@@ -21,3 +21,6 @@ combined.data
 \description{
 Estimate Distance
 }
+\examples{
+combined_data <- estimate.distance(combined_data, K, a, S)
+}

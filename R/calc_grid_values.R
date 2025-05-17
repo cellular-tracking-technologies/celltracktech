@@ -2,7 +2,7 @@
 #'
 #' @param grid_df grid dataframe
 #' @param rec_df recorded detections dataframe
-#' @param rssi_coefs
+#' @param rssi_coefs RSSI vs Distance fit coefficients from calibration
 #'
 #' @returns grid_value_data_frame
 #' @export

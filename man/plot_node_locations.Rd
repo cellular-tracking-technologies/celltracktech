@@ -7,11 +7,20 @@
 plot_node_locations(node_health_df, node_locs, theme = NULL)
 }
 \arguments{
-\item{theme}{}
+\item{node_health_df}{Node health dataframe}
+
+\item{node_locs}{Node locations}
+
+\item{theme}{ggplot2 theme}
 }
 \value{
 plot
 }
 \description{
 Plot Node Locations
+}
+\examples{
+node_loc_plot <- plot_node_locations(node_health_df,
+                                     node_locs,
+                                     theme = classic_plot_theme())
 }

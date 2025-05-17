@@ -1,11 +1,13 @@
 #' Trilateration - Test Data No Filter
 #'
-#' @param x - dataframe
+#' @param x - combined.data dataframe produced by estimate.distance function
 #'
 #' @returns list
 #' @export
 #'
 #' @examples
+#' no.filters <- trilateration.TestData.NoFilter(combined_data)
+
 trilateration.TestData.NoFilter <- function(x) {
 
   # supress warnings

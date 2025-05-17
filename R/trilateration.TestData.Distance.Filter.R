@@ -1,12 +1,14 @@
 #' Trilateration - Test Data Distance Filter
 #'
 #' @param x - dataframe
-#' @param DIST.FILTER
+#' @param DIST.FILTER List ex. c(315,500,750,1000)
 #'
 #' @returns list
 #' @export
 #'
 #' @examples
+#' Dist.filters <- trilateration.TestData.Distance.Filter(combined_data, c(315,500,750,1000))
+
 trilateration.TestData.Distance.Filter <- function(x, DIST.FILTER){
 
   # supress warnings

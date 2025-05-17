@@ -1,7 +1,7 @@
 #' Calculate Tag Activity
 #'
-#' @param tag_dets
-#' @param tag_beep_interval
+#' @param tag_dets Tag specific dataframe
+#' @param tag_beep_interval Interval (s) that the tag beeps
 #'
 #' @returns result - dataframe with node id and activity
 #' @export

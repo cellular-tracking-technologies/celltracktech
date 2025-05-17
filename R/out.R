@@ -1,8 +1,8 @@
 #' Out
 #'
-#' @param x - dataframe
+#' @param x Dataframe
 #' @param contents
-#' @param timezone
+#' @param timezone Timezone, UTC
 #'
 #' @returns newtimecol
 #' @export
@@ -11,6 +11,7 @@
 out <- function(x,
                 contents,
                 timezone) {
+
   x <- which(names(contents) == x)
   timecol <- contents[, x]
   if (is.character(timecol)) {

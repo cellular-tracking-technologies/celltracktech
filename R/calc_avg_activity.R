@@ -1,8 +1,8 @@
 #' Calculate Average Activity
 #'
-#' @param tag_activity
-#' @param start_time
-#' @param stop_time
+#' @param tag_activity Activity value for 5min bin. Calculated from calc_tag_activity function
+#' @param start_time POSIXct datetime, in UTC/GMT timezone
+#' @param stop_time POSIXct datetime, in UTC/GMT timezone
 #'
 #' @returns result
 #' @export
@@ -10,7 +10,9 @@
 #' @examples
 #' calc_avg_activity(tag_activity, start_time, stop_time)
 #'
-calc_avg_activity <- function(tag_activity, start_time, stop_time) {
+calc_avg_activity <- function(tag_activity,
+                              start_time,
+                              stop_time) {
   result <- data.frame(
     time = as.POSIXct(character()),
     avg_activity = double(),

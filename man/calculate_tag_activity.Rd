@@ -7,7 +7,9 @@
 calculate_tag_activity(tag_dets, tag_beep_interval)
 }
 \arguments{
-\item{tag_beep_interval}{}
+\item{tag_dets}{Tag specific dataframe}
+
+\item{tag_beep_interval}{Interval (s) that the tag beeps}
 }
 \value{
 result - dataframe with node id and activity

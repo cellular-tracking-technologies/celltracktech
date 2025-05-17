@@ -1,11 +1,13 @@
 #' Node File
 #'
-#' @param health
+#' @param health Node health dataframe from 'node_health' data table
 #'
 #' @returns health - dataframe
 #' @export
 #'
 #' @examples
+#' nodes <- node_file(nodehealth)
+
 node_file <- function(health) {
   options(digits=9)
 

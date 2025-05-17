@@ -1,11 +1,13 @@
 #' Load Sidekick Data
 #'
-#' @param sidekick_file_path
+#' @param sidekick_file_path Directory that contains sidekick data files
 #'
 #' @returns df
 #' @export
 #'
 #' @examples
+#' sidekick_all_df <- load_sidekick_data(sidekick_file_path)
+
 load_sidekick_data <- function(sidekick_file_path) {
     df <- read.csv(sidekick_file_path)
 

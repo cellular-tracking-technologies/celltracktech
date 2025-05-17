@@ -1,18 +1,28 @@
 #' Calculate Receiver Values
 #'
-#' @param current_time
-#' @param det_window
-#' @param station_tag_df
-#' @param node_locs
-#' @param node_t_offset
-#' @param rssi_coefs
-#' @param filter_alpha
-#' @param filter_time_range
+#' @param current_time POSIXct datetime value, in UTC/GMT timezone
+#' @param det_window Detection time window (s)
+#' @param station_tag_df Dataframe of tag detections, obtained from 'raw' data table
+#' @param node_locs Node locations dataframe
+#' @param node_t_offset Node time offset, obtained from Node Time Offset functions (Ch. 5)
+#' @param rssi_coefs RSSI vs Distance fit coefficients from calibration
+#' @param filter_alpha Alpha value used to filter RSSI values
+#' @param filter_time_range Time (s), used to get detections up to current time
 #'
-#' @returns
+#' @returns rec_df
 #' @export
 #'
 #' @examples
+#' test_rec_df <- calc_receiver_values(
+#'     current_time = test_time,
+#'     det_window = 60,
+#'     station_tag_df = detection_df,
+#'     node_locs = node_locs,
+#'     node_t_offset = node_toff_df,
+#'     rssi_coefs = rssi_coefs,
+#'     filter_alpha = 0.7,
+#'     filter_time_range = 120
+#' )
 #' calc_receiver_values(
 #'     current_time,
 #'     det_window,
@@ -35,6 +45,7 @@ calc_receiver_values <- function(
     # Get all detections up to this time
     new_df <- station_tag_df %>%
         filter(station_tag_df$time_value >= current_time - filter_time_range & station_tag_df$time_value <= current_time)
+
     rec_df <- data.frame(
         node_id = character(),
         lat = double(),
@@ -46,12 +57,15 @@ calc_receiver_values <- function(
         exp_dist = double(),
         stringsAsFactors = TRUE
     )
+
     for (n in 1:nrow(node_locs)) {
         node <- node_locs[n, ]
         this_node_id <- node$node_id
+
         if (!is.null(node_t_offset)) {
             # Get this node's time offset
-            t_off <- subset.data.frame(node_t_offset, toupper(node_t_offset$node_id) == node$node_id)$mean_time_offset
+            t_off <- subset.data.frame(node_t_offset,
+                                       toupper(node_t_offset$node_id) == node$node_id)$mean_time_offset
             # Use time offset to adjust time window for detection cut
             new_df <- station_tag_df %>%
                 filter(station_tag_df$time_value - t_off >= current_time - filter_time_range & station_tag_df$time_value - t_off <= current_time)

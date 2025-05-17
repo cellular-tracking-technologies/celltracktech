@@ -7,7 +7,11 @@
 load_node_detection_data(directory, start_time = NULL, stop_time = NULL)
 }
 \arguments{
-\item{stop_time}{}
+\item{directory}{Directory that contains node data}
+
+\item{start_time}{POSIXct datetime in UTC}
+
+\item{stop_time}{POSIXct datetime in UTC}
 }
 \value{
 df

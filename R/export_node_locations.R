@@ -1,12 +1,14 @@
 #' Export Node Locations
 #'
 #' @param output_file_path .csv file name
-#' @param node_locs dataframe
+#' @param node_locs Node locations dataframe
 #'
 #' @returns
 #' @export file.csv
 #'
 #' @examples
+#' export_node_locations("./results/node_locations.csv", node_locs)
+#'
 export_node_locations <- function(
     output_file_path,
     node_locs) {

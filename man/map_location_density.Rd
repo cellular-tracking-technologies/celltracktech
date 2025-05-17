@@ -10,11 +10,17 @@ map_location_density(
 )
 }
 \arguments{
-\item{tile_url}{}
+\item{loc_density_df}{Dataframe produced by calc_location_density function}
+
+\item{tile_url}{Map URL}
 }
 \value{
 map
 }
 \description{
 Map Location Density
+}
+\examples{
+loc_density_map <- map_location_density(loc_density_df = loc_density,
+                                        my_tile_url)
 }

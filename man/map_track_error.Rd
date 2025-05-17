@@ -12,11 +12,24 @@ map_track_error(
 )
 }
 \arguments{
-\item{tile_url}{}
+\item{node_locs}{Node locations dataframe}
+
+\item{track_error_df}{Track error dataframe obtained by calc_track_error function}
+
+\item{sidekick_df}{Sidekick calibration test}
+
+\item{tile_url}{Map URL}
 }
 \value{
 map
 }
 \description{
 Map Track Error
+}
+\examples{
+compare_map <- map_track_error(node_locs,
+                               track_error_df,
+                               sidekick_df,
+                               my_tile_url)
+
 }

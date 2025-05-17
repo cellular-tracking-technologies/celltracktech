@@ -11,11 +11,20 @@ map_calibration_track(
 )
 }
 \arguments{
-\item{tile_url}{}
+\item{node_locs}{Node locations dataframe}
+
+\item{sidekick_tag_df}{Sidekick tag dataframe of a specific tag ID}
+
+\item{tile_url}{Map URL}
 }
 \value{
 map
 }
 \description{
 Map Calibration Track
+}
+\examples{
+calibration_map <- map_calibration_track(node_locs,
+                                         sidekick_tag_df,
+                                         tile_url = my_tile_url)
 }

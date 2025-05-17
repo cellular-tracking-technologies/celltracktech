@@ -7,7 +7,15 @@
 map_single_solution(node_locs, rec_df, grid_values, solution, tile_url)
 }
 \arguments{
-\item{tile_url}{}
+\item{node_locs}{Node locations dataframe}
+
+\item{rec_df}{Receiver dataframe}
+
+\item{grid_values}{Grid values}
+
+\item{solution}{Subset of test_grid_values for max test_grid_values$value}
+
+\item{tile_url}{Map URL}
 }
 \value{
 map

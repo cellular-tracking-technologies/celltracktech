@@ -1,15 +1,16 @@
 #' Compare with Trilateration Results
 #'
-#' @param node_locs
-#' @param track_error_df
-#' @param sidekick_df
-#' @param multilat_df
-#' @param tile_url
+#' @param node_locs Node locations dataframe
+#' @param track_error_df Track error dataframe
+#' @param sidekick_df Sidekick detections dataframe
+#' @param multilat_df Multilateration dataframe
+#' @param tile_url Map URL
 #'
 #' @returns map
 #' @export
 #'
 #' @examples
+#'
 map_multilat <- function(
     node_locs,
     track_error_df,

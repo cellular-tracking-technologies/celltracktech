@@ -1,14 +1,16 @@
 
 #' Map Track
 #'
-#' @param node_locs
-#' @param track_df
-#' @param tile_url
+#' @param node_locs Node locations database
+#' @param track_df Dataframe produced by calculate_track function
+#' @param tile_url Map URL
 #'
 #' @returns map
 #' @export
 #'
 #' @examples
+#' track_map <- map_track(node_locs, track_df, my_tile_url)
+
 map_track <- function(node_locs, track_df, tile_url = "https://tile.openstreetmap.org/{z}/{x}/{y}.png") {
     map <- leaflet() %>%
         addTiles(

@@ -11,7 +11,7 @@ calc_grid_values(grid_df, rec_df, rssi_coefs)
 
 \item{rec_df}{recorded detections dataframe}
 
-\item{rssi_coefs}{}
+\item{rssi_coefs}{RSSI vs Distance fit coefficients from calibration}
 }
 \value{
 grid_value_data_frame

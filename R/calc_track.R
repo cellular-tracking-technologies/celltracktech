@@ -1,23 +1,38 @@
 #' Calculate Track
 #'
-#' @param start_time
-#' @param length_seconds
-#' @param step_size_seconds
-#' @param det_time_window
-#' @param filter_alpha
-#' @param filter_time_range
-#' @param grid_df
-#' @param detection_df
-#' @param node_locs
-#' @param node_t_offset
-#' @param rssi_coefs
-#' @param track_frame_output_path
-#' @param tile_url
+#' @param start_time POSIXct datetime value, in UTC/GMT timezone
+#' @param length_seconds Time (s)
+#' @param step_size_seconds Step Size (s)
+#' @param det_time_window Detection time window (s)
+#' @param filter_alpha Alpha value, used in calc_receiver_values function
+#' @param filter_time_range Time range (s) to include detections in filtered value
+#' @param grid_df Grid dataframe
+#' @param detection_df Detections dataframe
+#' @param node_locs Node locations
+#' @param node_t_offset Node time offset (obtained in Ch. 5)
+#' @param rssi_coefs RSSI vs Distance fit coefficients from calibration
+#' @param track_frame_output_path Filepath to save track map
+#' @param tile_url URL for map
 #'
-#' @returns
+#' @returns track_df
 #' @export
 #'
 #' @examples
+#' track_df <- calculate_track(
+#'                             start_time = "2023-08-03 19:50:45",
+#'                             length_seconds = 1050,
+#'                             step_size_seconds = 10,
+#'                             det_time_window = 60, # Must have detection within this window to be included in position calculation
+#'                             filter_alpha = 0.7,
+#'                             filter_time_range = 120, # Time range to include detections in filtered value
+#'                             grid_df = grid_df,
+#'                             detection_df = detection_df,
+#'                             node_locs = node_locs,
+#'                             node_t_offset = node_toff_df,
+#'                             rssi_coefs = rssi_coefs,
+#'                             track_frame_output_path = NULL # If NULL no individual frames will be saved
+#'                             )
+
 calculate_track <- function(
     start_time,
     length_seconds,

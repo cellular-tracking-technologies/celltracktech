@@ -7,11 +7,30 @@
 draw_single_solution(rec_df, grid_values, solution, multilat_sol, tile_url)
 }
 \arguments{
-\item{tile_url}{}
+\item{rec_df}{Dataframe produced by calc_receiver_values function}
+
+\item{grid_values}{Grid values dataframe produced by calc_grid_values function}
+
+\item{solution}{Subset of test_grid_values for max test_grid_values$value}
+
+\item{multilat_sol}{Subset of multilat_fit coefficients}
+
+\item{tile_url}{Map URL}
 }
 \value{
 map - map with grid
 }
 \description{
 Draw Single Solution
+}
+\examples{
+test_map <- draw_single_solution(test_rec_df,
+                                 test_grid_values,
+                                 solution,
+                                 multilat_result,
+                                 my_tile_url)
+
+
+
+
 }

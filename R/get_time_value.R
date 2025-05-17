@@ -1,11 +1,13 @@
 #' Get Time Value
 #'
-#' @param time_string
+#' @param time_string time_utc column in Sidekick dataframe
 #'
 #' @returns time_value
 #' @export
 #'
 #' @examples
+#' get_time_value(sidekick_df$time_utc)
+#'
 get_time_value <- function(time_string) {
     time_posix <- as.POSIXct(
         time_string,

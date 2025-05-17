@@ -1,4 +1,4 @@
-#' Title
+#' Build Grid
 #'
 #' @param node_locs dataframe of node locations
 #' @param center_lat grid center latitude

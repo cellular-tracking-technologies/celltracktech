@@ -12,3 +12,8 @@ creates classic theme for ggplots
 \description{
 Classic Plot Theme
 }
+\examples{
+node_loc_plot <- plot_node_locations(node_health_df,
+                                     node_locs,
+                                     theme = classic_plot_theme())
+}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/build_grid.R
 \name{build_grid}
 \alias{build_grid}
-\title{Title}
+\title{Build Grid}
 \usage{
 build_grid(
   node_locs,
@@ -30,7 +30,7 @@ build_grid(
 grid_data_frame
 }
 \description{
-Title
+Build Grid
 }
 \examples{
 build_grid(node_locs, center_lat, center_lon, x_size_meters, y_size_meters, bin_size)

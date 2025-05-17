@@ -7,11 +7,14 @@
 load_sidekick_data(sidekick_file_path)
 }
 \arguments{
-\item{sidekick_file_path}{}
+\item{sidekick_file_path}{Directory that contains sidekick data files}
 }
 \value{
 df
 }
 \description{
 Load Sidekick Data
+}
+\examples{
+sidekick_all_df <- load_sidekick_data(sidekick_file_path)
 }

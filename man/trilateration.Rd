@@ -7,7 +7,11 @@
 trilateration(x, nodes, RSS.FILTER)
 }
 \arguments{
-\item{RSS.FILTER}{}
+\item{x}{Dataframe with tag detections (raw or blu), produced by prep.data function}
+
+\item{nodes}{Nodes dataframe}
+
+\item{RSS.FILTER}{Filter for RSS}
 }
 \value{
 estimated.location_results

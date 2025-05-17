@@ -1,9 +1,9 @@
 
 #' Load Node Health
 #'
-#' @param directory
-#' @param start_time
-#' @param stop_time
+#' @param directory Directory that contains node health files
+#' @param start_time POSIXct datetime, in UTC
+#' @param stop_time POSIXct datetime, in UTC
 #'
 #' @returns df
 #' @export

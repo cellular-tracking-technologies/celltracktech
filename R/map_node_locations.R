@@ -8,6 +8,8 @@
 #' @export
 #'
 #' @examples
+#' node_map <- map_node_locations(node_locs, tile_url = my_tile_url)
+
 map_node_locations <- function(node_locs,
                                tile_url = "https://tile.openstreetmap.org/{z}/{x}/{y}.png") {
     map <- leaflet() %>%

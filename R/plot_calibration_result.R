@@ -1,13 +1,15 @@
 
 #' Plot Calibration Result
 #'
-#' @param rssi_v_dist
-#' @param theme
+#' @param rssi_v_dist Dataframe produced by calc_rssi_v_dist function
+#' @param theme ggplot2 theme
 #'
 #' @returns plot
 #' @export
 #'
 #' @examples
+#' calibration_plot <- plot_calibration_result(rssi_v_dist, classic_plot_theme())
+
 plot_calibration_result <- function(rssi_v_dist,
                                     theme = NULL) {
     plot <- ggplot() +

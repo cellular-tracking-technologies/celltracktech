@@ -7,8 +7,25 @@
 calc_rssi_v_dist(node_locs, sidekick_tag_df, detection_df, use_sync = TRUE)
 }
 \arguments{
-\item{use_sync}{}
+\item{node_locs}{Node locations dataframe}
+
+\item{sidekick_tag_df}{Sidekick tag detection dataframe}
+
+\item{detection_df}{Tag detection dataframe, from 'raw' or 'blu' data table}
+
+\item{use_sync}{For bluseries data, set to TRUE, for 434 MHz data set to FALSE}
+}
+\value{
+result
 }
 \description{
 Calculate RSSI vs. Distance
+}
+\examples{
+rssi_v_dist <- calc_rssi_v_dist(node_locs = node_locs,
+                                sidekick_tag_df = sidekick_tag_df,
+                                detection_df = detection_df,
+                                use_sync = FALSE)
+
+
 }

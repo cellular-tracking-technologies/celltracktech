@@ -9,8 +9,12 @@ export_node_locations(output_file_path, node_locs)
 \arguments{
 \item{output_file_path}{.csv file name}
 
-\item{node_locs}{dataframe}
+\item{node_locs}{Node locations dataframe}
 }
 \description{
 Export Node Locations
+}
+\examples{
+export_node_locations("./results/node_locations.csv", node_locs)
+
 }

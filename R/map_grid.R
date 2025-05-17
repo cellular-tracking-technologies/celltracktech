@@ -1,13 +1,15 @@
 
 #' Map Grid
 #'
-#' @param node_locs
-#' @param grid_df
+#' @param node_locs Node locations dataframe
+#' @param grid_df Grid dataframe
 #'
 #' @returns map
 #' @export
 #'
 #' @examples
+#' grid_map <- draw_grid(node_locs, grid_df)
+
 draw_grid <- function(node_locs, grid_df) {
     map <- leaflet() %>%
         addTiles(

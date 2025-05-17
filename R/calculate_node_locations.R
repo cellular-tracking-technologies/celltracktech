@@ -1,11 +1,12 @@
 #' Calculate Node Locations
 #'
-#' @param node_health_df
+#' @param node_health_df Node Health dataframe, obtained from 'node_health' data table
 #'
 #' @returns result - dataframe with average and standard deviations of latitude and longitude
 #' @export
 #'
 #' @examples
+#' node_locs <- calculate_node_locations(node_health_df)
 calculate_node_locations <- function(node_health_df) {
     node_ids <- sort(unique(node_health_df$node_id))
 

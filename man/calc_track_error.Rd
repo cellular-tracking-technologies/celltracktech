@@ -7,7 +7,9 @@
 calc_track_error(sidekick_df, track_df)
 }
 \arguments{
-\item{track_df}{}
+\item{sidekick_df}{Sidekick tag detection dataframe}
+
+\item{track_df}{Tracks dataframe, obtained from calculate_track function}
 }
 \value{
 solution_compare_df

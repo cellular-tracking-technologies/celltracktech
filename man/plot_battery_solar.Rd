@@ -7,11 +7,18 @@
 plot_battery_solar(node_health_df, selected_node_id)
 }
 \arguments{
-\item{selected_node_id}{}
+\item{node_health_df}{Node health dataframe}
+
+\item{selected_node_id}{Specific node ID}
 }
 \value{
 plot
 }
 \description{
 Plot Battery and Solar Voltage
+}
+\examples{
+batt_solar_plot <- plot_battery_solar(node_health_df = node_health_df,
+                                      selected_node_id = selected_node_id)
+
 }

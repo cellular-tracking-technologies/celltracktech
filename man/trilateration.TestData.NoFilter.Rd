@@ -8,7 +8,7 @@ trilateration.TestData.NoFilter(x)
 }
 \arguments{
 \item{x}{\itemize{
-\item dataframe
+\item combined.data dataframe produced by estimate.distance function
 }}
 }
 \value{
@@ -16,4 +16,7 @@ list
 }
 \description{
 Trilateration - Test Data No Filter
+}
+\examples{
+no.filters <- trilateration.TestData.NoFilter(combined_data)
 }

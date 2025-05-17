@@ -1,15 +1,24 @@
 #' Draw Single Solution
 #'
-#' @param rec_df
-#' @param grid_values
-#' @param solution
-#' @param multilat_sol
-#' @param tile_url
+#' @param rec_df Dataframe produced by calc_receiver_values function
+#' @param grid_values Grid values dataframe produced by calc_grid_values function
+#' @param solution Subset of test_grid_values for max test_grid_values$value
+#' @param multilat_sol Subset of multilat_fit coefficients
+#' @param tile_url Map URL
 #'
 #' @returns map - map with grid
 #' @export
 #'
 #' @examples
+#' test_map <- draw_single_solution(test_rec_df,
+#'                                  test_grid_values,
+#'                                  solution,
+#'                                  multilat_result,
+#'                                  my_tile_url)
+#'
+#'
+#'
+#'
 draw_single_solution <- function(rec_df,
                                  grid_values,
                                  solution,

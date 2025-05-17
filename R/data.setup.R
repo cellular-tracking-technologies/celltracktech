@@ -1,24 +1,36 @@
 #' Combine Detection Data and Sidekick Calibration Data
 #'
-#' @param test
-#' @param testdata_in
-#' @param nodes
-#' @param tag_col
-#' @param tagid
-#' @param time_col
-#' @param timezone
-#' @param x
-#' @param y
-#' @param node_ids
-#' @param loc_precision
-#' @param latlon
-#' @param fileloc
-#' @param filetype
+#' @param test Sidekick calibration dataframe (loaded from file)
+#' @param testdata_in Tag detection dataframe (from 'raw' data table)
+#' @param nodes Dataframe of Nodes with lat/lon
+#' @param tag_col Tag ID column
+#' @param tagid Specific Tag ID you want to use for analysis
+#' @param time_col Time column
+#' @param timezone Timezone, set to UTC
+#' @param x Longitude
+#' @param y Latitude
+#' @param node_ids NULL
+#' @param loc_precision Location precision
+#' @param latlon Boolean, set to True
+#' @param fileloc filepath
+#' @param filetype Data filetype; from CTT account (raw, blu)
 #'
 #' @returns combined.data - dataframe
 #' @export
 #'
 #' @examples
+#' combined_data <- data.setup(mytest,
+#'                             testdata,
+#'                             nodes,
+#'                             tag_col = "tag_id",
+#'                             tagid = "072A6633",
+#'                             time_col = "Time",
+#'                             timezone = "UTC",
+#'                             x = "lon",
+#'                             y = "lat",
+#'                             loc_precision = 6,
+#'                             fileloc = "./data/Meadows V2/meadows.duckdb",
+#'                             filetype = "raw")
 data.setup <- function(test,
                        testdata_in,
                        nodes,
@@ -52,19 +64,26 @@ data.setup <- function(test,
       }
     } else {
       multfactor = 10^loc_precision
-      test$lat <- format(trunc(test[,y]*multfactor)/multfactor, nsmall=loc_precision)
-      test$lon <- format(trunc(test[,x]*multfactor)/multfactor, nsmall=loc_precision)
+      test$lat <- format(trunc(test[,y]*multfactor)/multfactor,
+                         nsmall=loc_precision)
+      test$lon <- format(trunc(test[,x]*multfactor)/multfactor,
+                         nsmall=loc_precision)
       test$id <- paste(test$lat, test$lon, sep="_")
       test <- test %>%
         mutate(c_diff = ifelse(id != lag(id), 1, 0))
       test$c_diff[1] <- 0
       test$TestId <- cumsum(test$c_diff)
-      test.info <- setDT(test)[, .(Start.Time = min(time), Stop.Time = max(time)), by = TestId]
-      test.info$id <- test$id[match(test.info$TestId, test$TestId)]
+      test.info <- setDT(test)[, .(Start.Time = min(time),
+                                   Stop.Time = max(time)), by = TestId]
+      test.info$id <- test$id[match(test.info$TestId,
+                                    test$TestId)]
       testid <- test[!duplicated(test$id),]
-      test.info$TestId <- testid$TestId[match(test.info$id, testid$id)]
-      test.info$lat <- as.numeric(test$lat[match(test.info$TestId, test$TestId)])
-      test.info$lon <- as.numeric(test$lon[match(test.info$TestId, test$TestId)])
+      test.info$TestId <- testid$TestId[match(test.info$id,
+                                              testid$id)]
+      test.info$lat <- as.numeric(test$lat[match(test.info$TestId,
+                                                 test$TestId)])
+      test.info$lon <- as.numeric(test$lon[match(test.info$TestId,
+                                                 test$TestId)])
     }
   } else {
     test.info <- test
@@ -105,7 +124,10 @@ data.setup <- function(test,
 
   #DBI::dbDisconnect(con)
 
-  test.dat <- setDT(testdata)[test.info,  TestId := +(i.TestId), on = .(tag_id, time > Start.Time, time < Stop.Time), by = .EACHI]
+  test.dat <- setDT(testdata)[test.info,
+                              TestId := +(i.TestId),
+                              on = .(tag_id, time > Start.Time,
+                                     time < Stop.Time), by = .EACHI]
   test.dat <- test.dat[!is.na(test.dat$TestId),]
 
   summary.test.tags <- test.dat %>%
@@ -114,12 +136,18 @@ data.setup <- function(test,
                      sdRSS = sd(tag_rssi),
                      n.det = n())
 
-  if(!is.null(node_ids)) {nodes <- nodes[nodes$node_id %in% node_ids,]}
+  if (!is.null(node_ids)) {
+    nodes <- nodes[nodes$node_id %in% node_ids,]
+    }
 
   #nodes <- node_file(nodes)
 
-  dst <- raster::pointDistance(test.UTM[,c("lon", "lat")], nodes[,c("node_lng", "node_lat")], lonlat = latlon, allpairs = T)
-  dist_df <- data.frame(dst, row.names = test.UTM$TestId)
+  dst <- raster::pointDistance(test.UTM[,c("lon", "lat")],
+                               nodes[,c("node_lng", "node_lat")],
+                               lonlat = latlon,
+                               allpairs = T)
+  dist_df <- data.frame(dst,
+                        row.names = test.UTM$TestId)
   colnames(dist_df) <- nodes$node_id
   dist_df$TestId <- as.integer(rownames(dist_df))
 

@@ -1,14 +1,18 @@
 #' Detection Summary
 #'
-#' @param detection_df
-#' @param tag_list
+#' @param detection_df Tag detection dataframe
+#' @param tag_list Tag IDs from deployment list
 #'
-#' @returns
+#' @returns det_summary
 #' @export
 #'
-#' @examples det_summary - dataframe
-detection_summary <- function(detection_df, tag_list) {
-    my_dets <- subset.data.frame(detection_df, detection_df$tag_id %in% tag_list)
+#' @examples
+#' detection_summary(detection_df, tag_list)
+#'
+detection_summary <- function(detection_df,
+                              tag_list) {
+    my_dets <- subset.data.frame(detection_df,
+                                 detection_df$tag_id %in% tag_list)
 
     det_summary <- data.frame(
         tag_id = character(),

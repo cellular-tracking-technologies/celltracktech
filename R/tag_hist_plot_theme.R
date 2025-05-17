@@ -4,6 +4,16 @@
 #' @export
 #'
 #' @examples
+#' ggplot(node_record_counts,
+#'        aes(x = factor(x = node_id,
+#'                levels = node_id),
+#'            y = n)) +
+#'   geom_bar(stat = "identity") +
+#'   coord_flip() +
+#'   labs(x = "Health Record Count",
+#'        y = "Node Id") +
+#'   tag_hist_plot_theme()
+
 tag_hist_plot_theme <- function() {
   theme(
     # axis.text.x = element_text(size = 20, vjust = 0.5),

@@ -1,7 +1,7 @@
 #' Calculate Track Errors
 #'
-#' @param sidekick_df
-#' @param track_df
+#' @param sidekick_df Sidekick tag detection dataframe
+#' @param track_df Tracks dataframe, obtained from calculate_track function
 #'
 #' @returns solution_compare_df
 #' @export

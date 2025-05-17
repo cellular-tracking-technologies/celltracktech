@@ -11,11 +11,14 @@ trilateration.TestData.Distance.Filter(x, DIST.FILTER)
 \item dataframe
 }}
 
-\item{DIST.FILTER}{}
+\item{DIST.FILTER}{List ex. c(315,500,750,1000)}
 }
 \value{
 list
 }
 \description{
 Trilateration - Test Data Distance Filter
+}
+\examples{
+Dist.filters <- trilateration.TestData.Distance.Filter(combined_data, c(315,500,750,1000))
 }

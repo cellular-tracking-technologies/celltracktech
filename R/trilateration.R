@@ -1,8 +1,8 @@
 #' Trilateration
 #'
-#' @param x
-#' @param nodes
-#' @param RSS.FILTER
+#' @param x Dataframe with tag detections (raw or blu), produced by prep.data function
+#' @param nodes Nodes dataframe
+#' @param RSS.FILTER Filter for RSS
 #'
 #' @returns estimated.location_results
 #' @export
@@ -36,8 +36,16 @@ trilateration <- function(x,
 
 
   # Create a dataframe for output estimates
-  estimated.location_results <- data.frame(TagId=character(), Time.group = POSIXct(), Hour = numeric(), No.Nodes = numeric(), UTMx_est=numeric(), UTMy_est=numeric(),
-                                           x.LCI =numeric(), x.UCI =numeric(),  y.LCI = numeric(), y.UCI = numeric())
+  estimated.location_results <- data.frame(TagId=character(),
+                                           Time.group = POSIXct(),
+                                           Hour = numeric(),
+                                           No.Nodes = numeric(),
+                                           UTMx_est=numeric(),
+                                           UTMy_est=numeric(),
+                                           x.LCI =numeric(),
+                                           x.UCI =numeric(),
+                                           y.LCI = numeric(),
+                                           y.UCI = numeric())
 
   # Loop through each bird
   for (k in 1:length(bird)) {
@@ -96,9 +104,18 @@ trilateration <- function(x,
       # then the error will be printed but the loop will continue
 
       # Non-linear test to optimize the location of unknown signal by looking at the radius around each Node based on estimated distance and the pairwise distance between all nodes
-      tryCatch( {nls.test <- nls(e.dist ~ raster::pointDistance(data.frame(node_lng, node_lat), c(UTMx_solution, UTMy_solution), lonlat = T, allpairs = T),
-                                 data = sub.test.dist.rssi, start=list(UTMx_solution=max.RSSI$node_lng, UTMy_solution=max.RSSI$node_lat),
-                                 control=nls.control(warnOnly = T, minFactor=1/30000, maxiter = 100)) # gives a warning, but doesn't stop the test from providing an estimate based on the last itteration before the warning
+      tryCatch({ nls.test <- nls(e.dist ~ raster::pointDistance(data.frame(node_lng,
+                                                                           node_lat),
+                                                                c(UTMx_solution,
+                                                                  UTMy_solution),
+                                                                lonlat = T,
+                                                                allpairs = T),
+                                 data = sub.test.dist.rssi,
+                                 start = list(UTMx_solution=max.RSSI$node_lng,
+                                            UTMy_solution=max.RSSI$node_lat),
+                                 control=nls.control(warnOnly = T,
+                                                     minFactor=1/30000,
+                                                     maxiter = 100)) # gives a warning, but doesn't stop the test from providing an estimate based on the last itteration before the warning
 
 
       # Determine an error around the point location estimate
@@ -106,9 +123,12 @@ trilateration <- function(x,
       UTMx.ci.upper =  par.est[1,3]
       UTMx.ci.lower =  par.est[1,2]
       UTMy.ci.upper =  par.est[2,3]
-      UTMy.ci.lower =  par.est[2,2] }
+      UTMy.ci.lower =  par.est[2,2]
+      }
 
-      ,error = function(e)  {cat("ERROR :",conditionMessage(e), "\n")})
+      ,error = function(e) {
+        cat("ERROR :",conditionMessage(e), "\n")
+        })
 
       # estimated location of the point and error
       estimated.loc <- data.frame(TagId = bird[k], Time.group = tests[j], Hour = test.hour, No.Nodes = no.nodes, lon_est = par.est[1,1], lat_est = par.est[2,1],

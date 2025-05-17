@@ -4,6 +4,10 @@
 #' @export
 #'
 #' @examples
+#' node_loc_plot <- plot_node_locations(node_health_df,
+#'                                      node_locs,
+#'                                      theme = classic_plot_theme())
+
 classic_plot_theme <- function() {
   theme(
     axis.text.x = element_text(size = 20, vjust = 0.5),

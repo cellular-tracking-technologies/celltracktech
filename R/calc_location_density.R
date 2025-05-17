@@ -1,9 +1,9 @@
 #' Calculate Location Density
 #'
-#' @param grid_df
-#' @param locations_df
+#' @param grid_df Grid dataframe; created by build_grid function
+#' @param locations_df Locations dataframe; created by calculate_track function
 #'
-#' @returns
+#' @returns loc_density_df
 #' @export
 #'
 #' @examples

@@ -14,7 +14,17 @@ map_latest_solution(
 )
 }
 \arguments{
-\item{tile_url}{}
+\item{node_locs}{Node location dataframe}
+
+\item{rec_df}{Receiver dataframe}
+
+\item{grid_values}{Grid values dataframe}
+
+\item{solution}{Subset of test_grid dataframe}
+
+\item{track_df}{Tracks dataframe}
+
+\item{tile_url}{Map URL}
 }
 \description{
 Map Latest Solution

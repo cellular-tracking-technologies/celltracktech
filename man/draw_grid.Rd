@@ -7,11 +7,16 @@
 draw_grid(node_locs, grid_df)
 }
 \arguments{
-\item{grid_df}{}
+\item{node_locs}{Node locations dataframe}
+
+\item{grid_df}{Grid dataframe}
 }
 \value{
 map
 }
 \description{
 Map Grid
+}
+\examples{
+grid_map <- draw_grid(node_locs, grid_df)
 }

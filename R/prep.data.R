@@ -1,19 +1,26 @@
 #' Prepare Data
 #'
-#' @param x
-#' @param y
-#' @param SLIDE.TIME
-#' @param GROUP.TIME
-#' @param K
-#' @param a
-#' @param S
-#' @param startval
+#' @param x Dataframe, raw or blu from data table, filtered for specific tag and specific date
+#' @param y Nodes dataframe
+#' @param SLIDE.TIME Slide time
+#' @param GROUP.TIME Group time
+#' @param K Horizontal asymptote
+#' @param a Intercept
+#' @param S Decay factor
+#' @param startval NULL
 #'
 #' @returns dataframe
 #' @export
 #'
 #' @examples
-prep.data <- function(x,y, SLIDE.TIME, GROUP.TIME, K, a, S, startval = NULL) {
+prep.data <- function(x,
+                      y,
+                      SLIDE.TIME,
+                      GROUP.TIME,
+                      K,
+                      a,
+                      S,
+                      startval = NULL) {
 
   # supress warnings
   options(warn = -1)

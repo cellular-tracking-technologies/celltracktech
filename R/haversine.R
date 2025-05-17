@@ -9,6 +9,11 @@
 #' @export
 #'
 #' @examples
+#' haversine(reduced_rec_df$lat,
+#'           reduced_rec_df$lon,
+#'           ml_lat,
+#'           ml_lon)
+#'
 haversine <- function(lat1, lon1, lat2, lon2) {
   # print(paste('lat1', lat1, 'lon1', lon1, 'lat2', lon2))
     pi <- 3.1415926535897932

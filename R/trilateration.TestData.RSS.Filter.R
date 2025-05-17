@@ -1,12 +1,14 @@
 #' Trilateration - Test Data RSS Filter
 #'
-#' @param x - dataframe
-#' @param RSS.FILTER
+#' @param x combined.data dataframe produced by estimate.distance function
+#' @param RSS.FILTER List
 #'
 #' @returns list
 #' @export
 #'
 #' @examples
+#' RSS.filters <- trilateration.TestData.RSS.Filter(combined_data, c(-80, -85, -90, -95))
+
 trilateration.TestData.RSS.Filter <- function(x, RSS.FILTER) {
 
   # supress warnings

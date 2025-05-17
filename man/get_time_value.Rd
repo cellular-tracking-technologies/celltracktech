@@ -7,11 +7,15 @@
 get_time_value(time_string)
 }
 \arguments{
-\item{time_string}{}
+\item{time_string}{time_utc column in Sidekick dataframe}
 }
 \value{
 time_value
 }
 \description{
 Get Time Value
+}
+\examples{
+get_time_value(sidekick_df$time_utc)
+
 }

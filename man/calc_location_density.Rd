@@ -7,7 +7,12 @@
 calc_location_density(grid_df, locations_df)
 }
 \arguments{
-\item{locations_df}{}
+\item{grid_df}{Grid dataframe; created by build_grid function}
+
+\item{locations_df}{Locations dataframe; created by calculate_track function}
+}
+\value{
+loc_density_df
 }
 \description{
 Calculate Location Density
