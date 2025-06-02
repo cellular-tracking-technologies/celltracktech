@@ -11,6 +11,9 @@ export_node_locations(output_file_path, node_locs)
 
 \item{node_locs}{Node locations dataframe}
 }
+\value{
+csv file
+}
 \description{
 Export Node Locations
 }

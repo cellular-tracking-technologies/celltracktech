@@ -3,8 +3,8 @@
 #' @param output_file_path .csv file name
 #' @param node_locs Node locations dataframe
 #'
-#' @returns
-#' @export file.csv
+#' @returns csv file
+#' @export
 #'
 #' @examples
 #' export_node_locations("./results/node_locations.csv", node_locs)
