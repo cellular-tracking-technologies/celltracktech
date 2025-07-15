@@ -7,7 +7,9 @@
 process_file(file_path, output_dir)
 }
 \arguments{
-\item{output_dir}{}
+\item{file_path}{filename}
+
+\item{output_dir}{output directory}
 }
 \value{
 csv with parsed battery voltage and temperature

@@ -1,8 +1,8 @@
 
 #' Function to process a single file
 #'
-#' @param file_path
-#' @param output_dir
+#' @param file_path filename
+#' @param output_dir output directory
 #'
 #' @returns csv with parsed battery voltage and temperature
 #' @export

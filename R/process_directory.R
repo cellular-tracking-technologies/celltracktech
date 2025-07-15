@@ -1,9 +1,9 @@
 #' Main function to process all CSV/CSV.GZ files in a directory
 #'
-#' @param input_dir
-#' @param output_dir
+#' @param input_dir input directory
+#' @param output_dir output directory
 #'
-#' @returns
+#' @returns csv files with parsed battery voltage and temperature
 #' @export
 #'
 #' @examples

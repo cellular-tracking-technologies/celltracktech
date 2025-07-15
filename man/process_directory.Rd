@@ -7,7 +7,12 @@
 process_directory(input_dir, output_dir)
 }
 \arguments{
-\item{output_dir}{}
+\item{input_dir}{input directory}
+
+\item{output_dir}{output directory}
+}
+\value{
+csv files with parsed battery voltage and temperature
 }
 \description{
 Main function to process all CSV/CSV.GZ files in a directory
