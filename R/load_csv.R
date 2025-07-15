@@ -1,12 +1,12 @@
 #' Function to load CSV or CSV.GZ file
 #'
-#' @param file_path
+#' @param file_path - string
 #'
 #' @returns data
 #' @export
 #'
 #' @examples
-#' load_csv('./data/)
+#' load_csv('./data/')
 #' load_csv('./data/blu-file.csv')
 #' load_csv('./data/blu-file.csv.gz')
 load_csv <- function(file_path) {

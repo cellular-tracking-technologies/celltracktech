@@ -7,11 +7,18 @@
 load_csv(file_path)
 }
 \arguments{
-\item{file_path}{}
+\item{file_path}{\itemize{
+\item string
+}}
 }
 \value{
 data
 }
 \description{
 Function to load CSV or CSV.GZ file
+}
+\examples{
+load_csv('./data/')
+load_csv('./data/blu-file.csv')
+load_csv('./data/blu-file.csv.gz')
 }
