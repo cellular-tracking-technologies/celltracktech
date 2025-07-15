@@ -120,8 +120,7 @@ post <- function(endpoint, payload = NULL) {
   if (!is.null(payload)) {
     payload_to_send <- c(payload_to_send, payload)
   }
-  # print(endpoint)
-  response <- httr::POST(host, path = endpoint, body = payload_to_send, encode = "json", httr::timeout(300)) # encode="json",
+  response <- httr::POST(host, path = endpoint, body = payload_to_send, encode = "json", httr::timeout(3000))
   httr::stop_for_status(response)
   return(response)
 }
@@ -134,6 +133,7 @@ getStations <- function(project_id) {
 getStationFileList <- function(station_id, begin, filetypes = NULL, end = NULL) {
   endpoint <- files
   payload <- list("station-id" = station_id, begin = as.Date(begin))
+
   if (!is.null(filetypes)) {
     add_types <- filetypes[filetypes %in% file_types]
     if (length(which(!filetypes %in% file_types)) > 0) {
@@ -150,6 +150,8 @@ getStationFileList <- function(station_id, begin, filetypes = NULL, end = NULL) 
 downloadFiles <- function(file_id) {
   endpoint <- "/station/api/download-file/"
   payload <- list("file-id" = file_id)
+  print(paste('downloadFiles payload', payload))
+
   response <- tryCatch(
     {
       post(endpoint = endpoint, payload = payload)
@@ -273,6 +275,83 @@ create_db <- function(conn) {
     n_fixes smallint,
     PRIMARY KEY (gps_at, station_id)
   )")
+
+  DBI::dbExecute(conn, "
+  CREATE TABLE IF NOT EXISTS node_raw
+  (
+    id SERIAL PRIMARY KEY,
+    path  TEXT NOT NULL,
+    radio_id TEXT,
+    tag_id TEXT,
+    node_id TEXT,
+    tag_rssi smallint,
+    time TIMESTAMP with time zone NOT NULL,
+    validated smallint,
+    station_id TEXT
+  )")
+
+  DBI::dbExecute(conn, "
+  CREATE TABLE IF NOT EXISTS node_blu
+  (
+    id SERIAL PRIMARY KEY,
+    path  TEXT NOT NULL,
+    radio_id smallint,
+    usb_port smallint,
+    blu_radio_id smallint,
+    tag_id TEXT,
+    node_id TEXT,
+    tag_rssi smallint,
+    sync integer,
+    product smallint,
+    revision smallint,
+    payload text,
+    time TIMESTAMP with time zone NOT NULL,
+    station_id TEXT
+  )")
+
+  DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS node_health_from_node
+  (
+    PRIMARY KEY (node_id, time, station_id),
+    time TIMESTAMP with time zone NOT NULL,
+    up_time BIGINT,
+    power_ok smallint,
+    batt_mv smallint,
+    batt_temp_c smallint,
+    charge_mv smallint,
+    charge_ma smallint,
+    charge_temp_c smallint,
+    node_temp_c smallint,
+    energy_used_mah smallint,
+    sd_free smallint,
+    sub_ghz_det smallint,
+    ble_det smallint,
+    errors TEXT,
+    node_id TEXT,
+    station_id TEXT,
+    path  TEXT NOT NULL,
+    FOREIGN KEY (node_id)
+      REFERENCES nodes (node_id)
+        ON DELETE NO ACTION
+        ON UPDATE NO ACTION
+  )")
+
+  DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS node_gps
+  (
+    path  TEXT NOT NULL,
+    latitude NUMERIC(8,6),
+    longitude NUMERIC(9,6),
+    altitude NUMERIC(6,1),
+    gps_at TIMESTAMP WITH TIME ZONE,
+    hdop NUMERIC(6,2),
+    vdop NUMERIC(6,2),
+    pdop NUMERIC(6,2),
+    navigation_mode smallint,
+    satellites NUMERIC(5,2),
+    on_time NUMERIC(3,0),
+    station_id TEXT,
+    node_id TEXT,
+    PRIMARY KEY (gps_at, node_id)
+  )")
 }
 
 create_duck <- function(conn) {
@@ -379,6 +458,85 @@ create_duck <- function(conn) {
     mean_lng NUMERIC(9,6),
     n_fixes smallint,
     PRIMARY KEY (gps_at, station_id)
+  )")
+
+  DBI::dbExecute(conn, "
+  CREATE SEQUENCE IF NOT EXISTS seq_id START 1;
+  CREATE TABLE IF NOT EXISTS node_raw
+  (
+    id integer primary key default nextval('seq_id'),
+    path  TEXT NOT NULL,
+    radio_id TEXT,
+    tag_id TEXT,
+    node_id TEXT,
+    tag_rssi smallint,
+    time TIMESTAMP with time zone NOT NULL,
+    validated smallint,
+    station_id TEXT
+  )")
+
+  DBI::dbExecute(conn, "
+  CREATE SEQUENCE IF NOT EXISTS seq_idb START 1;
+  CREATE TABLE IF NOT EXISTS node_blu
+  (
+    id integer primary key default nextval('seq_idb'),
+    path  TEXT NOT NULL,
+    radio_id smallint,
+    usb_port smallint,
+    blu_radio_id smallint,
+    tag_id TEXT,
+    node_id TEXT,
+    tag_rssi smallint,
+    sync integer,
+    product smallint,
+    revision smallint,
+    payload text,
+    time TIMESTAMP with time zone NOT NULL,
+    station_id TEXT
+  )")
+
+  DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS node_health_from_node
+  (
+    PRIMARY KEY (node_id, time, station_id),
+    time TIMESTAMP with time zone NOT NULL,
+    up_time BIGINT,
+    power_ok smallint,
+    batt_mv smallint,
+    batt_temp_c smallint,
+    charge_mv smallint,
+    charge_ma smallint,
+    charge_temp_c smallint,
+    node_temp_c smallint,
+    energy_used_mah smallint,
+    sd_free smallint,
+    sub_ghz_det smallint,
+    ble_det smallint,
+    errors TEXT,
+    node_id TEXT,
+    station_id TEXT,
+    path  TEXT NOT NULL,
+    FOREIGN KEY (node_id)
+      REFERENCES nodes (node_id)
+        ON DELETE NO ACTION
+        ON UPDATE NO ACTION
+  )")
+
+  DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS node_gps
+  (
+    path  TEXT NOT NULL,
+    latitude NUMERIC(8,6),
+    longitude NUMERIC(9,6),
+    altitude NUMERIC(6,1),
+    gps_at TIMESTAMP WITH TIME ZONE,
+    hdop smallint,
+    vdop smallint,
+    pdop smallint,
+    navigation_mode smallint,
+    satellites NUMERIC(5,2),
+    on_time NUMERIC(3,0),
+    station_id TEXT,
+    node_id TEXT,
+    PRIMARY KEY (gps_at, node_id)
   )")
 }
 
@@ -492,6 +650,7 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
         contents$CumulativeSolarCurrent <- NA
         contents$Latitude <- NA
         contents$Longitude <- NA
+
       } else if(ncol(contents) > 9) {
         contents <- contents[which(contents$Latitude < 90 & contents$Latitude > -90),]
         #contents <- contents[contents$CumulativeSolarCurrent < 2147483647,]
@@ -576,62 +735,79 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
     contents$node_id <- toupper(contents$node_id)
     if (length(which(!is.na(contents$node_id))) > 0) {
       nodeids <- contents$node_id[which(!is.na(contents$node_id))]
-      insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "nodes (node_id)", " VALUES ($1)
-                                           ON CONFLICT DO NOTHING", sep = ""))
+      insertnew <- DBI::dbSendQuery(conn,
+                                    paste("INSERT INTO ",
+                                    "nodes (node_id)",
+                                    " VALUES ($1)
+                                    ON CONFLICT DO NOTHING", sep = ""))
+
       DBI::dbBind(insertnew, params = list(unique(nodeids)))
       DBI::dbClearResult(insertnew)
     }
   } else {
     nodeids <- c()
   }
-  if (filetype %in% c("raw", "node_health", "gps", "blu") & nrow(contents) > 0) {
-    if (filetype %in% c("raw", "blu")) {
-        vars <- paste(DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))], sep = "", collapse = ",")
-        vals <- paste(seq_along(1:(length(DBI::dbListFields(conn, filetype)) - 1)), sep = "", collapse = ", $")
+  if (filetype %in% c("raw",
+                      "node_health",
+                      "gps",
+                      "blu",
+                      'node_raw',
+                      'node_health_from_node',
+                      'node_gps',
+                      'node_blu') & nrow(contents) > 0) {
+    if (filetype %in% c("raw", "blu", 'node_raw', 'node_blu')) {
+      vars <- paste(DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))],
+                    sep = "",
+                    collapse = ",")
+      vals <- paste(seq_along(1:(length(DBI::dbListFields(conn, filetype)) - 1)),
+                    sep = "",
+                    collapse = ", $")
 
-        contents <- contents[, DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]] # need path and station_id columns
-        contents
+      contents <- contents[, DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]] # need path and station_id columns
+      contents
     } else {
-        vars <- paste(DBI::dbListFields(conn, filetype), sep = "", collapse = ",")
-        vals <- paste(seq_along(1:length(DBI::dbListFields(conn, filetype))), sep = "", collapse = ", $")
-        names(contents) <- tolower(names(contents))
-        contents <- contents[, DBI::dbListFields(conn, filetype)]
+      vars <- paste(DBI::dbListFields(conn, filetype), sep = "", collapse = ",")
+      vals <- paste(seq_along(1:length(DBI::dbListFields(conn, filetype))),
+                    sep = "",
+                    collapse = ", $")
+      names(contents) <- tolower(names(contents))
+      contents <- contents[, DBI::dbListFields(conn, filetype)]
     }
 
     # browser()
     h <- tryCatch({
-          tryCatch({
-              DBI::dbWriteTable(conn, filetype, contents, append = TRUE)
-              query = paste("INSERT INTO ", "data_file (path)", " VALUES ($1) ON CONFLICT DO NOTHING", sep = "")
-              insertnew <-DBI::dbSendQuery(conn, query)
-              # insertnew <- DBI::dbSendQuery(conn,
-              #                               paste("INSERT INTO ",
-              #                                     "data_file (path)",
-              #                                     " VALUES ($1) ON CONFLICT DO NOTHING", sep = ""))  #CTT-FC16AD87C466-node-health.2022-07-15_104908.csv.gz
-              DBI::dbBind(insertnew, params = list(y))
-              DBI::dbClearResult(insertnew)
-              return(NULL)
-            },
-            error = function(err) {
-              # error handler picks up where error was generated, in Bob's script it breaks if header is missing
-              # myquery <- paste("INSERT INTO ", filetype, " (", vars, ") VALUES ($", vals, ")
-                                         # ON CONFLICT DO NOTHING", sep = "")
-              myquery <- paste("INSERT INTO ", filetype, " (", vars, ") VALUES ($", vals, ")", sep = "")
-              insertnew <- DBI::dbSendQuery(conn, myquery)
-              DBI::dbBind(insertnew, params = unname(contents))
-              DBI::dbClearResult(insertnew)
-              insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "data_file (path)", " VALUES ($1)
+      tryCatch({
+        DBI::dbWriteTable(conn, filetype, contents, append = TRUE)
+        query = paste("INSERT INTO ", "data_file (path)", " VALUES ($1) ON CONFLICT DO NOTHING", sep = "")
+        insertnew <-DBI::dbSendQuery(conn, query)
+        # insertnew <- DBI::dbSendQuery(conn,
+        #                               paste("INSERT INTO ",
+        #                                     "data_file (path)",
+        #                                     " VALUES ($1) ON CONFLICT DO NOTHING", sep = ""))  #CTT-FC16AD87C466-node-health.2022-07-15_104908.csv.gz
+        DBI::dbBind(insertnew, params = list(y))
+        DBI::dbClearResult(insertnew)
+        return(NULL)
+      },
+      error = function(err) {
+        # error handler picks up where error was generated, in Bob's script it breaks if header is missing
+        # myquery <- paste("INSERT INTO ", filetype, " (", vars, ") VALUES ($", vals, ")
+        # ON CONFLICT DO NOTHING", sep = "")
+        myquery <- paste("INSERT INTO ", filetype, " (", vars, ") VALUES ($", vals, ")", sep = "")
+        insertnew <- DBI::dbSendQuery(conn, myquery)
+        DBI::dbBind(insertnew, params = unname(contents))
+        DBI::dbClearResult(insertnew)
+        insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "data_file (path)", " VALUES ($1)
                                          ON CONFLICT DO NOTHING", sep = ""))  #CTT-FC16AD87C466-node-health.2022-07-15_104908.csv.gz
-              DBI::dbBind(insertnew, params = list(y))
-              DBI::dbClearResult(insertnew)
-            })
-        },
-        error = function(err) {
-          print(paste('h error', err))
-          return(list(err, contents, y))
-        }
-      )
+        DBI::dbBind(insertnew, params = list(y))
+        DBI::dbClearResult(insertnew)
+      })
+    },
+    error = function(err) {
+      print(paste('h error', err))
+      return(list(err, contents, y))
     }
+    )
+  }
   if (!exists("h")) {
     h <- NULL # h is boolean
   }
@@ -649,7 +825,8 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
   files_loc <- sapply(strsplit(myfiles, "/"), tail, n = 1)
   my_stations <- getStations(project_id = id)
   if (!is.null(my_station)) {
-    my_stations[["stations"]] <- list(my_stations[[1]][[which(sapply(my_stations[[1]], function(x) x[["station"]][["id"]] == my_station))]])
+    my_stations[["stations"]] <- list(my_stations[[1]][[which(sapply(my_stations[[1]],
+                                                                     function(x) x[["station"]][["id"]] == my_station))]])
   }
   files_avail <- lapply(my_stations[["stations"]], function(station, mybeginning = beginning, myending = ending) {
     print(station)
@@ -670,11 +847,10 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     }
 
     print(kwargs)
-    # print("getting station file list...")
+    print("getting station file list...")
     file_info <- do.call(getStationFileList, kwargs)
     outfiles <- file_info[["files"]]
-    # print(outfiles)
-    # print(paste(length(outfiles), "files available"))
+
     return(outfiles)
   })
   print("getting files available for those stations...")
@@ -697,8 +873,6 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
   # x = file ids
   # y = file names
   get_files <- function(x, y) {
-    print(x)
-    print(y)
     splitfile <- unlist(strsplit(y, "CTT-"))
     fileinfo <- splitfile[2]
     sensorid <- unlist(strsplit(fileinfo, "-"))
@@ -715,49 +889,49 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
       filetype <- "raw"
     }
     if (filetype %in% filetypes) {
-    faul <- which(sapply(my_stations[["stations"]], function(sta) sta$station$id == sensor))
-    if (length(faul) > 1) {
-      begin <- sapply(faul, function(x) as.POSIXct(my_stations[["stations"]][[x]]$`deploy-at`, format = "%Y-%m-%dT%H:%M:%OS", tz = "UTC", optional = TRUE))
-      begin <- max(begin)
-    } else {
-      begin <- as.POSIXct(my_stations[["stations"]][[faul]]$`deploy-at`, format = "%Y-%m-%dT%H:%M:%OS", tz = "UTC", optional = TRUE)
-    }
-
-    contents <- downloadFiles(file_id = x)
-    if (filetype == "raw") {
-      contents <- httr::content(contents, type = "text", col_types = list(NodeId = "c"))
-    } else if(filetype == "blu") {
-      contents <- httr::content(contents)
-    } else {
-      contents <- httr::content(contents, type = "text")
-    }
-    if (!is.null(contents)) { #& filetype %in% c("raw", "node_health", "gps", "ble", "blu")) {
-      dir.create(file.path(outpath, projbasename, sensor), showWarnings = FALSE)
-      dir.create(file.path(outpath, projbasename, sensor, filetype), showWarnings = FALSE)
-      print(paste("downloading",y,"to",file.path(outpath, projbasename, sensor, filetype)))
-      print(x)
-      if(is.character(contents)) {write(contents, file = gzfile(file.path(outpath, projbasename, sensor, filetype, y)))
+      faul <- which(sapply(my_stations[["stations"]], function(sta) sta$station$id == sensor))
+      if (length(faul) > 1) {
+        begin <- sapply(faul, function(x) as.POSIXct(my_stations[["stations"]][[x]]$`deploy-at`, format = "%Y-%m-%dT%H:%M:%OS", tz = "UTC", optional = TRUE))
+        begin <- max(begin)
       } else {
+        begin <- as.POSIXct(my_stations[["stations"]][[faul]]$`deploy-at`, format = "%Y-%m-%dT%H:%M:%OS", tz = "UTC", optional = TRUE)
+      }
+
+      contents <- downloadFiles(file_id = x)
+      if (filetype == "raw") {
+        contents <- httr::content(contents, type = "text", col_types = list(NodeId = "c"))
+      } else if(filetype == "blu") {
+        contents <- httr::content(contents)
+      } else {
+        contents <- httr::content(contents, type = "text")
+      }
+      if (!is.null(contents)) { #& filetype %in% c("raw", "node_health", "gps", "ble", "blu")) {
+        dir.create(file.path(outpath, projbasename, sensor), showWarnings = FALSE)
+        dir.create(file.path(outpath, projbasename, sensor, filetype), showWarnings = FALSE)
+        print(paste("downloading",y,"to",file.path(outpath, projbasename, sensor, filetype)))
+        print(x)
+        if(is.character(contents)) {write(contents, file = gzfile(file.path(outpath, projbasename, sensor, filetype, y)))
+        } else {
           write.csv(contents, file = gzfile(file.path(outpath, projbasename, sensor, filetype, y)), row.names = F)
         }
-      e <- file.path(outpath, projbasename, sensor, filetype, y)
-      if (!is.null(f)) {
-        if(filetype %in% c("raw", "node_health", "gps", "blu")) {
-        contents <- file_handle(e, filetype)[[1]]
-        print(begin)
-        contents <- db_prep(contents, filetype, sensor, y, begin)
-        # z <- db_insert(contents, filetype, f, y)
-        z <- db_insert(contents=contents, filetype=filetype, conn=f, y=y)
+        e <- file.path(outpath, projbasename, sensor, filetype, y)
+        if (!is.null(f)) {
+          if(filetype %in% c("raw", "node_health", "gps", "blu")) {
+            contents <- file_handle(e, filetype)[[1]]
+            print(begin)
+            contents <- db_prep(contents, filetype, sensor, y, begin)
+            # z <- db_insert(contents, filetype, f, y)
+            z <- db_insert(contents=contents, filetype=filetype, conn=f, y=y)
 
+          }
         }
       }
-    }
     }
     if (!exists("z")) {
       z <- NULL
     }
     return(z)
-    }
+  }
 
   failed <- Map(get_files, filesget$ids, filesget$file_names)
   print("done getting files")
@@ -866,147 +1040,148 @@ file_handle <- function(e, filetype) {
 
   if (!is.null(contents) & nrow(contents > 0)) {
     if(filetype %in% c("raw", "node_health", "gps", "blu")) {
-    delete.columns <- grep("[[:digit:]]", colnames(contents), perl = T)
-    if (length(delete.columns) > 0) {
-      file_err <- 1
-      myrowfix <- tryCatch(
-        {
-          myrowfix <- Correct_Colnames(contents)
-          myrowfix[1] <- strsplit(Correct_Colnames(contents)[1], "[.]")[[1]][1]
-          myrowfix[2] <- strsplit(Correct_Colnames(contents)[2], "[.]")[[1]][1]
-          myrowfix[3] <- strsplit(Correct_Colnames(contents)[3], "\\.\\.")[[1]][1] # were there files where this wasn't correctly split?
-          myrowfix[3] <- ifelse(myrowfix[3]=="", NA, myrowfix[3])
-          myrowfix[4] <- strsplit(Correct_Colnames(contents)[4], "\\.\\.")[[1]][1]
-          myrowfix[5] <- strsplit(Correct_Colnames(contents)[5], "\\.\\.")[[1]][1]
-          if (nchar(myrowfix[5]) < 1) {
-            myrowfix[5] <- NA
+      delete.columns <- grep("[[:digit:]]", colnames(contents), perl = T)
+      if (length(delete.columns) > 0) {
+        file_err <- 1
+        myrowfix <- tryCatch(
+          {
+            myrowfix <- Correct_Colnames(contents)
+            myrowfix[1] <- strsplit(Correct_Colnames(contents)[1], "[.]")[[1]][1]
+            myrowfix[2] <- strsplit(Correct_Colnames(contents)[2], "[.]")[[1]][1]
+            myrowfix[3] <- strsplit(Correct_Colnames(contents)[3], "\\.\\.")[[1]][1] # were there files where this wasn't correctly split?
+            myrowfix[3] <- ifelse(myrowfix[3]=="", NA, myrowfix[3])
+            myrowfix[4] <- strsplit(Correct_Colnames(contents)[4], "\\.\\.")[[1]][1]
+            myrowfix[5] <- strsplit(Correct_Colnames(contents)[5], "\\.\\.")[[1]][1]
+            if (nchar(myrowfix[5]) < 1) {
+              myrowfix[5] <- NA
+            }
+            if (length(myrowfix) > 5) {
+              myrowfix[6] <- strsplit(Correct_Colnames(contents)[6], "[.]")[[1]][1]
+            }
+            if (length(myrowfix) > 6) {
+              myrowfix[7] <- strsplit(Correct_Colnames(contents)[7], "\\.\\.")[[1]][1]
+              myrowfix[7] <- strsplit(myrowfix[7], "[_]")[[1]][1]
+              myrowfix[8] <- strsplit(Correct_Colnames(contents)[8], "\\.\\.")[[1]][1]
+            }
+            if (length(myrowfix) > 9) {
+              myrowfix[10] <- strsplit(Correct_Colnames(contents)[10], "\\.\\.")[[1]][1]
+              myrowfix[10] <- ifelse(myrowfix[10]=="", NA, myrowfix[10])
+              myrowfix[12] <- strsplit(Correct_Colnames(contents)[12], "\\.\\.")[[1]][1]
+              myrowfix[13] <- strsplit(Correct_Colnames(contents)[13], "\\.\\.")[[1]][1]
+            }
+            # rowfix <- data.frame(as.POSIXct(rowfix[1], tz="UTC"), as.integer(rowfix[2]), rowfix[3], rowfix[4], rowfix[5], as.integer(rowfix[6]))
+            myrowfix
+            # names(rowfix) <- names(contents)
+            # rbind(contents, rowfix)
+          },
+          error = function(err) {
+            return(data.frame())
           }
-          if (length(myrowfix) > 5) {
-            myrowfix[6] <- strsplit(Correct_Colnames(contents)[6], "[.]")[[1]][1]
-          }
-          if (length(myrowfix) > 6) {
-            myrowfix[7] <- strsplit(Correct_Colnames(contents)[7], "\\.\\.")[[1]][1]
-            myrowfix[7] <- strsplit(myrowfix[7], "[_]")[[1]][1]
-            myrowfix[8] <- strsplit(Correct_Colnames(contents)[8], "\\.\\.")[[1]][1]
-          }
-          if (length(myrowfix) > 9) {
-            myrowfix[10] <- strsplit(Correct_Colnames(contents)[10], "\\.\\.")[[1]][1]
-            myrowfix[10] <- ifelse(myrowfix[10]=="", NA, myrowfix[10])
-            myrowfix[12] <- strsplit(Correct_Colnames(contents)[12], "\\.\\.")[[1]][1]
-            myrowfix[13] <- strsplit(Correct_Colnames(contents)[13], "\\.\\.")[[1]][1]
-          }
-          # rowfix <- data.frame(as.POSIXct(rowfix[1], tz="UTC"), as.integer(rowfix[2]), rowfix[3], rowfix[4], rowfix[5], as.integer(rowfix[6]))
-          myrowfix
-          # names(rowfix) <- names(contents)
-          # rbind(contents, rowfix)
-        },
-        error = function(err) {
-          return(data.frame())
-        }
-      )
-      # contents <- newcontents
-    }
+        )
+        # contents <- newcontents
+      }
 
-    if(!ignore & !filetype=="blu"){
-      rowtest <- badrow(e, contents, filetype)
-      contents <- rowtest[[1]]
-    } else {
-      rowtest <- list(contents,0)
-      #myrowfix <- c()
-    }
+      if(!ignore & !filetype=="blu"){
+        rowtest <- badrow(e, contents, filetype)
+        contents <- rowtest[[1]]
+      } else {
+        rowtest <- list(contents,0)
+        #myrowfix <- c()
+      }
 
-    if (filetype == "raw") {
-      if (length(delete.columns) > 0) {
-        if (ncol(contents) > 5) {
-          names(contents) <- c("Time", "RadioId", "TagId", "TagRSSI", "NodeId", "Validated")
-          if (length(myrowfix) > 0) {
-            time <- timecheck(contents, myrowfix)
-            rowfix <- data.frame(time, as.integer(myrowfix[2]), myrowfix[3], myrowfix[4], myrowfix[5], as.integer(myrowfix[6]))
-            names(rowfix) <- names(contents)
-            contents <- rbind(contents, rowfix)
+      if (filetype == "raw") {
+        if (length(delete.columns) > 0) {
+          if (ncol(contents) > 5) {
+            names(contents) <- c("Time", "RadioId", "TagId", "TagRSSI", "NodeId", "Validated")
+            if (length(myrowfix) > 0) {
+              time <- timecheck(contents, myrowfix)
+              rowfix <- data.frame(time, as.integer(myrowfix[2]), myrowfix[3], myrowfix[4], myrowfix[5], as.integer(myrowfix[6]))
+              names(rowfix) <- names(contents)
+              contents <- rbind(contents, rowfix)
+            }
+          } else {
+            names(contents) <- c("Time", "RadioId", "TagId", "TagRSSI", "NodeId")
           }
-        } else {
-          names(contents) <- c("Time", "RadioId", "TagId", "TagRSSI", "NodeId")
         }
-      }
-      contents <- contents[(nchar(contents$NodeId) == 6 | is.na(contents$NodeId)),]
-      # correct <- ifelse(v > 2, 7, 6)
-      # rowtest <- badrow(e, correct, contents)
-      # contents <- rowtest[[1]]
-      # if(file_err < 1) {
-      #  file_err <- rowtest[[2]]
-      # }
-    } else if (filetype == "gps") {
-      if (length(delete.columns) > 0) {
-        if (ncol(contents) > 8) {
-          names(contents) <- c("recorded.at", "gps.at", "latitude", "longitude", "altitude", "quality", "mean.lat", "mean.lng", "n.fixes")
-          if (length(myrowfix) > 6) {
-            time <- timecheck(contents, myrowfix)
-            rowfix <- data.frame(time, as.POSIXct(myrowfix[2], tz = "UTC"), myrowfix[3], myrowfix[4], as.numeric(myrowfix[5]), as.numeric(myrowfix[6]), myrowfix[7], myrowfix[8], as.numeric(myrowfix[9]))
-            names(rowfix) <- names(contents)
-            contents <- rbind(contents, rowfix)
-          }
-        } else {
-          names(contents) <- c("recorded.at", "gps.at", "latitude", "longitude", "altitude", "quality")
-        } # not fixing rows for v1
-      }
-    } else if (filetype == "node_health") {
-      if (length(delete.columns) > 0) {
-        if (ncol(contents) > 9 & ncol(contents) < 14) {
-          names(contents) <- c("Time", "RadioId", "NodeId", "NodeRssi", "Battery", "celsius", "RecordedAt", "firmware", "SolarVolts", "SolarCurrent", "CumulativeSolarCurrent", "latitude", "longitude")
-          if (length(myrowfix) > 0) {
-            time <- timecheck(contents, myrowfix)
-            rowfix <- data.frame(time, as.integer(myrowfix[2]), myrowfix[3], as.integer(myrowfix[4]), as.numeric(myrowfix[5]), as.numeric(myrowfix[6]), as.POSIXct(myrowfix[7], tz = "UTC"), myrowfix[8], as.numeric(myrowfix[9]), as.numeric(myrowfix[10]), as.numeric(myrowfix[11]), as.numeric(myrowfix[12]), as.numeric(myrowfix[13]))
-            names(rowfix) <- names(contents)
-            contents <- rbind(contents, rowfix)
-          }
-        } else if (ncol(contents) < 9) {
-          names(contents) <- c("Time", "RadioId", "NodeId", "NodeRssi", "Battery", "celsius")
+        contents <- contents[(nchar(contents$NodeId) == 6 | is.na(contents$NodeId)),]
+        # correct <- ifelse(v > 2, 7, 6)
+        # rowtest <- badrow(e, correct, contents)
+        # contents <- rowtest[[1]]
+        # if(file_err < 1) {
+        #  file_err <- rowtest[[2]]
+        # }
+      } else if (filetype == "gps") {
+        if (length(delete.columns) > 0) {
+          if (ncol(contents) > 8) {
+            names(contents) <- c("recorded.at", "gps.at", "latitude", "longitude", "altitude", "quality", "mean.lat", "mean.lng", "n.fixes")
+            if (length(myrowfix) > 6) {
+              time <- timecheck(contents, myrowfix)
+              rowfix <- data.frame(time, as.POSIXct(myrowfix[2], tz = "UTC"), myrowfix[3], myrowfix[4], as.numeric(myrowfix[5]), as.numeric(myrowfix[6]), myrowfix[7], myrowfix[8], as.numeric(myrowfix[9]))
+              names(rowfix) <- names(contents)
+              contents <- rbind(contents, rowfix)
+            }
+          } else {
+            names(contents) <- c("recorded.at", "gps.at", "latitude", "longitude", "altitude", "quality")
+          } # not fixing rows for v1
         }
-      }
-      contents <- contents[(nchar(contents$NodeId) >= 6 & nchar(contents$NodeId) <= 8),]
-    } else if(filetype=="blu") {
-      #rowtest <- list(contents,0)
-      if (length(delete.columns) > 0) {
-        if (ncol(contents) > 8) {
-          names(contents) <- c("UsbPort","BluRadioId","RadioId","Time","TagRSSI","TagId","Sync","Product","Revision","NodeId","Payload")
+      } else if (filetype == "node_health") {
+        if (length(delete.columns) > 0) {
+          if (ncol(contents) > 9 & ncol(contents) < 14) {
+            names(contents) <- c("Time", "RadioId", "NodeId", "NodeRssi", "Battery", "celsius", "RecordedAt", "firmware", "SolarVolts", "SolarCurrent", "CumulativeSolarCurrent", "latitude", "longitude")
+            if (length(myrowfix) > 0) {
+              time <- timecheck(contents, myrowfix)
+              rowfix <- data.frame(time, as.integer(myrowfix[2]), myrowfix[3], as.integer(myrowfix[4]), as.numeric(myrowfix[5]), as.numeric(myrowfix[6]), as.POSIXct(myrowfix[7], tz = "UTC"), myrowfix[8], as.numeric(myrowfix[9]), as.numeric(myrowfix[10]), as.numeric(myrowfix[11]), as.numeric(myrowfix[12]), as.numeric(myrowfix[13]))
+              names(rowfix) <- names(contents)
+              contents <- rbind(contents, rowfix)
+            }
+          } else if (ncol(contents) < 9) {
+            names(contents) <- c("Time", "RadioId", "NodeId", "NodeRssi", "Battery", "celsius")
+          }
+        }
+        contents <- contents[(nchar(contents$NodeId) >= 6 & nchar(contents$NodeId) <= 8),]
+      } else if(filetype=="blu") {
+        #rowtest <- list(contents,0)
+        if (length(delete.columns) > 0) {
+          if (ncol(contents) > 8) {
+            names(contents) <- c("UsbPort","BluRadioId","RadioId","Time","TagRSSI","TagId","Sync","Product","Revision","NodeId","Payload")
             rowfix <- data.frame(as.integer(myrowfix[1]), as.integer(myrowfix[2]), myrowfix[3], as.POSIXct(myrowfix[4], tz = "UTC"), as.integer(myrowfix[5]), as.character(myrowfix[6]), as.integer(myrowfix[7]), myrowfix[8], myrowfix[9], myrowfix[10], as.character(myrowfix[11]))
             names(rowfix) <- names(contents)
             contents <- rbind(contents, rowfix)
           }
         }
-      contents <- contents[(nchar(contents$NodeId) <= 8 | is.na(contents$NodeId)),]
-    }
-    timecols <- c("Time", "recorded at", "gps at", "RecordedAt", "recorded.at", "gps.at")
-    filetime <- which(names(contents) %in% timecols)
-    out <- lapply(filetime, function(x) {
-      timecol <- contents[, x][[1]]
-      if (is.character(timecol)) {
-        DatePattern <- "[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T, ][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?"
-        exactDatePattern <- "^[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T, ][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?$"
-        brokenrow <- grep(exactDatePattern, timecol, invert = TRUE) # find row that has a date embedded in a messed up string (i.e. interrupted rows)
-        if (length(brokenrow) > 0) {
-          file_err <- 6
-        }
-        timecol[brokenrow] <- substring(timecol[brokenrow], regexpr(DatePattern, timecol[brokenrow]))
-        timecol[brokenrow[which(regexpr(DatePattern, timecol[brokenrow]) < 0)]] <- NA
-        newtimecol <- as.POSIXct(timecol, tz = "UTC")
-      } else {
-        newtimecol <- timecol
+        contents <- contents[(nchar(contents$NodeId) <= 8 | is.na(contents$NodeId)),]
       }
-      return(newtimecol)
-    })
-    contents[filetime] <- out
-    if ("Time" %in% colnames(contents) & nrow(contents) > 0) {
-      contents <- contents[!is.na(contents$Time), ]
-    }
+      timecols <- c("Time", "recorded at", "gps at", "RecordedAt", "recorded.at", "gps.at")
+      filetime <- which(names(contents) %in% timecols)
+      out <- lapply(filetime, function(x) {
+        timecol <- contents[, x][[1]]
+        if (is.character(timecol)) {
+          DatePattern <- "[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T, ][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?"
+          exactDatePattern <- "^[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}[T, ][[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?$"
+          brokenrow <- grep(exactDatePattern, timecol, invert = TRUE) # find row that has a date embedded in a messed up string (i.e. interrupted rows)
+          if (length(brokenrow) > 0) {
+            file_err <- 6
+          }
+          timecol[brokenrow] <- substring(timecol[brokenrow], regexpr(DatePattern, timecol[brokenrow]))
+          timecol[brokenrow[which(regexpr(DatePattern, timecol[brokenrow]) < 0)]] <- NA
+          newtimecol <- as.POSIXct(timecol, tz = "UTC")
+        } else {
+          newtimecol <- timecol
+        }
+        return(newtimecol)
+      })
+      contents[filetime] <- out
+      if ("Time" %in% colnames(contents) & nrow(contents) > 0) {
+        contents <- contents[!is.na(contents$Time), ]
+      }
 
-    file_err <- ifelse(rowtest[[2]] > 0, rowtest[[2]], file_err)
-    if(file_err < 5) {
-      if(filetype == 'gps' & all(is.na(contents[,2]))) {file_err <- 7}
-    }
-    # print(contents)
-  }} else {file_err <- 2}
+      file_err <- ifelse(rowtest[[2]] > 0, rowtest[[2]], file_err)
+
+      if(file_err < 5) {
+        if(filetype == 'gps' & all(is.na(contents[,2]))) {file_err <- 7}
+      }
+      # print(contents)
+    }} else {file_err <- 2}
   # print(tail(contents))
   return(list(contents, file_err, myrowfix, contents[1, ]))
 }
@@ -1024,8 +1199,17 @@ file_handle <- function(e, filetype) {
 #' @export
 #' @examples
 #' get_my_data(token, "~/mydata", myproject = "Project Name from CTT Account")
-get_my_data <- function(my_token, outpath, db_name = NULL, myproject = NULL, mystation = NULL, begin = NULL, end = NULL, filetypes=NULL) {
+get_my_data <- function(my_token,
+                        outpath,
+                        db_name = NULL,
+                        myproject = NULL,
+                        mystation = NULL,
+                        begin = NULL,
+                        end = NULL,
+                        filetypes=NULL) {
+
   projects <- project_list(my_token, myproject)
+
   if (!is.null(db_name) & length(grep("postgresql", format(db_name))) > 0) {
     create_db(db_name) # EDIT TO TAKE NEW create_db() when you switch back!
     sapply(projects, pop_proj, conn = db_name)
@@ -1035,8 +1219,9 @@ get_my_data <- function(my_token, outpath, db_name = NULL, myproject = NULL, mys
     sapply(projects, pop_proj, conn = db_name)
     failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
   } else {
-    failed <- lapply(projects, get_data, outpath = outpath, my_station = mystation, beginning = begin, ending = end)
+    failed <- lapply(projects, get_data, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
   }
+  print(paste('failed', failed[[1]]))
   faul <- which(!sapply(failed[[1]], is.null))
   if (length(faul > 0)) {
     failed <- Map(`[`, failed, faul)
@@ -1071,6 +1256,30 @@ pop <- function(x) { # this was a function written before the data file table wa
 #' @examples
 #' update_db(conn, "~/mydata", myproject = "Project Name from CTT Account", fix = FALSE)
 update_db <- function(d, outpath, myproject, fix = FALSE) {
+
+  ### NEED TO ADD NODE COLUMN CONDITIONAL
+  if ('CumulativeSolarCurrent' %in% colnames(df)) {
+    df <- df %>%
+      rename(radio_id = 'RadioId',
+             node_id = 'NodeId',
+             node_rssi = 'NodeRSSI',
+             battery = 'Battery',
+             celsius = 'Celsius',
+             recorded_at = 'RecordedAt',
+             firmware = 'Firmware',
+             solar_volts = 'SolarVolts',
+             solar_current = 'SolarCurrent',
+             cumulative_solar_current = 'CumulativeSolarCurrent',
+             latitude = 'Latitude',
+             longitude = 'Longitude',
+             up_time = 'UpTime',
+             charge_ma = 'AverageChargerCurrentMa',
+             energy_used_mah = 'EnergyUsed',
+             sd_free = 'SdFree',
+             sub_ghz_det = 'Detections',
+             errors = 'Errors')
+  }
+
   myfiles <- list.files(file.path(outpath, myproject), recursive = TRUE, full.names = TRUE)
   files_loc <- basename(myfiles)
   allnode <- DBI::dbReadTable(d, "data_file")
@@ -1083,7 +1292,11 @@ update_db <- function(d, outpath, myproject, fix = FALSE) {
     filesdone <- allnode$path
   }
   files_import <- myfiles[which(!files_loc %in% filesdone)]
-  files_import <- files_import[unname(sapply(files_import, function(x) get_file_info(x)[[1]])) %in% c("gps", "node_health", "raw", "blu")]
+  files_import <- files_import[unname(sapply(files_import,
+                                             function(x) get_file_info(x)[[1]])) %in% c("gps",
+                                                                                        "node_health",
+                                                                                        "raw",
+                                                                                        "blu")]
   #files_import <- files_import[unname(sapply(files_import, function(x) get_file_info(x)[[2]])) == "FC16AD87C466"][1:10]
   write.csv(files_import, file.path(outpath, "files.csv"))
   failed2 <- lapply(files_import, get_files_import, conn = d, outpath=outpath) # outpath=outpath, myproject=myproject)
@@ -1123,13 +1336,13 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
   filetype <- out$filetype
 
   if (filetype %in% c("raw", "node_health", "gps", "blu")) {
-  sensor <- out$sensor
-  y <- out$y
-  i <- DBI::dbReadTable(conn, "ctt_project_station")
-  begin <- i[i$station_id == sensor, ]$deploy_at
-  if (length(begin) == 0) {
-    begin <- as.POSIXct("2018-01-01")
-  }
+    sensor <- out$sensor
+    y <- out$y
+    i <- DBI::dbReadTable(conn, "ctt_project_station")
+    begin <- i[i$station_id == sensor, ]$deploy_at
+    if (length(begin) == 0) {
+      begin <- as.POSIXct("2018-01-01")
+    }
     # print("attempting import")
     outtest <- file_handle(e, filetype)
     contents <- outtest[[1]]
@@ -1137,15 +1350,14 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
     # file_err <- fileimp[[2]]
     # print("inserting contents")
     #print(fix)
-    print(errtpe)
+    print(errtype)
     #print(filetype)
     print(y)
     contents <- db_prep(contents, filetype, sensor, y, begin)
     if(nrow(contents) < 1) {errtype <- 7}
     if (errtype < 7 & errtype != 2) {
-    # z <- db_insert(contents, filetype, conn, y)
-    z <- db_insert(contents=contents, filetype=filetype, conn=conn, y=y, begin=begin)
-    print(paste('get files import z', z))
+      # z <- db_insert(contents, filetype, conn, y)
+      z <- db_insert(contents=contents, filetype=filetype, conn=conn, y=y, begin=begin)
     } else if(errtype == 7) {
       dir.create(file.path(outpath, "ignore_files"), showWarnings = FALSE)
       file.copy(e, file.path(outpath, "ignore_files"))
@@ -1188,7 +1400,7 @@ to_delete AS (
   WHERE  rnk > 1
 )
 delete from nodes using to_delete where nodes.node_id = to_delete.node_id"))
-  # failed2 <- Map(get_files_import, names(errors), unname(errors), MoreArgs=list(conn=d, fix=T))
+# failed2 <- Map(get_files_import, names(errors), unname(errors), MoreArgs=list(conn=d, fix=T))
 }
 
 # x <- data.frame("2021-10-26 18:29:52", 1, "52345578", -91, NA, 1)
@@ -1246,4 +1458,63 @@ error_files <- function(dirin, dirout, conn = NULL) {
   dir.create(file.path(dirout, "row_error"), showWarnings = FALSE)
   file.copy(rowerr, file.path(dirout, "row_error"))
   return(filetest)
+}
+
+#' Create database from Node Data files from SD card
+#'
+#' @param outpath where your files are to be downloaded
+#' @param myproject the name of your project on our system
+#' @param db_name the connection to your local database
+#'
+#' @returns database
+#' @export
+#'
+#' @examples
+#' create_database(outpath = './data/', myproject = 'Meadows V2', db_name = conn)
+create_database = function(
+    my_token,
+    outpath,
+    myproject,
+    db_name) {
+
+  # if (is.null(my_token)) {
+  #   myList = list()
+  #   myList$id = as.integer(1)
+  #   myList$name = myproject
+  #   projects = list(myList)
+  # } else {
+  #   projects <- project_list(my_token, myproject)
+  # }
+
+  projects <- project_list(my_token, myproject)
+
+  # Checking if database is postgres, duckdb, or remote
+  if (!is.null(db_name) && length(grep("postgresql", format(db_name))) > 0) {
+    create_db(db_name) # EDIT TO TAKE NEW create_db() when you switch back!
+    sapply(projects, pop_proj, conn = db_name)
+    # failed <- import_node_data(conn,
+    #                            outpath,
+    #                            myproject=myproject)
+
+  } else if (!is.null(db_name) && length(grep("duckdb", format(db_name))) > 0) {
+    create_duck(db_name)
+    sapply(projects, pop_proj, conn = db_name)
+
+    # failed <- import_node_data(conn,
+    #                            outpath,
+    #                            myproject=myproject)
+  } else {
+    # remote database (i.e. AWS RDS)
+    # failed <- import_node_data(conn,
+    #                            outpath,
+    #                            myproject=myproject)
+  }
+  # faul <- which(!sapply(failed[[1]], is.null))
+  # if (length(faul > 0)) {
+  #   failed <- Map(`[`, failed, faul)
+  #   # save(failed, file = file.path(outpath, "caught.RData"))
+  # } else {
+  #   failed <- "all good!"
+  #   # save(failed, file = file.path(outpath, "caught.RData"))
+  # }
 }

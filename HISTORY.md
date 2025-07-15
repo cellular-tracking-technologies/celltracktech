@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1] - 2025-02-11
+
+### Changed
+
+- import_node_data(): Fix issue with importing node data into database. db_insert() had differing number of parameters, explicitly defined parameters in functions
+
+- get_data(): trim project name to avoid creating directories with leading or trailing spaces. Windows does not create folders with trailing spaces, and if the project name has a trailing space, the downloaded files would not be saved there
+
 ## [1.0.0] - 2024-09-09
 
 ### Changed
