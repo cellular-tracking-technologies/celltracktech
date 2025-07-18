@@ -7,7 +7,7 @@
 #' @export
 #'
 #' @examples
-#' process_directory('./data/', './data/results/')
+#' process_directory('./sensor_station_id/blu', './sensor_station_id/blu')
 process_directory <- function(input_dir, output_dir) {
   # Get list of .csv and .csv.gz files
   files <- list.files(input_dir, pattern = "\\.(csv|csv\\.gz)$", full.names = TRUE)

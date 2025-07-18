@@ -234,7 +234,10 @@ create_db <- function(conn) {
     payload text,
     time TIMESTAMP with time zone NOT NULL,
     station_id TEXT
-  )")
+  );
+  ALTER TABLE blu
+  ADD COLUMN IF NOT EXISTS battery_voltage_v DECIMAL(6,3)
+  ADD COLUMN IF NOT EXISTS temperature_celsius DECIMAL(6,3);")
 
   DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS node_health
   (
@@ -418,7 +421,12 @@ create_duck <- function(conn) {
     payload text,
     time TIMESTAMP with time zone NOT NULL,
     station_id TEXT
-  )")
+  );
+  ALTER TABLE blu
+  ADD COLUMN IF NOT EXISTS battery_voltage_v DECIMAL(6, 3);
+  ALTER TABLE blu
+  ADD COLUMN IF NOT EXISTS temperature_celsius DECIMAL(6, 3)"
+                 )
 
   DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS node_health
   (
@@ -493,7 +501,11 @@ create_duck <- function(conn) {
     payload text,
     time TIMESTAMP with time zone NOT NULL,
     station_id TEXT
-  )")
+  );
+  ALTER TABLE node_blu
+  ADD COLUMN IF NOT EXISTS battery_voltage_v DECIMAL(6,3);
+  ALTER TABLE node_blu
+  ADD COLUMN IF NOT EXISTS temperature_celsius DECIMAL(6,3);")
 
   DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS node_health_from_node
   (
@@ -683,6 +695,9 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
       contents$Product <- as.integer(contents$Product)
       contents$Revision <- as.integer(contents$Revision)
       contents$Payload <- as.character(contents$Payload)
+      # contents$BatteryVoltage <- as.integer(parseint(contents$Payload)[[1]])
+      # contents$Temperature <- as.integer(parseint(contents$Payload)[[2]])
+
       names(contents) <- sapply(names(contents), function(x) gsub("([[:lower:]])([[:upper:]])", "\\1_\\2", x))
       names(contents) <- tolower(names(contents))
       # if(is.na(sensor)) {
@@ -765,6 +780,9 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
 
       contents <- contents[, DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]] # need path and station_id columns
       contents
+
+      print('db insert')
+      print(contents)
     } else {
       vars <- paste(DBI::dbListFields(conn, filetype), sep = "", collapse = ",")
       vals <- paste(seq_along(1:length(DBI::dbListFields(conn, filetype))),
@@ -919,6 +937,8 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
           if(filetype %in% c("raw", "node_health", "gps", "blu")) {
             contents <- file_handle(e, filetype)[[1]]
             print(begin)
+            print('contents')
+            print(contents)
             contents <- db_prep(contents, filetype, sensor, y, begin)
             # z <- db_insert(contents, filetype, f, y)
             z <- db_insert(contents=contents, filetype=filetype, conn=f, y=y)
@@ -1020,8 +1040,18 @@ file_handle <- function(e, filetype) {
       },
       error = function(err) {
         return(NULL)
-      }
-    )
+      })
+  } else if (filetype == 'blu') {
+    process_file(e, dirname(e))
+
+    e_parsed = paste0(str_remove(e, '.gz'), "_parsed.csv")
+    contents <- tryCatch(
+      {
+        readr::read_csv(e_parsed, col_names = TRUE, col_types = list(NodeId="c"))
+      },
+      error = function(err) {
+        return(NULL)
+      })
   } else {
     contents <- tryCatch(
       {
@@ -1215,13 +1245,15 @@ get_my_data <- function(my_token,
     sapply(projects, pop_proj, conn = db_name)
     failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
   } else if(!is.null(db_name) & length(grep("duckdb", format(db_name))) > 0) {
+    print('projects')
+    print(projects)
     create_duck(db_name)
     sapply(projects, pop_proj, conn = db_name)
     failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
   } else {
     failed <- lapply(projects, get_data, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
   }
-  print(paste('failed', failed[[1]]))
+  print(paste('files that failed to download', failed[[1]]))
   faul <- which(!sapply(failed[[1]], is.null))
   if (length(faul > 0)) {
     failed <- Map(`[`, failed, faul)

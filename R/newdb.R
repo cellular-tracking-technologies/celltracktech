@@ -500,6 +500,9 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
                                 "WHERE time >= '", start,
                                 "'AND time <= '", end, "'"))
 
+      print('test df')
+      print(test)
+
       # only get records that do not exist in database
       df$path = y
       df$station_id = station_id
@@ -507,6 +510,20 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       df$radio_id = NA
       df$usb_port = NA
       df$blu_radio_id = NA
+      df$battery_voltage_v = df$Battery_Voltage_V
+      df$temperature_celsius = df$Temperature_Celsius
+      # df$battery_voltage = parseit
+      # df = df %>%
+      #   rowwise() %>%
+      #   mutate(battery_voltage = parseit(payload)[[1]],
+      #          temperature = parseit(payload)[[2]])
+
+      # parsed <- t(sapply(df$payload, parseit))
+      # df$battery_voltage <- parsed[, 1]
+      # df$temperature <- parsed[, 2]
+
+      print('incoming df')
+      print(df, width = Inf)
 
       check_db_type(df,
                     'blu',
@@ -515,6 +532,9 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
                      begin)
 
       df2 <- dplyr::anti_join(df, test)
+
+      print('df2 after join')
+      print(df2, width = Inf)
 
       z <- db_insert(contents=df2,
                      filetype='node_blu',
