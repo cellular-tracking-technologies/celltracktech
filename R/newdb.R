@@ -189,8 +189,19 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
 
   # get data from file
   df <- tryCatch({
-    if (file.size(e) > 0) {
-        read_csv(e, na = c("NA", ""), skip_empty_rows = TRUE)
+    print('df trycatch')
+    if (file.size(e) > 0 && (filetype == 'blu' || filetype == '2p4_ghz_beep')) {
+      print('blu filetype before payload parse')
+      print(filetype)
+      # if blu file, open file, parse payload
+      process_file(e, dirname(e))
+      read_csv(e, na = c("NA", ""), skip_empty_rows = TRUE)
+
+    } else if (file.size(e) > 0) {
+      read_csv(e, na = c("NA", ""), skip_empty_rows = TRUE)
+      # print('main if filetype')
+      # print(filetype)
+
     } else {
       err <- 'No Data in File'
       contents <- NULL
@@ -211,7 +222,8 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       #colnames(x) <- c("time", "id", "rssi")
       #return(x)
     })
-
+  print('dataframe')
+  print(df)
   # remove corrupted data
   df_bad = df %>%
     filter(if_any(everything(), ~ str_detect(., "[^\\x00-\\x7F]+") == TRUE))
