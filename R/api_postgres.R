@@ -1044,10 +1044,16 @@ file_handle <- function(e, filetype) {
   } else if (filetype == 'blu') {
     process_file(e, dirname(e))
 
-    e_parsed = paste0(str_remove(e, '.gz'), "_parsed.csv")
+    # e_parsed = paste0(str_remove(e, '.gz'), "_parsed.csv")
+    e_parsed = paste0(str_remove(e, '.gz'))
+    e_gzip = R.utils::gzip(e_parsed,
+                           overwrite=TRUE)
+    rm(e_parsed)
     contents <- tryCatch(
       {
-        readr::read_csv(e_parsed, col_names = TRUE, col_types = list(NodeId="c"))
+        readr::read_csv(e_gzip,
+                        col_names = TRUE,
+                        col_types = list(NodeId="c"))
       },
       error = function(err) {
         return(NULL)

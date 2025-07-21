@@ -34,8 +34,8 @@ process_file <- function(file_path, output_dir) {
 
   print('output directory')
   print(output_dir)
-  output_file <- file.path(output_dir, paste0(file_name, "_parsed.csv"))
-  # output_file <- file.path(output_dir, file_name)
+  # output_file <- file.path(output_dir, paste0(file_name, "_parsed.csv"))
+  output_file <- file.path(output_dir, file_name)
   print('output file')
   print(output_file)
 
