@@ -18,5 +18,5 @@ csv files with parsed battery voltage and temperature
 Main function to process all CSV/CSV.GZ files in a directory
 }
 \examples{
-process_directory('./data/', './data/results/')
+process_directory('./sensor_station_id/blu', './sensor_station_id/blu')
 }
