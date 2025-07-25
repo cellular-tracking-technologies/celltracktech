@@ -9,13 +9,13 @@
 #'
 #' @examples
 update_existing_blu = function(table_name, con) {
-  library(parallel)
   start_time = Sys.time()
 
   df = tbl(con, table_name) |>
     filter(is.na(battery_voltage_v) == TRUE) |>
+    filter(LENGTH(as.character(payload)) == 8) |>
     collect()
-  df = df[1:2000,]
+  df = df[1:100000,]
   # print(head(df))
   # alter table if columns do not exist
   dbSendQuery(con, paste0('ALTER TABLE ', table_name,
@@ -33,25 +33,35 @@ update_existing_blu = function(table_name, con) {
   # print(clusterEvalQ(cl, exists("parseit")))
 
   for (i in chunks) {
-    print(paste('Updating records', i$id[1], 'through', i$id[nrow(i)]))
+    cat(paste('\nUpdated records', i$id[1], 'through', i$id[nrow(i)], '\n'))
 
     # get total number of rows in dataframe
     total = nrow(i)
 
     # create progress bar
-    total <- 50
     pb <- txtProgressBar(min = 0, max = total, style = 3)
 
     # parse payload for each row and update database
     sapply(1:total, function(x) {
-      try(
+      tryCatch({
+        if (nchar(as.character(i$payload[x])) != 8) {
+          next
+        }
         db_exec(paste0(
           'UPDATE ', table_name,
           ' SET battery_voltage_v = ', parseit(i$payload[x])[[1]],
           ', temperature_celsius = ', parseit(i$payload[x])[[2]],
           ' WHERE id = ', i$id[x]
-          ), con=con),
-        silent = FALSE)
+          ), con=con)
+        }, error = function(e) {
+          message('Error processing id: ', i$id[x], '-', e$message)
+          db_exec(paste0(
+            'UPDATE ', table_name,
+            ' SET battery_voltage_v = NULL',
+            ', temperature_celsius = NULL',
+            ' WHERE id = ', i$id[x]
+          ), con=con)
+        })
         Sys.sleep(0.1)
         setTxtProgressBar(pb, x)
 
@@ -61,5 +71,5 @@ update_existing_blu = function(table_name, con) {
 
   end_time = Sys.time()
   diff = end_time - start_time
-  print(paste('Database update took', diff, 'min long'))
+  cat(paste('\nStart: ', start_time, '\nEnd: ', end_time, '\nDifference:', diff))
 }
