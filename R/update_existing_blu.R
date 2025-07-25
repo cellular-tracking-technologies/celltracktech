@@ -12,14 +12,6 @@ update_existing_blu = function(table_name, con) {
   library(parallel)
   start_time = Sys.time()
 
-  outpath <- "./examples/" # where your downloaded files are to go
-  myproject = 'Black-throated finches in Australia'
-
-  # con <- DBI::dbConnect(duckdb::duckdb(),
-  #                       dbdir = paste0(outpath, myproject, '/', 'btfi.duckdb'),
-  #                       read_only = FALSE)
-
-  # df = tbl(con, table_name) |> collect()
   df = tbl(con, table_name) |>
     filter(is.na(battery_voltage_v) == TRUE) |>
     collect()
@@ -35,53 +27,7 @@ update_existing_blu = function(table_name, con) {
   chunk_size = 1000
   grouping_factor = cut(1:nrow(df), breaks = seq(0, nrow(df), by = chunk_size))
   chunks = split(df, grouping_factor)
-  print(environment())
 
-
-  # create cluster for parallel processing
-  numCores = detectCores()
-  cl <- makeCluster(4)
-
-  clusterExport(cl, 'chunks', envir = environment())
-  clusterEvalQ(cl, chunks)
-
-  # clusterExport(cl, 'con', envir = environment())
-  # clusterEvalQ(cl, con)
-  # print(clusterEvalQ(cl, con))
-
-  clusterExport(cl, 'table_name', envir = environment())
-  clusterEvalQ(cl, table_name)
-
-  # load packages into cluster
-  clusterEvalQ(cl, {
-    library(renv)
-    # renv::install('cellular-tracking-technologies/celltracktech')
-    renv::activate()
-    library(celltracktech)
-    library(devtools)
-    library(parallel)
-    library(R.utils)
-    load_all()
-
-    outpath <- "./examples/" # where your downloaded files are to go
-    myproject = 'Black-throated finches in Australia'
-
-    con <- DBI::dbConnect(duckdb::duckdb(),
-                          dbdir = paste0(outpath, myproject, '/', 'btfi.duckdb'),
-                          read_only = FALSE)
-
-    df = tbl(con, table_name) |>
-      filter(is.na(battery_voltage_v) == TRUE) |>
-      collect()
-    df = df[1:2000,]
-    # print(head(df))
-    # alter table if columns do not exist
-    dbSendQuery(con, paste0('ALTER TABLE ', table_name,
-                            ' ADD COLUMN IF NOT EXISTS battery_voltage_v DECIMAL(6,3);
-          ALTER TABLE ', table_name,
-                            ' ADD COLUMN IF NOT EXISTS temperature_celsius DECIMAL(6,3)'))
-
-  })
 
   # print(clusterEvalQ(cl, "celltracktech" %in% .packages()))
   # print(clusterEvalQ(cl, exists("parseit")))
@@ -91,15 +37,13 @@ update_existing_blu = function(table_name, con) {
 
     # get total number of rows in dataframe
     total = nrow(i)
-    # print(i)
-    print(parseit(i$payload[1])[[1]])
-    print(parseit(i$payload[1])[[2]])
 
-    print(DBI::dbListTables(con))
+    # create progress bar
+    total <- 50
+    pb <- txtProgressBar(min = 0, max = total, style = 3)
 
-    parSapply(cl, 1:total, function(x) {
-      print(parseit(i$payload[x])[[1]])
-      print(parseit(i$payload[x])[[2]])
+    # parse payload for each row and update database
+    sapply(1:total, function(x) {
       try(
         db_exec(paste0(
           'UPDATE ', table_name,
@@ -109,12 +53,11 @@ update_existing_blu = function(table_name, con) {
           ), con=con),
         silent = FALSE)
         Sys.sleep(0.1)
+        setTxtProgressBar(pb, x)
 
-        db_exec(paste0('SELECT battery_voltage_v, temperature_celsius FROM ', table_name), con = con)
+        # db_exec(paste0('SELECT battery_voltage_v, temperature_celsius FROM ', table_name), con = con)
     })
-
   }
-  stopCluster(cl)
 
   end_time = Sys.time()
   diff = end_time - start_time
