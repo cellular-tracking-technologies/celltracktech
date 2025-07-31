@@ -15,22 +15,20 @@ update_existing_blu = function(table_name, con) {
     filter(is.na(battery_voltage_v) == TRUE) |>
     filter(LENGTH(as.character(payload)) == 8) |>
     collect()
-  df = df[1:100000,]
   # print(head(df))
   # alter table if columns do not exist
-  dbSendQuery(con, paste0('ALTER TABLE ', table_name,
-                          ' ADD COLUMN IF NOT EXISTS battery_voltage_v DECIMAL(6,3);
-          ALTER TABLE ', table_name,
-                          ' ADD COLUMN IF NOT EXISTS temperature_celsius DECIMAL(6,3)'))
+  dbSendQuery(con,
+              paste0('ALTER TABLE ', table_name,
+                     ' ADD COLUMN IF NOT EXISTS battery_voltage_v DECIMAL(6,3);
+                     ALTER TABLE ', table_name,
+                     ' ADD COLUMN IF NOT EXISTS temperature_celsius DECIMAL(6,3)'
+                     )
+              )
 
   # create chunks
   chunk_size = 1000
   grouping_factor = cut(1:nrow(df), breaks = seq(0, nrow(df), by = chunk_size))
   chunks = split(df, grouping_factor)
-
-
-  # print(clusterEvalQ(cl, "celltracktech" %in% .packages()))
-  # print(clusterEvalQ(cl, exists("parseit")))
 
   for (i in chunks) {
     cat(paste('\nUpdated records', i$id[1], 'through', i$id[nrow(i)], '\n'))
@@ -44,15 +42,16 @@ update_existing_blu = function(table_name, con) {
     # parse payload for each row and update database
     sapply(1:total, function(x) {
       tryCatch({
-        if (nchar(as.character(i$payload[x])) != 8) {
-          next
-        }
+        # if (nchar(as.character(i$payload[x])) != 8) {
+        #   next
+        # }
         db_exec(paste0(
           'UPDATE ', table_name,
           ' SET battery_voltage_v = ', parseit(i$payload[x])[[1]],
           ', temperature_celsius = ', parseit(i$payload[x])[[2]],
           ' WHERE id = ', i$id[x]
-          ), con=con)
+          ),
+          con=con)
         }, error = function(e) {
           message('Error processing id: ', i$id[x], '-', e$message)
           db_exec(paste0(
@@ -64,8 +63,6 @@ update_existing_blu = function(table_name, con) {
         })
         Sys.sleep(0.1)
         setTxtProgressBar(pb, x)
-
-        # db_exec(paste0('SELECT battery_voltage_v, temperature_celsius FROM ', table_name), con = con)
     })
   }
 
