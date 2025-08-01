@@ -11,10 +11,7 @@
 update_existing_blu = function(table_name, con) {
   start_time = Sys.time()
 
-  df = tbl(con, table_name) |>
-    filter(is.na(battery_voltage_v) == TRUE) |>
-    filter(LENGTH(as.character(payload)) == 8) |>
-    collect()
+
   # print(head(df))
   # alter table if columns do not exist
   dbSendQuery(con,
@@ -24,6 +21,11 @@ update_existing_blu = function(table_name, con) {
                      ' ADD COLUMN IF NOT EXISTS temperature_celsius DECIMAL(6,3)'
                      )
               )
+
+  df = tbl(con, table_name) |>
+    filter(is.na(battery_voltage_v) == TRUE) |>
+    filter(LENGTH(as.character(payload)) == 8) |>
+    collect()
 
   # create chunks
   chunk_size = 1000
