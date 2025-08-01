@@ -7,12 +7,19 @@
 update_existing_blu(table_name, con)
 }
 \arguments{
-\item{table_name}{string}
+\item{table_name}{string, either 'blu' or 'blu_node'}
+
+\item{con}{the connection to your local database}
 
 \item{payload}{dataframe column}
 
 \item{id}{dataframe column}
 }
 \description{
-Update existing blu and node_blu database tables
+Parses additional information from the blu series tags by updating an existing database. Will return the \code{battery_voltage_v} and \code{temperature_celsius} of the tag data as new fields in the connected database.
+}
+\examples{
+update_existing_blu('blu', con)
+
+
 }

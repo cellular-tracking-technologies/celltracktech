@@ -1,13 +1,20 @@
 #' Update existing blu and node_blu database tables
+#' 
+#' @description
+#' Parses additional information from the blu series tags by updating an existing database. Will return the `battery_voltage_v` and `temperature_celsius` of the tag data as new fields in the connected database. 
 #'
-#' @param table_name string
+#' @param table_name string, either 'blu' or 'blu_node'
+#' @param con the connection to your local database
 #' @param payload dataframe column
 #' @param id dataframe column
 #'
-#' @returns
+#' @returns 
 #' @export
 #'
 #' @examples
+#' update_existing_blu('blu', con)
+#' 
+#' 
 update_existing_blu = function(table_name, con) {
   start_time = Sys.time()
 
