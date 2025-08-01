@@ -12,7 +12,9 @@ update_existing_blu = function(table_name, con) {
   start_time = Sys.time()
 
   df = tbl(con, table_name) |>
-    filter(is.na(battery_voltage_v) == TRUE) |>
+    # filter(is.na(battery_voltage_v) == TRUE) |>
+    filter(if_any(matches("battery_voltage_v"), \(battery_voltage_v)
+                  is.na(battery_voltage_v) == TRUE)) |> #check if column exists, then filter
     filter(LENGTH(as.character(payload)) == 8) |>
     collect()
   # print(head(df))
