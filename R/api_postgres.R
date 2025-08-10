@@ -625,6 +625,7 @@ db_prep <- function(contents, filetype, sensor,y,begin) {
         nodecheck <- contents[!is.na(contents$node_id), ]
         nodecheck <- nodecheck[!duplicated(nodecheck[c("time", "tag_id", "node_id", "tag_rssi")]), ]
         badrec <- nodecheck[duplicated(nodecheck[c("time", "tag_id", "node_id")]), ]
+
         if (nrow(badrec) > 0) {
           nodecheck$id <- paste(nodecheck$time, nodecheck$tag_id, nodecheck$node_id)
           badrec$id <- paste(badrec$time, badrec$tag_id, badrec$node_id)
@@ -781,8 +782,8 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
       contents <- contents[, DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]] # need path and station_id columns
       contents
 
-      print('db insert')
-      print(contents)
+      # print('db insert')
+      # print(contents, n = 100)
     } else {
       vars <- paste(DBI::dbListFields(conn, filetype), sep = "", collapse = ",")
       vals <- paste(seq_along(1:length(DBI::dbListFields(conn, filetype))),
@@ -890,6 +891,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
 
   # x = file ids
   # y = file names
+  # SOMEWHERE HERE V3 NODES ARE GETTING DELETED
   get_files <- function(x, y) {
     splitfile <- unlist(strsplit(y, "CTT-"))
     fileinfo <- splitfile[2]
@@ -937,8 +939,6 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
           if(filetype %in% c("raw", "node_health", "gps", "blu")) {
             contents <- file_handle(e, filetype)[[1]]
             print(begin)
-            print('contents')
-            print(contents)
             contents <- db_prep(contents, filetype, sensor, y, begin)
             # z <- db_insert(contents, filetype, f, y)
             z <- db_insert(contents=contents, filetype=filetype, conn=f, y=y)
@@ -1139,7 +1139,10 @@ file_handle <- function(e, filetype) {
             names(contents) <- c("Time", "RadioId", "TagId", "TagRSSI", "NodeId")
           }
         }
-        contents <- contents[(nchar(contents$NodeId) == 6 | is.na(contents$NodeId)),]
+        # contents <- contents[(nchar(contents$NodeId) == 6 | is.na(contents$NodeId)),]
+        contents = contents |>
+          dplyr::filter(nchar(NodeId) == 6 | nchar(NodeId == 8) | is.na(NodeId) == TRUE)
+
         # correct <- ifelse(v > 2, 7, 6)
         # rowtest <- badrow(e, correct, contents)
         # contents <- rowtest[[1]]
