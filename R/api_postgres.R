@@ -1322,6 +1322,28 @@ update_db <- function(d, outpath, myproject, fix = FALSE) {
   }
 
   myfiles <- list.files(file.path(outpath, myproject), recursive = TRUE, full.names = TRUE)
+
+  # print('myfiles')
+  # print(myfiles)
+
+  # check for any unzipped csv files
+  myfiles1 = as.list(myfiles)
+  for (i in 1:length(myfiles1)){
+    if (i < length(myfiles1)) {
+
+      regex_value = str_remove(myfiles1[[i+1]], '.gz')
+      if(myfiles1[[i]] == regex_value) {
+        myfiles1[[i]] <- NULL
+        print(myfiles)
+      }  else {
+        next
+      }
+    }
+  }
+
+  myfiles = unlist(myfiles1)
+  print('myfiles after check')
+  print(myfiles)
   files_loc <- basename(myfiles)
   allnode <- DBI::dbReadTable(d, "data_file")
   if (fix) {
