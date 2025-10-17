@@ -426,11 +426,36 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
 
       # rename id to tag_id
       if ('tag_id' %in% colnames(df)) {
+        print('trimming tag id to 8 digits')
+        print(head(df))
+
         df$tag_id = toupper(df$tag_id)
         if (length(df$tag_id) > 8) {
           df$tag_id = substr(df$tag_id, 1,8)
         }
+        print('to upper df$id')
+
         ### remove last two characters if length is 10 characters long
+      } else if ('TagId' %in% colnames(df)) {
+        print('convert camel case to snake case')
+        column_names = colnames(df)
+        print(column_names)
+        for(i in 1:length(column_names)) {
+          print(i)
+          name = camel_to_snake(column_names[i])
+          print(paste('name', name))
+          column_names[i] = name
+        }
+        colnames(df) = column_names
+        print(colnames(df))
+        df$tag_id = toupper(df$tag_id)
+        df$rssi = df$tag_r_s_s_i
+        if (length(df$tag_id) > 8) {
+          df$tag_id = substr(df$tag_id, 1,8)
+        }
+        print('to upper df$id')
+        print(head(df))
+
       } else {
         df$tag_id = toupper(df$id)
         if (length(df$tag_id) > 8) {
@@ -448,9 +473,14 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       df <- df[!is.na(df$tag_rssi),]
       df$rssi <- NULL
 
-      start <- min(df$Time, na.rm=T)
-      end <- max(df$Time, na.rm=T)
-      print(paste(start, end))
+      rows_with_inf <- apply(df, 1, function(row) any(is.infinite(row)))
+      print('rows with inf')
+      print(df[rows_with_inf, ])
+
+      start <- min(df$time, na.rm=T)
+      end <- max(df$time, na.rm=T)
+      print(paste('start: ', start, 'end: ', end))
+
 
       # DBI::dbSendQuery(conn,
       #                  'ALTER TABLE node_raw
@@ -463,6 +493,9 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
                                 "'AND time <= '", end, "'"))
 
       test$radio_id = as.numeric(test$radio_id)
+
+      print('test df')
+      print(test)
 
       df$path = y
       df$station_id = station_id
@@ -504,7 +537,7 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
 
       start <- min(df$time, na.rm=T)
       end <- max(df$time, na.rm=T)
-      print(paste(start, end))
+      print(paste('start: ', start, 'end: ', end))
 
       # get existing data table from database
       test <- dbGetQuery(conn,
@@ -605,8 +638,15 @@ combine_data_duck <- function(df,
 
   } else if (filetype == 'raw') {
     DBI::dbSendQuery(conn, 'ALTER TABLE node_raw ALTER radio_id TYPE smallint')
+
+    rows_with_inf <- apply(df, 1, function(row) any(is.infinite(row)))
+    print('rows with inf')
+    print(df[rows_with_inf, ])
+
     start <- min(df$time, na.rm=T)
     end <- max(df$time, na.rm=T)
+    print(paste('combine duck data start: ', start, 'end: ', end))
+
 
     test <- DBI::dbGetQuery(conn,
                        paste0("SELECT * FROM raw ",

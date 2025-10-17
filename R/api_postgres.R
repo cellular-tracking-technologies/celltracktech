@@ -775,15 +775,24 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
       vars <- paste(DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))],
                     sep = "",
                     collapse = ",")
+      print('vars')
+      print(vars)
       vals <- paste(seq_along(1:(length(DBI::dbListFields(conn, filetype)) - 1)),
                     sep = "",
                     collapse = ", $")
+      print('vals')
+      print(vals)
 
+      print('filetype')
+      print(filetype)
+
+      print('contents')
+      print(head(contents))
       contents <- contents[, DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]] # need path and station_id columns
+      print('db insert')
+      print(contents, n = 100)
       contents
 
-      # print('db insert')
-      # print(contents, n = 100)
     } else {
       vars <- paste(DBI::dbListFields(conn, filetype), sep = "", collapse = ",")
       vals <- paste(seq_along(1:length(DBI::dbListFields(conn, filetype))),
