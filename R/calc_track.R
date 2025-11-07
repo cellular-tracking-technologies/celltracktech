@@ -83,7 +83,7 @@ calculate_track <- function(
             filter_alpha = filter_alpha,
             filter_time_range = filter_time_range
         )
-        # print(rec_df)
+        print(rec_df)
 
         ##################################
         reduced_rec_df <- subset.data.frame(rec_df,

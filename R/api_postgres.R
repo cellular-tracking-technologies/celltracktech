@@ -790,7 +790,7 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
       print(head(contents))
       contents <- contents[, DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]] # need path and station_id columns
       print('db insert')
-      print(contents, n = 100)
+      print(contents)
       contents
 
     } else {

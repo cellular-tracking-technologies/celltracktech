@@ -73,8 +73,11 @@ data.setup <- function(test,
         mutate(c_diff = ifelse(id != lag(id), 1, 0))
       test$c_diff[1] <- 0
       test$TestId <- cumsum(test$c_diff)
+      print('test')
+      print(test)
       test.info <- setDT(test)[, .(Start.Time = min(time),
                                    Stop.Time = max(time)), by = TestId]
+
       test.info$id <- test$id[match(test.info$TestId,
                                     test$TestId)]
       testid <- test[!duplicated(test$id),]
@@ -88,7 +91,8 @@ data.setup <- function(test,
   } else {
     test.info <- test
     test.info$lat <- test[,y]
-    test.info$lon <- test[,x]}
+    test.info$lon <- test[,x]
+  }
 
   test.UTM <- test.info %>%
     dplyr::group_by(TestId) %>%
@@ -99,8 +103,11 @@ data.setup <- function(test,
     group_by(TestId) %>%
     summarise(tag_id = list(unique(tagid))) %>%
     unnest(tag_id)
+
   test.info <- left_join(test.info, df1)
   #}
+  print('test info')
+  print(test.info)
 
   test.info$Start.Time <- test.info$Start.Time - 2
   test.info$Stop.Time <- test.info$Stop.Time + 2
@@ -113,6 +120,8 @@ data.setup <- function(test,
     filter(tag_id %in% tagid) |>
     collect()
 
+  print('test data')
+  print(testdata)
   #testdata$syncid <- paste(format(testdata$time, "%Y-%m-%d %H:%M"), testdata$sync, sep="_")
 
   start_buff = start - 2*60*60
@@ -126,9 +135,14 @@ data.setup <- function(test,
 
   test.dat <- setDT(testdata)[test.info,
                               TestId := +(i.TestId),
-                              on = .(tag_id, time > Start.Time,
-                                     time < Stop.Time), by = .EACHI]
+                              on = .(tag_id, time >= Start.Time,
+                                     time <= Stop.Time), by = .EACHI]
+  print('test dat')
+  print(test.dat)
+
   test.dat <- test.dat[!is.na(test.dat$TestId),]
+
+
 
   summary.test.tags <- test.dat %>%
     dplyr::group_by(node_id, TestId) %>%

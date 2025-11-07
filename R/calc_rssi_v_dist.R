@@ -38,7 +38,8 @@ calc_rssi_v_dist <- function(node_locs,
                 matching_beeps,
                 matching_beeps$Sync == sidekick_beep$sync
             )
-            # print(matching_beeps)
+            print('first matching beeps')
+            print(matching_beeps)
         }
         lower_time_limit <- sidekick_beep$time_utc - time_window
         upper_time_limit <- sidekick_beep$time_utc + time_window
@@ -46,21 +47,36 @@ calc_rssi_v_dist <- function(node_locs,
             matching_beeps,
             matching_beeps$time >= lower_time_limit & matching_beeps$time <= upper_time_limit
         )
-        # print(matching_beeps)
+        print('second matching beeps')
+        print(matching_beeps)
 
         if (nrow(matching_beeps) > 0) {
             for (i in 1:nrow(matching_beeps)) {
                 beep <- matching_beeps[i, ]
                 beep_node_id <- beep$node_id
                 rssi <- beep$tag_rssi
-                # print(beep$NodeId)
+                # print('rssi')
+                print(paste())
                 beep_node_loc <- subset.data.frame(
                     node_locs,
                     node_locs$node_id == beep_node_id
                 )
 
-                distance <- haversine(sidekick_beep$lat, sidekick_beep$lon, beep_node_loc$avg_lat, beep_node_loc$avg_lon)
+                distance <- haversine(sidekick_beep$lat,
+                                      sidekick_beep$lon,
+                                      beep_node_loc$avg_lat,
+                                      beep_node_loc$avg_lon)
+                # print('distance')
                 # print(distance)
+                print('beep node loc')
+                print(tail(beep_node_loc))
+                print(paste('i', i,
+                            'lat', sidekick_beep$lat,
+                            'lon', sidekick_beep$lon,
+                            'avg lat', beep_node_loc$avg_lat,
+                            'avg lon', beep_node_loc$avg_lon))
+                print(paste('i', i, 'rssi', rssi, 'distance', distance))
+
                 this_result <- data.frame(
                     node_id = beep_node_id,
                     distance = distance,

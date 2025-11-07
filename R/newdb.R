@@ -477,8 +477,34 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       print('rows with inf')
       print(df[rows_with_inf, ])
 
-      start <- min(df$time, na.rm=T)
-      end <- max(df$time, na.rm=T)
+      # # arrange by time to get min max falues
+      # df = df %>%
+      #   arrange(df$time)
+      #
+      # print('first row')
+      # print(df %>% head(1))
+      #
+      # print('last row')
+      # print(df %>% tail(1))
+
+      # start <- min(df$time, na.rm=T)
+      # end <- max(df$time, na.rm=T)
+      if ('Time' %in% colnames(df)) {
+        df$time = df$Time
+      } else if ('time' %in% colnames(df)) {
+        df$Time = df$time
+      }
+
+      df_first_row = df %>% head(1)
+      df_last_row = df %>% tail(1)
+
+      print('df first row')
+      print(df_first_row)
+
+      print('df last row')
+      print(df_last_row)
+      start <- df_first_row$time
+      end <- df_last_row$time
       print(paste('start: ', start, 'end: ', end))
 
 
