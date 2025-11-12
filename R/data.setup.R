@@ -75,8 +75,8 @@ data.setup <- function(test,
       test$TestId <- cumsum(test$c_diff)
       print('test')
       print(test)
-      test.info <- setDT(test)[, .(Start.Time = min(time),
-                                   Stop.Time = max(time)), by = TestId]
+      test.info <- setDT(test)[, .(Start.Time = min(ymd_hms(time_utc)),
+                                   Stop.Time = max(ymd_hms(time_utc))), by = TestId]
 
       test.info$id <- test$id[match(test.info$TestId,
                                     test$TestId)]
@@ -111,9 +111,18 @@ data.setup <- function(test,
 
   test.info$Start.Time <- test.info$Start.Time - 2
   test.info$Stop.Time <- test.info$Stop.Time + 2
-  start <- min(test.info$Start.Time)
-  end <- max(test.info$Stop.Time)
+  # start <- min(test.info$Start.Time)
+  # end <- max(test.info$Stop.Time)
 
+  start <- ymd_hms(min(test.info$Start.Time))
+  end <- ymd_hms(max(test.info$Stop.Time))
+  print('start')
+  print(start)
+
+  print('end')
+  print(end)
+  print('testdata in')
+  print(testdata_in)
   #con <- DBI::dbConnect(duckdb::duckdb(), dbdir = fileloc, read_only = TRUE)
   testdata <- testdata_in %>%
     filter(time >= start & time <= end) |>

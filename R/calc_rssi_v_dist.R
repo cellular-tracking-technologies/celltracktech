@@ -30,19 +30,26 @@ calc_rssi_v_dist <- function(node_locs,
     time_window <- 1
 
     for (r in 1:nrow(sidekick_tag_df)) {
+      print('row')
+      print(r)
         sidekick_beep <- sidekick_tag_df[r, ]
-        # print(sidekick_beep)
+        print('sidekick_beep')
+        print(sidekick_beep)
         matching_beeps <- detection_df
         if (use_sync == TRUE) {
             matching_beeps <- subset.data.frame(
                 matching_beeps,
                 matching_beeps$Sync == sidekick_beep$sync
             )
-            print('first matching beeps')
-            print(matching_beeps)
         }
         lower_time_limit <- sidekick_beep$time_utc - time_window
+        print('lower time limit')
+        print(lubridate::ymd_hms(lower_time_limit))
         upper_time_limit <- sidekick_beep$time_utc + time_window
+        print('upper time limit')
+        print(lubridate::ymd_hms(upper_time_limit))
+        print('first matching beeps')
+        print(matching_beeps)
         matching_beeps <- subset.data.frame(
             matching_beeps,
             matching_beeps$time >= lower_time_limit & matching_beeps$time <= upper_time_limit
@@ -87,6 +94,7 @@ calc_rssi_v_dist <- function(node_locs,
             }
         }
     }
-    # print(nrow(result))
+    print('final result')
+    print(nrow(result))
     return(result)
 }
