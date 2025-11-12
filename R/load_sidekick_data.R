@@ -23,6 +23,7 @@ load_sidekick_data <- function(sidekick_file_path) {
     df <- transform(df, time_utc = substring(c(time_utc), 1, 19))
     # Convert to date object
     df <- transform(df, time_utc = as.POSIXct(time_utc, tz = "GMT"))
-
+    print('sidekick time after transform')
+    print(df$time_utc)
     return(df)
 }
