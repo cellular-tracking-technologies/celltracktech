@@ -169,8 +169,20 @@ data.setup <- function(test,
                                nodes[,c("node_lng", "node_lat")],
                                lonlat = latlon,
                                allpairs = T)
+
+  print('dst')
+  print(dst)
+
+  print('test utm')
+  print(test.UTM, n=1000)
+
   dist_df <- data.frame(dst,
                         row.names = test.UTM$TestId)
+                        # row.names = seq(1, length(dst)))
+
+  print('dist_df')
+  print(colnames(dist_df))
+  print(dist_df)
   colnames(dist_df) <- nodes$node_id
   dist_df$TestId <- as.integer(rownames(dist_df))
 
