@@ -44,8 +44,29 @@ calc_receiver_values <- function(
     #########################################################
     # Get all detections up to this time
 
+    print('station tag df')
+    print(station_tag_df)
+
+    if ('time' %in% colnames(station_tag_df)) {
+      station_tag_df$time_value = station_tag_df$time
+    } else if ('time_value' %in% colnames(station_tag_df)) {
+      station_tag_df$time = station_tag_df$time_value
+    }
+    print('current time')
+    print(as_datetime(current_time))
+    station_tag_df$time_value = station_tag_df$time
+    print('station_tag_df time value')
+    print(head(station_tag_df$time_value))
+
+    print('station tag df time range')
+    min_time = current_time - filter_time_range
+    max_time = current_time + filter_time_range
+    print(paste(as_datetime(min_time), as_datetime(max_time)))
     new_df <- station_tag_df %>%
-        filter(station_tag_df$time_value >= current_time - filter_time_range & station_tag_df$time_value <= current_time)
+        filter(station_tag_df$time_value >= current_time - filter_time_range &
+               station_tag_df$time_value <= current_time)
+    print('new df')
+    print(new_df)
 
     rec_df <- data.frame(
         node_id = character(),
@@ -59,11 +80,14 @@ calc_receiver_values <- function(
         stringsAsFactors = TRUE
     )
 
+    print('rec df')
+    print(rec_df)
+
     for (n in 1:nrow(node_locs)) {
         node <- node_locs[n, ]
         this_node_id <- node$node_id
-        print('calculate receiver values node id')
-        print(this_node_id)
+        # print('calculate receiver values node id')
+        # print(this_node_id)
         if (!is.null(node_t_offset)) {
             # Get this node's time offset
             t_off <- subset.data.frame(node_t_offset,
