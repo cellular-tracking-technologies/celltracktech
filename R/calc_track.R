@@ -73,6 +73,9 @@ calculate_track <- function(
 
         # For all detections in this bin calculate the avg rssi in each receiver
         print("Calculating receiver values...")
+        print('detection df')
+        print(detection_df)
+
         rec_df <- calc_receiver_values(
             current_time = bin_stop_value,
             det_window = det_time_window,
@@ -83,7 +86,11 @@ calculate_track <- function(
             filter_alpha = filter_alpha,
             filter_time_range = filter_time_range
         )
+        print('rec df')
         print(rec_df)
+        if (nrow(rec_df) == 0) {
+          next
+        }
 
         ##################################
         reduced_rec_df <- subset.data.frame(rec_df,

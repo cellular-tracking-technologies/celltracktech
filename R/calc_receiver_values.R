@@ -43,6 +43,7 @@ calc_receiver_values <- function(
     filter_time_range) {
     #########################################################
     # Get all detections up to this time
+
     new_df <- station_tag_df %>%
         filter(station_tag_df$time_value >= current_time - filter_time_range & station_tag_df$time_value <= current_time)
 
@@ -74,11 +75,11 @@ calc_receiver_values <- function(
                 filter(station_tag_df$time_value - t_off >= current_time - filter_time_range & station_tag_df$time_value - t_off <= current_time)
             print(new_df)
         }
-        print('new df')
-        print(new_df)
+        # print('new df')
+        # print(new_df)
         this_node_detections <- subset.data.frame(new_df, new_df$node_id == this_node_id)
-        print('this node detections')
-        print(this_node_detections)
+        # print('this node detections')
+        # print(this_node_detections)
         most_recent_detection_time <- 0
         avg_rssi <- NaN
         filtered_rssi <- NaN
