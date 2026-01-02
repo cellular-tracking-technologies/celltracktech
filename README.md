@@ -2,7 +2,7 @@
 
 R package for working with Cellular Tracking Technologies Sensor Station and Node data.
 
-**Note**: this package is NOT for analyze Satellite or GSM trackers. Only digital radio and blu series trackers.
+**Note**: this package is NOT for analyzing Satellite or GSM tracking devices. Only digital radio and blu series tags.
 
 To install this package, please run:
 
