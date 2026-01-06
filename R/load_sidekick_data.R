@@ -21,8 +21,7 @@ load_sidekick_data <- function(sidekick_file_path) {
     }
     # Remove the microseconds
     df <- transform(df, time_utc = substring(c(time_utc), 1, 19))
-    print('sidekick time remove ms')
-    print(df$time_utc)
+
     # Convert to date object
     # df <- transform(df, time_utc = as.POSIXct(time_utc, tz = "GMT"))
     df$time_utc = lubridate::ymd_hms(df$time_utc)

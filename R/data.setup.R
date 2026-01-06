@@ -73,8 +73,7 @@ data.setup <- function(test,
         mutate(c_diff = ifelse(id != lag(id), 1, 0))
       test$c_diff[1] <- 0
       test$TestId <- cumsum(test$c_diff)
-      print('test')
-      print(test)
+
       test.info <- setDT(test)[, .(Start.Time = min(ymd_hms(time_utc)),
                                    Stop.Time = max(ymd_hms(time_utc))), by = TestId]
 
@@ -106,8 +105,6 @@ data.setup <- function(test,
 
   test.info <- left_join(test.info, df1)
   #}
-  print('test info')
-  print(test.info)
 
   test.info$Start.Time <- test.info$Start.Time - 2
   test.info$Stop.Time <- test.info$Stop.Time + 2
@@ -116,21 +113,13 @@ data.setup <- function(test,
 
   start <- ymd_hms(min(test.info$Start.Time))
   end <- ymd_hms(max(test.info$Stop.Time))
-  print('start')
-  print(start)
 
-  print('end')
-  print(end)
-  print('testdata in')
-  print(testdata_in)
   #con <- DBI::dbConnect(duckdb::duckdb(), dbdir = fileloc, read_only = TRUE)
   testdata <- testdata_in %>%
     filter(time >= start & time <= end) |>
     filter(tag_id %in% tagid) |>
     collect()
 
-  print('test data')
-  print(testdata)
   #testdata$syncid <- paste(format(testdata$time, "%Y-%m-%d %H:%M"), testdata$sync, sep="_")
 
   start_buff = start - 2*60*60
@@ -146,8 +135,6 @@ data.setup <- function(test,
                               TestId := +(i.TestId),
                               on = .(tag_id, time >= Start.Time,
                                      time <= Stop.Time), by = .EACHI]
-  print('test dat')
-  print(test.dat)
 
   test.dat <- test.dat[!is.na(test.dat$TestId),]
 
@@ -170,19 +157,10 @@ data.setup <- function(test,
                                lonlat = latlon,
                                allpairs = T)
 
-  print('dst')
-  print(dst)
-
-  print('test utm')
-  print(test.UTM, n=1000)
-
   dist_df <- data.frame(dst,
                         row.names = test.UTM$TestId)
                         # row.names = seq(1, length(dst)))
 
-  print('dist_df')
-  print(colnames(dist_df))
-  print(dist_df)
   colnames(dist_df) <- nodes$node_id
   dist_df$TestId <- as.integer(rownames(dist_df))
 

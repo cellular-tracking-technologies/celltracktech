@@ -775,22 +775,12 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
       vars <- paste(DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))],
                     sep = "",
                     collapse = ",")
-      print('vars')
-      print(vars)
+
       vals <- paste(seq_along(1:(length(DBI::dbListFields(conn, filetype)) - 1)),
                     sep = "",
                     collapse = ", $")
-      print('vals')
-      print(vals)
 
-      print('filetype')
-      print(filetype)
-
-      print('contents')
-      print(head(contents))
       contents <- contents[, DBI::dbListFields(conn, filetype)[2:length(DBI::dbListFields(conn, filetype))]] # need path and station_id columns
-      print('db insert')
-      print(contents)
       contents
 
     } else {
@@ -1332,9 +1322,6 @@ update_db <- function(d, outpath, myproject, fix = FALSE) {
 
   myfiles <- list.files(file.path(outpath, myproject), recursive = TRUE, full.names = TRUE)
 
-  # print('myfiles')
-  # print(myfiles)
-
   # check for any unzipped csv files
   myfiles1 = as.list(myfiles)
   for (i in 1:length(myfiles1)){
@@ -1351,8 +1338,7 @@ update_db <- function(d, outpath, myproject, fix = FALSE) {
   }
 
   myfiles = unlist(myfiles1)
-  print('myfiles after check')
-  print(myfiles)
+
   files_loc <- basename(myfiles)
   allnode <- DBI::dbReadTable(d, "data_file")
   if (fix) {

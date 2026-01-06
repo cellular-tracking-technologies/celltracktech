@@ -30,11 +30,9 @@ calc_rssi_v_dist <- function(node_locs,
     time_window <- 1
 
     for (r in 1:nrow(sidekick_tag_df)) {
-      print('row')
-      print(r)
+
         sidekick_beep <- sidekick_tag_df[r, ]
-        print('sidekick_beep')
-        print(sidekick_beep)
+
         matching_beeps <- detection_df
         if (use_sync == TRUE) {
             matching_beeps <- subset.data.frame(
@@ -43,27 +41,20 @@ calc_rssi_v_dist <- function(node_locs,
             )
         }
         lower_time_limit <- sidekick_beep$time_utc - time_window
-        print('lower time limit')
-        print(lubridate::ymd_hms(lower_time_limit))
+
         upper_time_limit <- sidekick_beep$time_utc + time_window
-        print('upper time limit')
-        print(lubridate::ymd_hms(upper_time_limit))
-        print('first matching beeps')
-        print(matching_beeps)
+
         matching_beeps <- subset.data.frame(
             matching_beeps,
             matching_beeps$time >= lower_time_limit & matching_beeps$time <= upper_time_limit
         )
-        print('second matching beeps')
-        print(matching_beeps)
 
         if (nrow(matching_beeps) > 0) {
             for (i in 1:nrow(matching_beeps)) {
                 beep <- matching_beeps[i, ]
                 beep_node_id <- beep$node_id
                 rssi <- beep$tag_rssi
-                # print('rssi')
-                print(paste())
+
                 beep_node_loc <- subset.data.frame(
                     node_locs,
                     node_locs$node_id == beep_node_id
@@ -73,16 +64,6 @@ calc_rssi_v_dist <- function(node_locs,
                                       sidekick_beep$lon,
                                       beep_node_loc$avg_lat,
                                       beep_node_loc$avg_lon)
-                # print('distance')
-                # print(distance)
-                print('beep node loc')
-                print(tail(beep_node_loc))
-                print(paste('i', i,
-                            'lat', sidekick_beep$lat,
-                            'lon', sidekick_beep$lon,
-                            'avg lat', beep_node_loc$avg_lat,
-                            'avg lon', beep_node_loc$avg_lon))
-                print(paste('i', i, 'rssi', rssi, 'distance', distance))
 
                 this_result <- data.frame(
                     node_id = beep_node_id,
@@ -90,11 +71,9 @@ calc_rssi_v_dist <- function(node_locs,
                     rssi = rssi
                 )
                 result <- rbind(result, this_result)
-                # print(this_result)
             }
         }
     }
-    print('final result')
-    print(nrow(result))
+
     return(result)
 }
