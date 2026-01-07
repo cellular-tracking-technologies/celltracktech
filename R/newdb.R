@@ -427,34 +427,30 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       # rename id to tag_id
       if ('tag_id' %in% colnames(df)) {
         print('trimming tag id to 8 digits')
-        print(head(df))
 
         df$tag_id = toupper(df$tag_id)
         if (length(df$tag_id) > 8) {
           df$tag_id = substr(df$tag_id, 1,8)
         }
-        print('to upper df$id')
 
         ### remove last two characters if length is 10 characters long
       } else if ('TagId' %in% colnames(df)) {
-        print('convert camel case to snake case')
+        print('Converting column names from camelCase to snake_case')
         column_names = colnames(df)
-        print(column_names)
+
         for(i in 1:length(column_names)) {
           print(i)
           name = camel_to_snake(column_names[i])
-          print(paste('name', name))
           column_names[i] = name
         }
+
         colnames(df) = column_names
-        print(colnames(df))
         df$tag_id = toupper(df$tag_id)
         df$rssi = df$tag_r_s_s_i
+
         if (length(df$tag_id) > 8) {
           df$tag_id = substr(df$tag_id, 1,8)
         }
-        print('to upper df$id')
-        print(head(df))
 
       } else {
         df$tag_id = toupper(df$id)
@@ -473,44 +469,22 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       df <- df[!is.na(df$tag_rssi),]
       df$rssi <- NULL
 
-      rows_with_inf <- apply(df, 1, function(row) any(is.infinite(row)))
-      print('rows with inf')
-      print(df[rows_with_inf, ])
-
-      # # arrange by time to get min max falues
-      # df = df %>%
-      #   arrange(df$time)
-      #
-      # print('first row')
-      # print(df %>% head(1))
-      #
-      # print('last row')
-      # print(df %>% tail(1))
-
-      # start <- min(df$time, na.rm=T)
-      # end <- max(df$time, na.rm=T)
       if ('Time' %in% colnames(df)) {
         df$time = df$Time
       } else if ('time' %in% colnames(df)) {
         df$Time = df$time
       }
 
+      # original start and end time
+      # start <- min(df$Time, na.rm=T)
+      # end <- max(df$Time, na.rm=T)
+
+      # edited start and end time
       df_first_row = df %>% head(1)
       df_last_row = df %>% tail(1)
 
-      print('df first row')
-      print(df_first_row)
-
-      print('df last row')
-      print(df_last_row)
       start <- df_first_row$time
       end <- df_last_row$time
-      print(paste('start: ', start, 'end: ', end))
-
-
-      # DBI::dbSendQuery(conn,
-      #                  'ALTER TABLE node_raw
-      #                  ALTER COLUMN radio_id TYPE smallint')
 
       # get existing data table from database
       test <- dbGetQuery(conn,
@@ -519,9 +493,6 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
                                 "'AND time <= '", end, "'"))
 
       test$radio_id = as.numeric(test$radio_id)
-
-      print('test df')
-      print(test)
 
       df$path = y
       df$station_id = station_id
@@ -549,6 +520,7 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
     } else if (filetype == 'blu' || filetype == '2p4_ghz_beep') {
 
       df$tag_rssi <- as.integer(df$rssi)
+
       df <- df %>%
         filter(is.na(tag_rssi) == FALSE)
       df$time <- df$Time
@@ -571,9 +543,6 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
                                 "WHERE time >= '", start,
                                 "'AND time <= '", end, "'"))
 
-      print('test df')
-      print(test)
-
       # only get records that do not exist in database
       df$path = y
       df$station_id = station_id
@@ -592,9 +561,6 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       # parsed <- t(sapply(df$payload, parseit))
       # df$battery_voltage <- parsed[, 1]
       # df$temperature <- parsed[, 2]
-
-      print('incoming df')
-      print(df, width = Inf)
 
       check_db_type(df,
                     'blu',
@@ -665,10 +631,6 @@ combine_data_duck <- function(df,
   } else if (filetype == 'raw') {
     DBI::dbSendQuery(conn, 'ALTER TABLE node_raw ALTER radio_id TYPE smallint')
 
-    rows_with_inf <- apply(df, 1, function(row) any(is.infinite(row)))
-    print('rows with inf')
-    print(df[rows_with_inf, ])
-
     start <- min(df$time, na.rm=T)
     end <- max(df$time, na.rm=T)
     print(paste('combine duck data start: ', start, 'end: ', end))
@@ -708,7 +670,6 @@ combine_data_duck <- function(df,
                   select(colnames(test))
 
     df2 = anti_join(df, test, by = c('gps_at', 'station_id'))
-    print(paste0('number of rows going into gps table ', nrow(df2)))
 
     z <- db_insert(contents=df,
                    filetype='gps',
@@ -825,7 +786,6 @@ combine_data_postgres <- function(df,
       select(colnames(test))
 
     df2 = anti_join(df, test, by = c('gps_at', 'station_id'))
-    print(paste0('number of rows going into gps table ', nrow(df2)))
 
     z <- db_insert(contents=df,
                    filetype='gps',

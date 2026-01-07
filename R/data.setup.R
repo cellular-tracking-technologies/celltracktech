@@ -108,6 +108,8 @@ data.setup <- function(test,
 
   test.info$Start.Time <- test.info$Start.Time - 2
   test.info$Stop.Time <- test.info$Stop.Time + 2
+
+  # using lubridate datetime format? need to test...
   # start <- min(test.info$Start.Time)
   # end <- max(test.info$Stop.Time)
 
