@@ -73,8 +73,10 @@ data.setup <- function(test,
         mutate(c_diff = ifelse(id != lag(id), 1, 0))
       test$c_diff[1] <- 0
       test$TestId <- cumsum(test$c_diff)
-      test.info <- setDT(test)[, .(Start.Time = min(time),
-                                   Stop.Time = max(time)), by = TestId]
+
+      test.info <- setDT(test)[, .(Start.Time = min(ymd_hms(time_utc)),
+                                   Stop.Time = max(ymd_hms(time_utc))), by = TestId]
+
       test.info$id <- test$id[match(test.info$TestId,
                                     test$TestId)]
       testid <- test[!duplicated(test$id),]
@@ -88,7 +90,8 @@ data.setup <- function(test,
   } else {
     test.info <- test
     test.info$lat <- test[,y]
-    test.info$lon <- test[,x]}
+    test.info$lon <- test[,x]
+  }
 
   test.UTM <- test.info %>%
     dplyr::group_by(TestId) %>%
@@ -99,13 +102,19 @@ data.setup <- function(test,
     group_by(TestId) %>%
     summarise(tag_id = list(unique(tagid))) %>%
     unnest(tag_id)
+
   test.info <- left_join(test.info, df1)
   #}
 
   test.info$Start.Time <- test.info$Start.Time - 2
   test.info$Stop.Time <- test.info$Stop.Time + 2
-  start <- min(test.info$Start.Time)
-  end <- max(test.info$Stop.Time)
+
+  # using lubridate datetime format? need to test...
+  # start <- min(test.info$Start.Time)
+  # end <- max(test.info$Stop.Time)
+
+  start <- ymd_hms(min(test.info$Start.Time))
+  end <- ymd_hms(max(test.info$Stop.Time))
 
   #con <- DBI::dbConnect(duckdb::duckdb(), dbdir = fileloc, read_only = TRUE)
   testdata <- testdata_in %>%
@@ -126,9 +135,12 @@ data.setup <- function(test,
 
   test.dat <- setDT(testdata)[test.info,
                               TestId := +(i.TestId),
-                              on = .(tag_id, time > Start.Time,
-                                     time < Stop.Time), by = .EACHI]
+                              on = .(tag_id, time >= Start.Time,
+                                     time <= Stop.Time), by = .EACHI]
+
   test.dat <- test.dat[!is.na(test.dat$TestId),]
+
+
 
   summary.test.tags <- test.dat %>%
     dplyr::group_by(node_id, TestId) %>%
@@ -146,8 +158,11 @@ data.setup <- function(test,
                                nodes[,c("node_lng", "node_lat")],
                                lonlat = latlon,
                                allpairs = T)
+
   dist_df <- data.frame(dst,
                         row.names = test.UTM$TestId)
+                        # row.names = seq(1, length(dst)))
+
   colnames(dist_df) <- nodes$node_id
   dist_df$TestId <- as.integer(rownames(dist_df))
 

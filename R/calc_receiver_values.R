@@ -43,8 +43,19 @@ calc_receiver_values <- function(
     filter_time_range) {
     #########################################################
     # Get all detections up to this time
+
+    print('station tag df')
+    print(station_tag_df)
+
+    if ('time' %in% colnames(station_tag_df)) {
+      station_tag_df$time_value = station_tag_df$time
+    } else if ('time_value' %in% colnames(station_tag_df)) {
+      station_tag_df$time = station_tag_df$time_value
+    }
+
     new_df <- station_tag_df %>%
-        filter(station_tag_df$time_value >= current_time - filter_time_range & station_tag_df$time_value <= current_time)
+        filter(station_tag_df$time_value >= current_time - filter_time_range &
+               station_tag_df$time_value <= current_time)
 
     rec_df <- data.frame(
         node_id = character(),
@@ -61,16 +72,20 @@ calc_receiver_values <- function(
     for (n in 1:nrow(node_locs)) {
         node <- node_locs[n, ]
         this_node_id <- node$node_id
-
+        # print('calculate receiver values node id')
+        # print(this_node_id)
         if (!is.null(node_t_offset)) {
             # Get this node's time offset
             t_off <- subset.data.frame(node_t_offset,
                                        toupper(node_t_offset$node_id) == node$node_id)$mean_time_offset
+
             # Use time offset to adjust time window for detection cut
             new_df <- station_tag_df %>%
                 filter(station_tag_df$time_value - t_off >= current_time - filter_time_range & station_tag_df$time_value - t_off <= current_time)
         }
+
         this_node_detections <- subset.data.frame(new_df, new_df$node_id == this_node_id)
+
         most_recent_detection_time <- 0
         avg_rssi <- NaN
         filtered_rssi <- NaN

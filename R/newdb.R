@@ -426,11 +426,32 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
 
       # rename id to tag_id
       if ('tag_id' %in% colnames(df)) {
+        print('trimming tag id to 8 digits')
+
         df$tag_id = toupper(df$tag_id)
         if (length(df$tag_id) > 8) {
           df$tag_id = substr(df$tag_id, 1,8)
         }
+
         ### remove last two characters if length is 10 characters long
+      } else if ('TagId' %in% colnames(df)) {
+        print('Converting column names from camelCase to snake_case')
+        column_names = colnames(df)
+
+        for(i in 1:length(column_names)) {
+          print(i)
+          name = camel_to_snake(column_names[i])
+          column_names[i] = name
+        }
+
+        colnames(df) = column_names
+        df$tag_id = toupper(df$tag_id)
+        df$rssi = df$tag_r_s_s_i
+
+        if (length(df$tag_id) > 8) {
+          df$tag_id = substr(df$tag_id, 1,8)
+        }
+
       } else {
         df$tag_id = toupper(df$id)
         if (length(df$tag_id) > 8) {
@@ -448,13 +469,22 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       df <- df[!is.na(df$tag_rssi),]
       df$rssi <- NULL
 
-      start <- min(df$Time, na.rm=T)
-      end <- max(df$Time, na.rm=T)
-      print(paste(start, end))
+      if ('Time' %in% colnames(df)) {
+        df$time = df$Time
+      } else if ('time' %in% colnames(df)) {
+        df$Time = df$time
+      }
 
-      # DBI::dbSendQuery(conn,
-      #                  'ALTER TABLE node_raw
-      #                  ALTER COLUMN radio_id TYPE smallint')
+      # original start and end time
+      # start <- min(df$Time, na.rm=T)
+      # end <- max(df$Time, na.rm=T)
+
+      # edited start and end time
+      df_first_row = df %>% head(1)
+      df_last_row = df %>% tail(1)
+
+      start <- df_first_row$time
+      end <- df_last_row$time
 
       # get existing data table from database
       test <- dbGetQuery(conn,
@@ -490,6 +520,7 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
     } else if (filetype == 'blu' || filetype == '2p4_ghz_beep') {
 
       df$tag_rssi <- as.integer(df$rssi)
+
       df <- df %>%
         filter(is.na(tag_rssi) == FALSE)
       df$time <- df$Time
@@ -504,16 +535,13 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
 
       start <- min(df$time, na.rm=T)
       end <- max(df$time, na.rm=T)
-      print(paste(start, end))
+      print(paste('start: ', start, 'end: ', end))
 
       # get existing data table from database
       test <- dbGetQuery(conn,
                          paste0("SELECT * FROM node_blu ",
                                 "WHERE time >= '", start,
                                 "'AND time <= '", end, "'"))
-
-      print('test df')
-      print(test)
 
       # only get records that do not exist in database
       df$path = y
@@ -533,9 +561,6 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       # parsed <- t(sapply(df$payload, parseit))
       # df$battery_voltage <- parsed[, 1]
       # df$temperature <- parsed[, 2]
-
-      print('incoming df')
-      print(df, width = Inf)
 
       check_db_type(df,
                     'blu',
@@ -605,8 +630,11 @@ combine_data_duck <- function(df,
 
   } else if (filetype == 'raw') {
     DBI::dbSendQuery(conn, 'ALTER TABLE node_raw ALTER radio_id TYPE smallint')
+
     start <- min(df$time, na.rm=T)
     end <- max(df$time, na.rm=T)
+    print(paste('combine duck data start: ', start, 'end: ', end))
+
 
     test <- DBI::dbGetQuery(conn,
                        paste0("SELECT * FROM raw ",
@@ -642,7 +670,6 @@ combine_data_duck <- function(df,
                   select(colnames(test))
 
     df2 = anti_join(df, test, by = c('gps_at', 'station_id'))
-    print(paste0('number of rows going into gps table ', nrow(df2)))
 
     z <- db_insert(contents=df,
                    filetype='gps',
@@ -759,7 +786,6 @@ combine_data_postgres <- function(df,
       select(colnames(test))
 
     df2 = anti_join(df, test, by = c('gps_at', 'station_id'))
-    print(paste0('number of rows going into gps table ', nrow(df2)))
 
     z <- db_insert(contents=df,
                    filetype='gps',
