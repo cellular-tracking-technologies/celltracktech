@@ -124,9 +124,17 @@ calculate_track <- function(
                                             maxiter = 100)
                     )
 
+        # find ml error from multilat_fit
+        residuals <- resid(multilat_fit)
+        print('ml residuals')
+        print(residuals)
+        ml_rmse <- sqrt(mean(residuals^2))
+        print('ml rmse')
+        print(ml_rmse)
+
+        # find multilat coefficients
         co <- coef(summary(multilat_fit))
         ##################################
-
 
         # Check that at least three nodes have detections in time window
         nodes_with_dets <- sum(rec_df$n > 0)
@@ -138,6 +146,7 @@ calculate_track <- function(
             # Find the bin with best "grid value"
             solution <- subset(grid_values, grid_values$value == max(grid_values$value))
 
+
             # Add solution to the track
             track_point <- data.frame(
                 i = i,
@@ -148,7 +157,8 @@ calculate_track <- function(
                 avg_rssi = mean(rec_df$avg_rssi),
                 ml_lat = co[1,1],
                 ml_lon = co[2,1],
-                error = NaN
+                # error = NaN
+                error = ml_rmse
             )
             track_df <- rbind(track_df, track_point)
 
