@@ -22,9 +22,6 @@ prep.data <- function(x,
                       S,
                       startval = NULL) {
 
-  # supress warnings
-  options(warn = -1)
-
   # Sliding window over RSSI values for a given TagId and NodeId
   # 1st argument: vector to iterate over and apply function
   # 2nd argument: datetime index to break into periods
@@ -76,4 +73,10 @@ prep.data <- function(x,
 
   return(beep.grouped[order(beep.grouped$Time.group),])
 
+}
+
+#' @rdname prep.data
+#' @export
+prep_data <- function(...) {
+  prep.data(...)
 }

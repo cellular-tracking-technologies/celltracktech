@@ -11,9 +11,6 @@
 
 trilateration.TestData.Distance.Filter <- function(x, DIST.FILTER){
 
-  # supress warnings
-  options(warn = -1)
-
   # Make a dataframe with only 1 row per test
   test.UTM <- x %>%
     dplyr::group_by(TestId) %>%
@@ -159,4 +156,10 @@ trilateration.TestData.Distance.Filter <- function(x, DIST.FILTER){
   #write.csv(summary.stats_results, paste0(outpath, "Trilateration.Simulation_Filters.Distance_Summary.Stats.csv"),  row.names = F)
 
   return(list(combined_results_final, summary.stats_results))
+}
+
+#' @rdname trilateration.TestData.Distance.Filter
+#' @export
+trilateration_testdata_distance_filter <- function(...) {
+  trilateration.TestData.Distance.Filter(...)
 }

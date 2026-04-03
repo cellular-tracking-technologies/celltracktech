@@ -35,7 +35,7 @@ update_existing_parallel = function(table_name, con) {
   chunk_size = 1000
   grouping_factor = cut(1:nrow(df), breaks = seq(0, nrow(df), by = chunk_size))
   chunks = split(df, grouping_factor)
-  print(environment())
+  message(environment())
 
 
   # create cluster for parallel processing
@@ -87,19 +87,19 @@ update_existing_parallel = function(table_name, con) {
   # print(clusterEvalQ(cl, exists("parseit")))
 
   for (i in chunks) {
-    print(paste('Updating records', i$id[1], 'through', i$id[nrow(i)]))
+    message(paste('Updating records', i$id[1], 'through', i$id[nrow(i)]))
 
     # get total number of rows in dataframe
     total = nrow(i)
     # print(i)
-    print(parseit(i$payload[1])[[1]])
-    print(parseit(i$payload[1])[[2]])
+    message(parseit(i$payload[1])[[1]])
+    message(parseit(i$payload[1])[[2]])
 
-    print(DBI::dbListTables(con))
+    message(DBI::dbListTables(con))
 
     parSapply(cl, 1:total, function(x) {
-      print(parseit(i$payload[x])[[1]])
-      print(parseit(i$payload[x])[[2]])
+      message(parseit(i$payload[x])[[1]])
+      message(parseit(i$payload[x])[[2]])
       try(
         db_exec(paste0(
           'UPDATE ', table_name,
@@ -118,5 +118,5 @@ update_existing_parallel = function(table_name, con) {
 
   end_time = Sys.time()
   diff = end_time - start_time
-  print(paste('Database update took', diff, 'min long'))
+  message(paste('Database update took', diff, 'min long'))
 }

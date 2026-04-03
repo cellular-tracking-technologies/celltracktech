@@ -11,9 +11,6 @@
 
 trilateration.TestData.RSS.Filter <- function(x, RSS.FILTER) {
 
-  # supress warnings
-  options(warn = -1)
-
   # Empty data frame to populate with summary results
   summary.stats_results <- data.frame(n.est.tests = numeric(), avg.no.nodes = numeric(), avg.diff = numeric(), sd.diff = numeric(),
                                       lower.ci = numeric(), upper.ci = numeric(), med.diff = numeric(),
@@ -128,4 +125,10 @@ trilateration.TestData.RSS.Filter <- function(x, RSS.FILTER) {
 
   return(list(combined_results_final,summary.stats_results))
 
+}
+
+#' @rdname trilateration.TestData.RSS.Filter
+#' @export
+trilateration_testdata_rss_filter <- function(...) {
+  trilateration.TestData.RSS.Filter(...)
 }

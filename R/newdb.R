@@ -7,7 +7,7 @@
 
 db_cleanup <- function(conn) {
 start <- Sys.time()
-  print("getting rid of duplicate records")
+  message("getting rid of duplicate records")
   DBI::dbExecute(conn, "WITH ordered AS (
   SELECT id, time, upper(tag_id), upper(node_id), tag_rssi,
     rank() OVER (PARTITION BY time, upper(tag_id), upper(node_id), tag_rssi  ORDER BY id) AS rnk
@@ -19,8 +19,8 @@ to_delete AS (
   WHERE  rnk > 1
 )
 delete from raw using to_delete where raw.id = to_delete.id")
-print(Sys.time() - start)
-print("getting rid of duplicate node health records")
+message(Sys.time() - start)
+message("getting rid of duplicate node health records")
 DBI::dbExecute(conn, "DELETE FROM node_health T1
 USING node_health T2
 WHERE T1.node_id is not null
@@ -29,8 +29,8 @@ AND  upper(T1.node_id) = upper(T2.node_id)
 AND  T1.time = T2.time
 AND  T1.radio_id = T2.radio_id")
 
-print(Sys.time() - start)
-print("getting rid of bad records")
+message(Sys.time() - start)
+message("getting rid of bad records")
 DBI::dbExecute(conn, "WITH ordered AS (
   SELECT id, time, upper(tag_id) as tag, upper(node_id),
     rank() OVER (PARTITION BY time, upper(tag_id), upper(node_id)  ORDER BY id) AS rnk
@@ -44,13 +44,13 @@ to_delete AS (
 
 delete from raw using to_delete where raw.time = to_delete.time and upper(raw.node_id) = to_delete.upper and upper(raw.tag_id) =to_delete.tag")
 
-print(Sys.time() - start)
-print("getting rid of null tags")
+message(Sys.time() - start)
+message("getting rid of null tags")
 DBI::dbExecute(conn, "delete from raw where tag_id is null")
 #2022-04-04 19:43:43-04 1933552D 377c59
 
-print(Sys.time() - start)
-print("getting rid of bad nodes")
+message(Sys.time() - start)
+message("getting rid of bad nodes")
 nodes <- DBI::dbReadTable(conn, "nodes")
 badnodes <- toupper(nodes$node_id[(nchar(nodes$node_id) != 6 & nchar(nodes$node_id) != 8)])
 goodnodes <- toupper(nodes$node_id[!(nchar(nodes$node_id) != 6 & nchar(nodes$node_id) != 8)])
@@ -61,8 +61,8 @@ DBI::dbExecute(conn, paste0("DELETE FROM node_health where upper(node_id) in (",
 DBI::dbExecute(conn, paste0("delete from nodes where upper(node_id) in (", badnodestr, ")"))
 DBI::dbExecute(conn, paste0("delete from blu where upper(node_id) in (", badnodestr, ")"))
 
-print(Sys.time() - start)
-print("updating node IDs to upper case")
+message(Sys.time() - start)
+message("updating node IDs to upper case")
 insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "nodes (node_id)", " VALUES ($1)
                                            ON CONFLICT DO NOTHING", sep = ""))
 DBI::dbBind(insertnew, params = list(goodnodes))
@@ -71,14 +71,14 @@ DBI::dbClearResult(insertnew)
 DBI::dbExecute(conn, "update raw set node_id = upper(node_id)")
 DBI::dbExecute(conn, "update node_health set node_id = upper(node_id)")
 
-print(Sys.time() - start)
-print("getting rid of duplicate lowercase nodes")
+message(Sys.time() - start)
+message("getting rid of duplicate lowercase nodes")
 DBI::dbExecute(conn, "DELETE FROM nodes T1
 USING nodes T2
 WHERE (T1.node_id ~ '[a-z]') is true")
 
-print(Sys.time() - start)
-print("filling in missing files")
+message(Sys.time() - start)
+message("filling in missing files")
 res <- DBI::dbGetQuery(conn, "select distinct path from gps")
 res2 <- DBI::dbGetQuery(conn, "select distinct path from raw")
 res1 <- DBI::dbGetQuery(conn, "select distinct path from node_health")
@@ -90,8 +90,8 @@ filesdone <- filesdone[!filesdone %in% filesin]
 insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ", "data_file (path)", " VALUES ($) ON CONFLICT DO NOTHING", sep = ""))
 DBI::dbBind(insertnew, params = list(unique(filesdone)))
 DBI::dbClearResult(insertnew)
-print("done")
-print(Sys.time() - start)
+message("done")
+message(Sys.time() - start)
 }
 
 #' Incorporate node data
@@ -121,14 +121,14 @@ import_node_data <- function(d, outpath, myproject=NULL, station_id) {
                         recursive = TRUE,
                         full.names = TRUE)
 
-  print(paste('myfiles', myfiles))
+  message(paste('myfiles', myfiles))
   files_loc <- sapply(strsplit(myfiles, "/"), tail, n=2)
   files <- paste(files_loc[1,],files_loc[2,],sep="/")
-  print(paste('files', files))
+  message(paste('files', files))
   allnode <- DBI::dbReadTable(d, "data_file")
   filesdone <- allnode$path
   files_import <- myfiles[which(!files %in% filesdone)]
-  print(files_import)
+  message(files_import)
   lapply(files_import,
          load_node_data,
          conn=d,
@@ -154,11 +154,11 @@ import_node_data <- function(d, outpath, myproject=NULL, station_id) {
 #' @examples
 load_node_data <- function(e, conn, outpath, myproject, station_id) {
   #e <- file.path(outpath, "nodes", e)
-  print(paste('e file', e))
+  message(paste('e file', e))
   file <- tail(unlist(strsplit(e, "/")), n=2)
-  print(paste('file', file))
+  message(paste('file', file))
   y <- paste(file, collapse="/")
-  print(paste('y file', y))
+  message(paste('y file', y))
 
   file_list = str_extract_all(y, c(regex('434(?=_)'),
                                    regex('(?<!_)(beep)'),
@@ -167,7 +167,7 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
                                    'gps',
                                    'health'))
   filetype = file_list %>% unlist()
-  print(paste('filetype', filetype))
+  message(paste('filetype', filetype))
 
   sensor <- NA
   i <- DBI::dbReadTable(conn, "ctt_project_station")
@@ -189,10 +189,10 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
 
   # get data from file
   df <- tryCatch({
-    print('df trycatch')
+    message('df trycatch')
     if (file.size(e) > 0 && (filetype == 'blu' || filetype == '2p4_ghz_beep')) {
-      print('blu filetype before payload parse')
-      print(filetype)
+      message('blu filetype before payload parse')
+      message(filetype)
       # if blu file, open file, parse payload
       process_file(e, dirname(e))
       read_csv(e, na = c("NA", ""), skip_empty_rows = TRUE)
@@ -213,24 +213,24 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
 
     }, error = function(err) {
         # error handler picks up where error was generated
-        print(paste("ignoring file", err, "- no data"))
+        message(paste("ignoring file", err, "- no data"))
         return(NULL)
     }, error = function(w) {
-      print(paste('error in file', w))
+      message(paste('error in file', w))
       #x <- read.csv(e,header=TRUE,as.is=TRUE, na.strings=c("NA", ""), skipNul = TRUE) might need to reimplement this...
       #x <- rbind(x,Correct_Colnames(x))
       #colnames(x) <- c("time", "id", "rssi")
       #return(x)
     })
-  print('dataframe')
-  print(df)
+  message('dataframe')
+  message(df)
   # remove corrupted data
   df_bad = df %>%
     filter(if_any(everything(), ~ str_detect(., "[^\\x00-\\x7F]+") == TRUE))
 
-  print('removing corrupted data')
+  message('removing corrupted data')
   df_anti_join = anti_join(df, df_bad)
-  print('corrupted data removed'
+  message('corrupted data removed'
         )
   df = df_anti_join
   # badlines <- grep("[^ -~]", df$id)
@@ -426,7 +426,7 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
 
       # rename id to tag_id
       if ('tag_id' %in% colnames(df)) {
-        print('trimming tag id to 8 digits')
+        message('trimming tag id to 8 digits')
 
         df$tag_id = toupper(df$tag_id)
         if (length(df$tag_id) > 8) {
@@ -435,11 +435,11 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
 
         ### remove last two characters if length is 10 characters long
       } else if ('TagId' %in% colnames(df)) {
-        print('Converting column names from camelCase to snake_case')
+        message('Converting column names from camelCase to snake_case')
         column_names = colnames(df)
 
         for(i in 1:length(column_names)) {
-          print(i)
+          message(i)
           name = camel_to_snake(column_names[i])
           column_names[i] = name
         }
@@ -535,7 +535,7 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
 
       start <- min(df$time, na.rm=T)
       end <- max(df$time, na.rm=T)
-      print(paste('start: ', start, 'end: ', end))
+      message(paste('start: ', start, 'end: ', end))
 
       # get existing data table from database
       test <- dbGetQuery(conn,
@@ -570,8 +570,8 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
 
       df2 <- dplyr::anti_join(df, test)
 
-      print('df2 after join')
-      print(df2, width = Inf)
+      message('df2 after join')
+      message(df2, width = Inf)
 
       z <- db_insert(contents=df2,
                      filetype='node_blu',
@@ -633,7 +633,7 @@ combine_data_duck <- function(df,
 
     start <- min(df$time, na.rm=T)
     end <- max(df$time, na.rm=T)
-    print(paste('combine duck data start: ', start, 'end: ', end))
+    message(paste('combine duck data start: ', start, 'end: ', end))
 
 
     test <- DBI::dbGetQuery(conn,

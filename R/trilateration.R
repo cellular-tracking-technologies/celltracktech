@@ -12,10 +12,6 @@ trilateration <- function(x,
                           nodes,
                           RSS.FILTER) {
 
-  # supress warnings
-  options(warn = -1)
-
-
   # Identify the Nodes for the given dataset and filter nodes
   nodes.unique <- unique(x$node_id)
   nodes.red <- nodes %>% dplyr::filter(node_id %in% nodes.unique)
@@ -61,7 +57,7 @@ trilateration <- function(x,
 
     # Indicate bird that is currently being processed and how many unique time periods to process
     #print(as.character(test.bird))
-    print(length(tests))
+    message(length(tests))
 
     # Loop through unique time groups
 

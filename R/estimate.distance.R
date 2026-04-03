@@ -13,12 +13,11 @@
 
 estimate.distance <- function(x, K, a, S) {
 
-  # supress warnings
-  options(warn = -1)
-
   # Calculate estimated distance based on RSSI~Distance relationship and indicate simulation round
-  combined.data <- x %>%
-    dplyr::mutate(e.dist = (log(avgRSS - K) - log(a)) / -S)
+  combined.data <- suppressWarnings(
+    x %>%
+      dplyr::mutate(e.dist = (log(avgRSS - K) - log(a)) / -S)
+  )
 
   # Remove rows with NAs
   combined.data <- combined.data[!is.na(combined.data$e.dist),]
@@ -34,4 +33,10 @@ estimate.distance <- function(x, K, a, S) {
 
   return(combined.data)
 
+}
+
+#' @rdname estimate.distance
+#' @export
+estimate_distance <- function(...) {
+  estimate.distance(...)
 }

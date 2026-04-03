@@ -14,10 +14,10 @@ create_outpath <- function(outpath) {
 
   # create outpath directory or directories if they do not exist
   if (file.exists(outpath)) {
-    print(paste('Folder exists, no need to create a new directory.'))
+    message(paste('Folder exists, no need to create a new directory.'))
   } else {
     # create a new sub directory inside the main path
-    print(paste('Folder', outpath, 'does not exist, creating it now.'))
+    message(paste('Folder', outpath, 'does not exist, creating it now.'))
     dir.create(file.path(project_dir, outpath), recursive = TRUE)
   }
 }

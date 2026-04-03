@@ -179,3 +179,9 @@ data.setup <- function(test,
 
   return(combined.data)
 }
+
+#' @rdname data.setup
+#' @export
+data_setup <- function(...) {
+  data.setup(...)
+}

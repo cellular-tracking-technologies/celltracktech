@@ -29,15 +29,15 @@ process_file <- function(file_path, output_dir) {
   # Create output file name and save the updated CSV
   file_name <- basename(sub("\\.gz$", "", file_path)) # Remove directory and .gz if present
 
-  print('file name')
-  print(file_name)
+  message('file name')
+  message(file_name)
 
-  print('output directory')
-  print(output_dir)
+  message('output directory')
+  message(output_dir)
   # output_file <- file.path(output_dir, paste0(file_name, "_parsed.csv"))
   output_file <- file.path(output_dir, file_name)
-  print('output file')
-  print(output_file)
+  message('output file')
+  message(output_file)
 
   write.csv(blu, output_file, row.names = FALSE)
 }

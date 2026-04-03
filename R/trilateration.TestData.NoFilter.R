@@ -10,9 +10,6 @@
 
 trilateration.TestData.NoFilter <- function(x) {
 
-  # supress warnings
-  options(warn = -1)
-
   # make a vector of unique trilaterations to run
   tests = unique(x$TestId)
 
@@ -99,4 +96,10 @@ trilateration.TestData.NoFilter <- function(x) {
   #write.csv(summary.stats, paste0(outpath, "Trilateration.TestData_NoFilter_Summary.Stats.csv"),  row.names = F)
 
   return(list(combined_results_final,summary.stats))
+}
+
+#' @rdname trilateration.TestData.NoFilter
+#' @export
+trilateration_testdata_nofilter <- function(...) {
+  trilateration.TestData.NoFilter(...)
 }

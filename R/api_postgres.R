@@ -50,21 +50,21 @@ file_types <- c("data", "node-data", "gps", "log", "telemetry", "sensorgnome", "
 
 project_list <- function(my_token, myproject = NULL) {
   projects <- httr::content(httr::POST(host, path = project, body = list(token = my_token), encode = "json"))
-  print(paste('projects', projects))
+  message(paste('projects', projects))
   projects <- projects[["projects"]]
-  print(projects)
+  message(projects)
   if (!is.null(myproject)) {
 
     projects <- tryCatch({
-      print(paste('The project name you entered is:', myproject))
+      message(paste('The project name you entered is:', myproject))
 
       list(projects[[which(sapply(projects, function(x) x[["name"]]) == myproject)]])
     }, error = function(err) {
-      print(paste('Error:', conditionMessage(err)))
+      message(paste('Error:', conditionMessage(err)))
       cat('The project you entered is not found in your project list. Check your spelling and if you have access to the project.\n')
     })
     # projects <- list(projects[[which(sapply(projects, function(x) x[["name"]]) == myproject)]])
-    print(projects)
+    message(projects)
   }
   return(projects)
 }
@@ -80,8 +80,8 @@ pop_proj <- function(a, conn) {
   basename <- a$name
   id <- a[["id"]]
   my_stations <- getStations(project_id = id)
-  print("RETURNED FROM API")
-  print(my_stations)
+  message("RETURNED FROM API")
+  message(my_stations)
   mystations <- lapply(my_stations$stations, function(c) {
     c <- as.data.frame(t(unlist(c)), stringsAsFactors = FALSE)
 
@@ -99,8 +99,8 @@ pop_proj <- function(a, conn) {
   mystations <- as.data.frame(dplyr::bind_rows(mystations))
   MYSTATIONS <- list(unique(mystations$station_id))
   mystations <- unname(mystations)
-  print("FORMATTED")
-  print(mystations)
+  message("FORMATTED")
+  message(mystations)
 
   # insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ","station (station_id)"," VALUES ($1)
   #                                     ON CONFLICT DO NOTHING",sep=""))
@@ -120,7 +120,10 @@ post <- function(endpoint, payload = NULL) {
   if (!is.null(payload)) {
     payload_to_send <- c(payload_to_send, payload)
   }
-  response <- httr::POST(host, path = endpoint, body = payload_to_send, encode = "json", httr::timeout(3000))
+  response <- httr::POST(host, path = endpoint, body = payload_to_send, encode = "json", httr::timeout(60))
+  if (httr::status_code(response) == 503) {
+    warning("Server query timeout — try narrowing your date range or using pagination")
+  }
   httr::stop_for_status(response)
   return(response)
 }
@@ -130,27 +133,63 @@ getStations <- function(project_id) {
   return(httr::content(out))
 }
 
-getStationFileList <- function(station_id, begin, filetypes = NULL, end = NULL) {
+getStationFileList <- function(station_id, begin, filetypes = NULL,
+                                end = NULL, limit = NULL, offset = NULL) {
   endpoint <- files
   payload <- list("station-id" = station_id, begin = as.Date(begin))
 
   if (!is.null(filetypes)) {
     add_types <- filetypes[filetypes %in% file_types]
     if (length(which(!filetypes %in% file_types)) > 0) {
-      print(paste("WARNING: invalid file type specified - ignoring:", filetypes[!filetypes %in% file_types]))
+      warning(paste("WARNING: invalid file type specified - ignoring:", filetypes[!filetypes %in% file_types]))
     }
     payload[["file-types"]] <- add_types
   }
   if (!is.null(end)) {
     payload[["end"]] <- as.Date(end)
   }
+  if (!is.null(limit)) {
+    payload[["limit"]] <- as.integer(limit)
+  }
+  if (!is.null(offset)) {
+    payload[["offset"]] <- as.integer(offset)
+  }
   return(httr::content(post(endpoint = endpoint, payload = payload)))
+}
+
+#' Get all files for a station with automatic pagination
+#'
+#' For stations with many files, retrieves results in pages to avoid
+#' server timeouts. Falls back to unbounded request for small stations.
+#'
+#' @param station_id station identifier
+#' @param begin start date
+#' @param filetypes optional file type filter
+#' @param end optional end date
+#' @param page_size number of files per page (default 500)
+#' @return list of file metadata
+#' @export
+getStationFileListPaginated <- function(station_id, begin, filetypes = NULL,
+                                         end = NULL, page_size = 500) {
+  all_files <- list()
+  offset <- 0
+  repeat {
+    result <- getStationFileList(station_id, begin,
+                                  filetypes = filetypes, end = end,
+                                  limit = page_size, offset = offset)
+    batch <- result[["files"]]
+    if (is.null(batch) || length(batch) == 0) break
+    all_files <- c(all_files, batch)
+    if (length(batch) < page_size) break
+    offset <- offset + page_size
+  }
+  return(list(files = all_files))
 }
 
 downloadFiles <- function(file_id) {
   endpoint <- "/station/api/download-file/"
   payload <- list("file-id" = file_id)
-  print(paste('downloadFiles payload', payload))
+  message(paste('downloadFiles payload', payload))
 
   response <- tryCatch(
     {
@@ -821,7 +860,7 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
       })
     },
     error = function(err) {
-      print(paste('h error', err))
+      message(paste('h error', err))
       return(list(err, contents, y))
     }
     )
@@ -847,7 +886,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
                                                                      function(x) x[["station"]][["id"]] == my_station))]])
   }
   files_avail <- lapply(my_stations[["stations"]], function(station, mybeginning = beginning, myending = ending) {
-    print(station)
+    message(station)
     if (is.null(mybeginning)) {
       beginning <- as.POSIXct(station[["deploy-at"]], format = "%Y-%m-%dT%H:%M:%OS", tz = "UTC", optional = TRUE)
     } else {
@@ -857,32 +896,32 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
       station_id = station[["station"]][["id"]],
       begin = beginning
     )
-    print(is.null(myending))
+    message(is.null(myending))
     if (!is.null(myending)) {
       kwargs[["end"]] <- as.POSIXct(as.Date(myending), format = "%Y-%m-%dT%H:%M:%OS", tz = "UTC", optional = TRUE)
     } else if (!is.null(station[["end-at"]])) {
       kwargs[["end"]] <- as.POSIXct(station[["end-at"]], format = "%Y-%m-%dT%H:%M:%OS", tz = "UTC", optional = TRUE)
     }
 
-    print(kwargs)
-    print("getting station file list...")
-    file_info <- do.call(getStationFileList, kwargs)
+    message(kwargs)
+    message("getting station file list...")
+    file_info <- do.call(getStationFileListPaginated, kwargs)
     outfiles <- file_info[["files"]]
 
     return(outfiles)
   })
-  print("getting files available for those stations...")
+  message("getting files available for those stations...")
   filenames <- unname(rapply(files_avail, grep, pattern = "CTT", value = TRUE))
-  print("got the file list; comparing against your files")
+  message("got the file list; comparing against your files")
   files_to <- filenames[!filenames %in% files_loc]
-  print("comparison complete")
+  message("comparison complete")
 
   # browser()
   allfiles <- rapply(files_avail, function(z) z %in% files_to, how = "unlist") # this is the super intensive, time consuming function...
   ids <- unlist(files_avail)[which(allfiles) - 1]
-  print(paste("about to get", length(ids), "files"))
+  message(paste("about to get", length(ids), "files"))
   file_names <- unlist(files_avail)[which(allfiles)]
-  print("prepped list of filenames to get")
+  message("prepped list of filenames to get")
   if (is.null(filetypes)) {filetypes <- c("raw", "node_health", "gps", "blu")}
   filetypeget <- unlist(sapply(file_names, function(x) get_file_info(x)["filetype"]))
   filesget <- data.frame(ids, file_names, filetypeget)
@@ -899,7 +938,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     filenameinfo <- sensorid[2]
     file_info <- unlist(strsplit(filenameinfo, "\\."))[1]
     filetype <- ifelse(is.na(as.integer(file_info)), file_info, "sensorgnome")
-    print(filetype)
+    message(filetype)
     if (is.na(filetype)) {
       filetype <- "none"
     } else if (filetype == "node") {
@@ -927,8 +966,8 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
       if (!is.null(contents)) { #& filetype %in% c("raw", "node_health", "gps", "ble", "blu")) {
         dir.create(file.path(outpath, projbasename, sensor), showWarnings = FALSE)
         dir.create(file.path(outpath, projbasename, sensor, filetype), showWarnings = FALSE)
-        print(paste("downloading",y,"to",file.path(outpath, projbasename, sensor, filetype)))
-        print(x)
+        message(paste("downloading",y,"to",file.path(outpath, projbasename, sensor, filetype)))
+        message(x)
         if(is.character(contents)) {write(contents, file = gzfile(file.path(outpath, projbasename, sensor, filetype, y)))
         } else {
           write.csv(contents, file = gzfile(file.path(outpath, projbasename, sensor, filetype, y)), row.names = F)
@@ -937,7 +976,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
         if (!is.null(f)) {
           if(filetype %in% c("raw", "node_health", "gps", "blu")) {
             contents <- file_handle(e, filetype)[[1]]
-            print(begin)
+            message(begin)
             contents <- db_prep(contents, filetype, sensor, y, begin)
             # z <- db_insert(contents, filetype, f, y)
             z <- db_insert(contents=contents, filetype=filetype, conn=f, y=y)
@@ -953,7 +992,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
   }
 
   failed <- Map(get_files, filesget$ids, filesget$file_names)
-  print("done getting files")
+  message("done getting files")
   return(failed)
 }
 
@@ -996,7 +1035,7 @@ badrow <- function(e, contents, filetype) {
     file_err <- 4
     rowfix <- which(indx != correct) - 1
     rowlen <- indx[which(indx != correct)] # what if this is more than 1 row?
-    print(contents[rowfix, ])
+    message(contents[rowfix, ])
     if (filetype == "gps" & correct == 9) {
       if (min(rowfix) < 1) {
         rowfix <- which(indx == 9) - 1
@@ -1027,7 +1066,7 @@ timecheck <- function(contents, myrowfix) {
 }
 
 file_handle <- function(e, filetype) {
-  print(paste("checking file for errors:", e))
+  message(paste("checking file for errors:", e))
   #print(filetype)
   file_err <- 0
   myrowfix <- c()
@@ -1253,15 +1292,15 @@ get_my_data <- function(my_token,
     sapply(projects, pop_proj, conn = db_name)
     failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
   } else if(!is.null(db_name) & length(grep("duckdb", format(db_name))) > 0) {
-    print('projects')
-    print(projects)
+    message('projects')
+    message(projects)
     create_duck(db_name)
     sapply(projects, pop_proj, conn = db_name)
     failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
   } else {
     failed <- lapply(projects, get_data, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
   }
-  print(paste('files that failed to download', failed[[1]]))
+  message(paste('files that failed to download', failed[[1]]))
   faul <- which(!sapply(failed[[1]], is.null))
   if (length(faul > 0)) {
     failed <- Map(`[`, failed, faul)
@@ -1330,7 +1369,7 @@ update_db <- function(d, outpath, myproject, fix = FALSE) {
       regex_value = str_remove(myfiles1[[i+1]], '.gz')
       if(myfiles1[[i]] == regex_value) {
         myfiles1[[i]] <- NULL
-        print(myfiles)
+        message(myfiles)
       }  else {
         next
       }
@@ -1408,9 +1447,9 @@ get_files_import <- function(e, errtpe = 0, conn, fix = F, outpath=outpath) {
     # file_err <- fileimp[[2]]
     # print("inserting contents")
     #print(fix)
-    print(errtype)
+    message(errtype)
     #print(filetype)
-    print(y)
+    message(y)
     contents <- db_prep(contents, filetype, sensor, y, begin)
     if(nrow(contents) < 1) {errtype <- 7}
     if (errtype < 7 & errtype != 2) {
@@ -1479,7 +1518,7 @@ error_files <- function(dirin, dirout, conn = NULL) {
   output <- file.path(dirout, "output.txt")
   fileConn <- file(output, open = "wt")
   filetest <- sapply(myfiles, function(e) {
-    print(e)
+    message(e)
     fileinfo <- get_file_info(e)
     if (fileinfo$filetype %in% c("raw", "node_health", "gps")) {
       testerr <- file_handle(e, fileinfo$filetype)
@@ -1488,7 +1527,7 @@ error_files <- function(dirin, dirout, conn = NULL) {
       testerr <- testerr[[2]]
       if (!is.null(conn)) {
         if (testerr > 0) {
-          print("deleting")
+          message("deleting")
           DBI::dbExecute(conn, paste0("delete from ", fileinfo$filetype, " where path = '", fileinfo$y, "'"))
           DBI::dbExecute(conn, paste0("delete from data_file where path = '", fileinfo$y, "'"))
           # z <- db_insert(contents, filetype, conn, sensor, y, begin)

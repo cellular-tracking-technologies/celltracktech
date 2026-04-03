@@ -29,7 +29,7 @@ detection_summary <- function(detection_df,
         if (count > 0) {
             first <- min(this_tag_dets$time)
             last <- max(this_tag_dets$time)
-            print(paste(first, last))
+            message(paste(first, last))
             df <- data.frame(
                 tag_id = tag_list[i],
                 count = count,
@@ -39,7 +39,7 @@ detection_summary <- function(detection_df,
             )
             det_summary <- rbind(det_summary, df)
         } else {
-            print(paste("No detections for TagId:", tag_list[i]))
+            message(paste("No detections for TagId:", tag_list[i]))
             first <- NaN
             last <- NaN
             df <- data.frame(
@@ -53,6 +53,6 @@ detection_summary <- function(detection_df,
         }
     }
 
-    print(det_summary)
+    message(det_summary)
     return(det_summary)
 }
