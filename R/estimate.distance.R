@@ -9,7 +9,7 @@
 #' @export
 #'
 #' @examples
-#' combined_data <- estimate.distance(combined_data, K, a, S)
+#' combined_data <- estimate_distance(combined_data, K, a, S)
 
 estimate.distance <- function(x, K, a, S) {
 

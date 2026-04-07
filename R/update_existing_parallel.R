@@ -4,10 +4,13 @@
 #' @param payload dataframe column
 #' @param id dataframe column
 #'
-#' @returns
+#' @returns NULL
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' update_existing_parallel("blu", con)
+#' }
 update_existing_parallel = function(table_name, con) {
   library(parallel)
   start_time = Sys.time()

@@ -19,7 +19,7 @@
 #' @export
 #'
 #' @examples
-#' combined_data <- data.setup(mytest,
+#' combined_data <- data_setup(mytest,
 #'                             testdata,
 #'                             nodes,
 #'                             tag_col = "tag_id",

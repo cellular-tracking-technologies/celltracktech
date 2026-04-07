@@ -16,3 +16,8 @@ update_existing_blu(table_name, con)
 \description{
 Update existing blu and node_blu database tables
 }
+\examples{
+\dontrun{
+update_existing_blu("blu", con)
+}
+}

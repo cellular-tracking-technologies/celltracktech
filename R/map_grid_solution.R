@@ -11,6 +11,9 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' map_single_solution(node_locs, rec_df, grid_values, solution, tile_url)
+#' }
 map_single_solution <- function(node_locs,
                                 rec_df,
                                 grid_values,
@@ -97,10 +100,13 @@ map_single_solution <- function(node_locs,
 #' @param track_df Tracks dataframe
 #' @param tile_url Map URL
 #'
-#' @returns
+#' @returns map
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' map_latest_solution(node_locs, rec_df, grid_values, solution, track_df, tile_url)
+#' }
 map_latest_solution <- function(node_locs,
                                 rec_df,
                                 grid_values,

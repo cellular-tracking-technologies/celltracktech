@@ -13,6 +13,9 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' prep_data(x, y, SLIDE.TIME, GROUP.TIME, K, a, S)
+#' }
 prep.data <- function(x,
                       y,
                       SLIDE.TIME,

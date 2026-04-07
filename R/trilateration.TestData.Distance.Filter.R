@@ -7,7 +7,7 @@
 #' @export
 #'
 #' @examples
-#' Dist.filters <- trilateration.TestData.Distance.Filter(combined_data, c(315,500,750,1000))
+#' Dist.filters <- trilateration_testdata_distance_filter(combined_data, c(315,500,750,1000))
 
 trilateration.TestData.Distance.Filter <- function(x, DIST.FILTER){
 

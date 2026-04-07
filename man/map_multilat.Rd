@@ -29,3 +29,8 @@ map
 \description{
 Compare with Trilateration Results
 }
+\examples{
+\dontrun{
+map_multilat(node_locs, track_error_df, sidekick_df, multilat_df)
+}
+}

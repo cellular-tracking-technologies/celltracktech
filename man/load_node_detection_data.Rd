@@ -19,3 +19,8 @@ df
 \description{
 Load Node Detection Data
 }
+\examples{
+\dontrun{
+load_node_detection_data("path/to/node_data", start_time, stop_time)
+}
+}

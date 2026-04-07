@@ -8,6 +8,9 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' load_node_detection_data("path/to/node_data", start_time, stop_time)
+#' }
 load_node_detection_data <- function(directory,
                                      start_time = NULL,
                                      stop_time = NULL) {

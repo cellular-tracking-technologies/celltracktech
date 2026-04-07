@@ -1,6 +1,6 @@
 #' Trilateration
 #'
-#' @param x Dataframe with tag detections (raw or blu), produced by prep.data function
+#' @param x Dataframe with tag detections (raw or blu), produced by prep_data function
 #' @param nodes Nodes dataframe
 #' @param RSS.FILTER Filter for RSS
 #'
@@ -8,6 +8,9 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' trilateration(x, nodes, RSS.FILTER)
+#' }
 trilateration <- function(x,
                           nodes,
                           RSS.FILTER) {

@@ -2,9 +2,12 @@
 % Please edit documentation in R/prep.data.R
 \name{prep.data}
 \alias{prep.data}
+\alias{prep_data}
 \title{Prepare Data}
 \usage{
 prep.data(x, y, SLIDE.TIME, GROUP.TIME, K, a, S, startval = NULL)
+
+prep_data(...)
 }
 \arguments{
 \item{x}{Dataframe, raw or blu from data table, filtered for specific tag and specific date}
@@ -28,4 +31,9 @@ dataframe
 }
 \description{
 Prepare Data
+}
+\examples{
+\dontrun{
+prep_data(x, y, SLIDE.TIME, GROUP.TIME, K, a, S)
+}
 }

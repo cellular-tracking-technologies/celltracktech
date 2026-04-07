@@ -9,6 +9,9 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' load_node_health_files("path/to/health_data", start_time, stop_time)
+#' }
 load_node_health_files <- function(directory,
                                    start_time = NULL,
                                    stop_time = NULL) {

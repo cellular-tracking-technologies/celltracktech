@@ -2,9 +2,12 @@
 % Please edit documentation in R/estimate.distance.R
 \name{estimate.distance}
 \alias{estimate.distance}
+\alias{estimate_distance}
 \title{Estimate Distance}
 \usage{
 estimate.distance(x, K, a, S)
+
+estimate_distance(...)
 }
 \arguments{
 \item{x}{combined_data dataframe}
@@ -22,5 +25,5 @@ combined.data
 Estimate Distance
 }
 \examples{
-combined_data <- estimate.distance(combined_data, K, a, S)
+combined_data <- estimate_distance(combined_data, K, a, S)
 }

@@ -2,9 +2,12 @@
 % Please edit documentation in R/trilateration.TestData.Distance.Filter.R
 \name{trilateration.TestData.Distance.Filter}
 \alias{trilateration.TestData.Distance.Filter}
+\alias{trilateration_testdata_distance_filter}
 \title{Trilateration - Test Data Distance Filter}
 \usage{
 trilateration.TestData.Distance.Filter(x, DIST.FILTER)
+
+trilateration_testdata_distance_filter(...)
 }
 \arguments{
 \item{x}{\itemize{
@@ -20,5 +23,5 @@ list
 Trilateration - Test Data Distance Filter
 }
 \examples{
-Dist.filters <- trilateration.TestData.Distance.Filter(combined_data, c(315,500,750,1000))
+Dist.filters <- trilateration_testdata_distance_filter(combined_data, c(315,500,750,1000))
 }

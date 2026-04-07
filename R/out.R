@@ -1,13 +1,16 @@
 #' Out
 #'
 #' @param x Dataframe
-#' @param contents
+#' @param contents Dataframe containing the data
 #' @param timezone Timezone, UTC
 #'
 #' @returns newtimecol
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' out("time", contents, "UTC")
+#' }
 out <- function(x,
                 contents,
                 timezone) {

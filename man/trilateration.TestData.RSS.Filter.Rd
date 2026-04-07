@@ -2,12 +2,15 @@
 % Please edit documentation in R/trilateration.TestData.RSS.Filter.R
 \name{trilateration.TestData.RSS.Filter}
 \alias{trilateration.TestData.RSS.Filter}
+\alias{trilateration_testdata_rss_filter}
 \title{Trilateration - Test Data RSS Filter}
 \usage{
 trilateration.TestData.RSS.Filter(x, RSS.FILTER)
+
+trilateration_testdata_rss_filter(...)
 }
 \arguments{
-\item{x}{combined.data dataframe produced by estimate.distance function}
+\item{x}{combined.data dataframe produced by estimate_distance function}
 
 \item{RSS.FILTER}{List}
 }
@@ -18,5 +21,5 @@ list
 Trilateration - Test Data RSS Filter
 }
 \examples{
-RSS.filters <- trilateration.TestData.RSS.Filter(combined_data, c(-80, -85, -90, -95))
+RSS.filters <- trilateration_testdata_rss_filter(combined_data, c(-80, -85, -90, -95))
 }

@@ -148,10 +148,13 @@ import_node_data <- function(d, outpath, myproject=NULL, station_id) {
 #' @param myproject project name
 #' @param station_id sensor station id - string
 #'
-#' @returns
+#' @returns NULL on success, or a list containing error details
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' load_node_data(e, conn, outpath, myproject, station_id)
+#' }
 load_node_data <- function(e, conn, outpath, myproject, station_id) {
   #e <- file.path(outpath, "nodes", e)
   message(paste('e file', e))
@@ -218,7 +221,7 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
     }, error = function(w) {
       message(paste('error in file', w))
       #x <- read.csv(e,header=TRUE,as.is=TRUE, na.strings=c("NA", ""), skipNul = TRUE) might need to reimplement this...
-      #x <- rbind(x,Correct_Colnames(x))
+      #x <- rbind(x,correct_colnames(x))
       #colnames(x) <- c("time", "id", "rssi")
       #return(x)
     })
@@ -583,7 +586,7 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
   }
 }
 
-Correct_Colnames <- function(df) {
+correct_colnames <- function(df) {
   rowval <- gsub("^X\\.", "-",  colnames(df))
   rowval <- gsub("^X", "",  rowval)
   DatePattern = '^[[:digit:]]{4}\\.[[:digit:]]{2}\\.[[:digit:]]{2}[T,\\.][[:digit:]]{2}\\.[[:digit:]]{2}\\.[[:digit:]]{2}(.[[:digit:]]{3})?[Z]?'
