@@ -60,12 +60,12 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
   filesdf <- filesdf[filesdf$name %in% files_to, ]
   ids <- filesdf$id
   file_names <- filesdf$name
-  message(paste("about to get", length(ids), "files"))
   message("prepped list of filenames to get")
   if (is.null(filetypes)) {filetypes <- c("raw", "node_health", "gps", "blu")}
   filetypeget <- unlist(sapply(file_names, function(x) get_file_info(x)["filetype"]))
   filesget <- data.frame(ids, file_names, filetypeget)
   filesget <- filesget[filesget$filetypeget %in% filetypes,]
+  message(paste("about to download", nrow(filesget), "files"))
 
   # x = file ids
   # y = file names
