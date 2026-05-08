@@ -12,7 +12,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
                                                                      function(x) x[["station"]][["id"]] == my_station))]])
   }
   files_avail <- lapply(my_stations[["stations"]], function(station, mybeginning = beginning, myending = ending) {
-    message(station)
+    message(paste0("processing station: ", station[["station"]][["id"]]))
     if (is.null(mybeginning)) {
       beginning <- as.POSIXct(station[["deploy-at"]], format = "%Y-%m-%dT%H:%M:%OS", tz = "UTC", optional = TRUE)
     } else {
@@ -29,25 +29,38 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
       kwargs[["end"]] <- as.POSIXct(station[["end-at"]], format = "%Y-%m-%dT%H:%M:%OS", tz = "UTC", optional = TRUE)
     }
 
-    message(kwargs)
+    message(paste0("station_id: ", kwargs$station_id, ", begin: ", kwargs$begin))
     message("getting station file list...")
     file_info <- do.call(get_station_file_list_paginated, kwargs)
     outfiles <- file_info[["files"]]
 
-    message(paste0('outfiles ', outfiles))
+    message(paste0('outfiles: ', length(outfiles), ' files found'))
     return(outfiles)
   })
   message("getting files available for those stations...")
-  filenames <- unname(rapply(files_avail, grep, pattern = "CTT", value = TRUE))
+  extract_files <- function(x) {
+    if (is.list(x) && !is.null(x[["id"]]) && !is.null(x[["name"]])) {
+      return(data.frame(id = x[["id"]], name = x[["name"]], stringsAsFactors = FALSE))
+    } else if (is.list(x)) {
+      return(do.call(rbind, lapply(x, extract_files)))
+    } else {
+      return(NULL)
+    }
+  }
+  filesdf <- extract_files(files_avail)
+  if (is.null(filesdf) || nrow(filesdf) == 0) {
+    message("no files found from API")
+    return(list())
+  }
+  filenames <- filesdf$name[grepl("CTT", filesdf$name)]
   message("got the file list; comparing against your files")
   files_to <- filenames[!filenames %in% files_loc]
   message("comparison complete")
 
-  # browser()
-  allfiles <- rapply(files_avail, function(z) z %in% files_to, how = "unlist") # this is the super intensive, time consuming function...
-  ids <- unlist(files_avail)[which(allfiles) - 1]
+  filesdf <- filesdf[filesdf$name %in% files_to, ]
+  ids <- filesdf$id
+  file_names <- filesdf$name
   message(paste("about to get", length(ids), "files"))
-  file_names <- unlist(files_avail)[which(allfiles)]
   message("prepped list of filenames to get")
   if (is.null(filetypes)) {filetypes <- c("raw", "node_health", "gps", "blu")}
   filetypeget <- unlist(sapply(file_names, function(x) get_file_info(x)["filetype"]))

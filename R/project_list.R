@@ -1,8 +1,7 @@
 project_list <- function(my_token, myproject = NULL) {
   projects <- httr::content(httr::POST(host, path = project, body = list(token = my_token), encode = "json"))
-  message(paste('projects', projects))
+  message(paste0('projects found: ', length(projects[["projects"]])))
   projects <- projects[["projects"]]
-  message(projects)
   if (!is.null(myproject)) {
 
     projects <- tryCatch({
@@ -14,7 +13,7 @@ project_list <- function(my_token, myproject = NULL) {
       cat('The project you entered is not found in your project list. Check your spelling and if you have access to the project.\n')
     })
     # projects <- list(projects[[which(sapply(projects, function(x) x[["name"]]) == myproject)]])
-    message(projects)
+    message(paste0("selected project: ", sapply(projects, function(x) x[["name"]])))
   }
   return(projects)
 }

@@ -10,7 +10,7 @@ pop_proj <- function(a, conn) {
   id <- a[["id"]]
   my_stations <- get_stations(project_id = id)
   message("RETURNED FROM API")
-  message(my_stations)
+  message(paste0("stations found: ", length(my_stations$stations)))
   mystations <- lapply(my_stations$stations, function(c) {
     c <- as.data.frame(t(unlist(c)), stringsAsFactors = FALSE)
 
@@ -29,7 +29,7 @@ pop_proj <- function(a, conn) {
   MYSTATIONS <- list(unique(mystations$station_id))
   mystations <- unname(mystations)
   message("FORMATTED")
-  message(mystations)
+  message(paste0("stations formatted: ", nrow(mystations)))
 
   # insertnew <- DBI::dbSendQuery(conn, paste("INSERT INTO ","station (station_id)"," VALUES ($1)
   #                                     ON CONFLICT DO NOTHING",sep=""))

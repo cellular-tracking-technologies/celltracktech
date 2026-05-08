@@ -28,7 +28,7 @@ get_my_data <- function(my_token,
     failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
   } else if(!is.null(db_name) & length(grep("duckdb", format(db_name))) > 0) {
     message('projects')
-    message(projects)
+    message(paste0("projects found: ", length(projects)))
     create_duck(db_name)
     sapply(projects, pop_proj, conn = db_name)
     failed <- lapply(projects, get_data, f = db_name, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
