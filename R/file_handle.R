@@ -1,5 +1,5 @@
 file_handle <- function(e, filetype) {
-  message(paste("checking file for errors:", e))
+  # message(paste("checking file for errors:", e))
   #print(filetype)
   file_err <- 0
   myrowfix <- c()
@@ -7,7 +7,7 @@ file_handle <- function(e, filetype) {
   if(filetype=="raw") {
     contents <- tryCatch(
       {
-        readr::read_csv(e, col_names = TRUE, col_types = list(NodeId="c"))
+        readr::read_csv(e, col_names = TRUE, col_types = list(NodeId="c"), show_col_types = FALSE)
       },
       error = function(err) {
         return(NULL)
@@ -24,7 +24,8 @@ file_handle <- function(e, filetype) {
       {
         readr::read_csv(e_gzip,
                         col_names = TRUE,
-                        col_types = list(NodeId="c"))
+                        col_types = list(NodeId="c"),
+                        show_col_types = FALSE)
       },
       error = function(err) {
         return(NULL)
@@ -32,7 +33,7 @@ file_handle <- function(e, filetype) {
   } else {
     contents <- tryCatch(
       {
-        readr::read_csv(e, col_names = TRUE)
+        readr::read_csv(e, col_names = TRUE, show_col_types = FALSE)
       },
       error = function(err) {
         return(NULL)

@@ -198,10 +198,10 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       message(filetype)
       # if blu file, open file, parse payload
       process_file(e, dirname(e))
-      read_csv(e, na = c("NA", ""), skip_empty_rows = TRUE)
+      read_csv(e, na = c("NA", ""), skip_empty_rows = TRUE, show_col_types = FALSE)
 
     } else if (file.size(e) > 0) {
-      read_csv(e, na = c("NA", ""), skip_empty_rows = TRUE)
+      read_csv(e, na = c("NA", ""), skip_empty_rows = TRUE, show_col_types = FALSE)
       # print('main if filetype')
       # print(filetype)
 

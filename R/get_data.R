@@ -65,6 +65,10 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
   filetypeget <- unlist(sapply(file_names, function(x) get_file_info(x)["filetype"]))
   filesget <- data.frame(ids, file_names, filetypeget)
   filesget <- filesget[filesget$filetypeget %in% filetypes,]
+  if (nrow(filesget) == 0) {
+    message("No new files to download")
+    return(data.frame(file = character(0), status = character(0), stringsAsFactors = FALSE))
+  }
   message(paste("about to download", nrow(filesget), "files"))
 
   # x = file ids
@@ -77,8 +81,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     sensor <- sensorid[1]
     filenameinfo <- sensorid[2]
     file_info <- unlist(strsplit(filenameinfo, "\\."))[1]
-    filetype <- ifelse(is.na(as.integer(file_info)), file_info, "sensorgnome")
-    message(filetype)
+    filetype <- ifelse(is.na(suppressWarnings(as.integer(file_info))), file_info, "sensorgnome")
     if (is.na(filetype)) {
       filetype <- "none"
     } else if (filetype == "node") {
@@ -97,18 +100,16 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
 
       contents <- download_files(file_id = x)
       if (filetype == "raw") {
-        contents <- httr::content(contents, type = "text", col_types = list(NodeId = "c"))
+        contents <- httr::content(contents, type = "text", encoding = "UTF-8", col_types = list(NodeId = "c"))
       } else if(filetype == "blu") {
-        contents <- httr::content(contents)
+        contents <- httr::content(contents, encoding = "UTF-8")
       } else {
-        contents <- httr::content(contents, type = "text")
+        contents <- httr::content(contents, type = "text", encoding = "UTF-8")
       }
       if (!is.null(contents)) { #& filetype %in% c("raw", "node_health", "gps", "ble", "blu")) {
         dir.create(file.path(outpath, projbasename, sensor), showWarnings = FALSE)
         dir.create(file.path(outpath, projbasename, sensor, filetype), showWarnings = FALSE)
-        message(paste("downloading",y,"to",file.path(outpath, projbasename, sensor, filetype)))
-        message(x)
-        if(is.character(contents)) {write(contents, file = gzfile(file.path(outpath, projbasename, sensor, filetype, y)))
+          if(is.character(contents)) {write(contents, file = gzfile(file.path(outpath, projbasename, sensor, filetype, y)))
         } else {
           write.csv(contents, file = gzfile(file.path(outpath, projbasename, sensor, filetype, y)), row.names = F)
         }
@@ -116,7 +117,6 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
         if (!is.null(f)) {
           if(filetype %in% c("raw", "node_health", "gps", "blu")) {
             contents <- file_handle(e, filetype)[[1]]
-            message(begin)
             contents <- db_prep(contents, filetype, sensor, y, begin)
             # z <- db_insert(contents, filetype, f, y)
             z <- db_insert(contents=contents, filetype=filetype, conn=f, y=y)
@@ -131,7 +131,44 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     return(z)
   }
 
-  failed <- Map(get_files, filesget$ids, filesget$file_names)
-  message("done getting files")
-  return(failed)
+  total <- nrow(filesget)
+  results <- vector("list", total)
+  bar_width <- 40
+  start_time <- Sys.time()
+  for (i in seq_len(total)) {
+    result <- tryCatch(
+      {
+        get_files(filesget$ids[i], filesget$file_names[i])
+        list(status = "success", file = filesget$file_names[i])
+      },
+      error = function(e) {
+        list(status = "failed", file = filesget$file_names[i], error = conditionMessage(e))
+      }
+    )
+    results[[i]] <- result
+    pct <- round(i / total * 100)
+    filled <- round(bar_width * i / total)
+    bar <- paste0("[", strrep("=", filled), strrep(" ", bar_width - filled), "]")
+    elapsed <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+    avg_per_file <- elapsed / i
+    remaining_time <- avg_per_file * (total - i)
+    mins <- floor(remaining_time / 60)
+    secs <- round(remaining_time %% 60)
+    cat(sprintf("\r%s %3d%%  %d/%d downloaded, %d remaining  ETA: %dm %ds", bar, pct, i, total, total - i, mins, secs))
+    flush.console()
+  }
+  cat("\n")
+
+  results_df <- data.frame(
+    file = sapply(results, function(r) r$file),
+    status = sapply(results, function(r) r$status),
+    stringsAsFactors = FALSE
+  )
+  row.names(results_df) <- NULL
+
+  succeeded <- sum(results_df$status == "success")
+  n_failed <- sum(results_df$status == "failed")
+  message(sprintf("\nDownload complete: %d succeeded, %d failed out of %d files", succeeded, n_failed, total))
+
+  return(results_df)
 }

@@ -35,13 +35,5 @@ get_my_data <- function(my_token,
   } else {
     failed <- lapply(projects, get_data, outpath = outpath, my_station = mystation, beginning = begin, ending = end, filetypes=filetypes)
   }
-  message(paste('files that failed to download', failed[[1]]))
-  faul <- which(!sapply(failed[[1]], is.null))
-  if (length(faul > 0)) {
-    failed <- Map(`[`, failed, faul)
-    #save(failed, file = file.path(outpath, "caught.RData"))
-  } else {
-    failed <- "all good!"
-    #save(failed, file = file.path(outpath, "caught.RData"))
-  }
+  return(failed)
 }
