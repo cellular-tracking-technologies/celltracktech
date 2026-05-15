@@ -1,6 +1,6 @@
 #' Trilateration
 #'
-#' @param x Dataframe with tag detections (raw or blu), produced by prep.data function
+#' @param x Dataframe with tag detections (raw or blu), produced by prep_data function
 #' @param nodes Nodes dataframe
 #' @param RSS.FILTER Filter for RSS
 #'
@@ -8,13 +8,12 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' trilateration(x, nodes, RSS.FILTER)
+#' }
 trilateration <- function(x,
                           nodes,
                           RSS.FILTER) {
-
-  # supress warnings
-  options(warn = -1)
-
 
   # Identify the Nodes for the given dataset and filter nodes
   nodes.unique <- unique(x$node_id)
@@ -61,7 +60,7 @@ trilateration <- function(x,
 
     # Indicate bird that is currently being processed and how many unique time periods to process
     #print(as.character(test.bird))
-    print(length(tests))
+    message(length(tests))
 
     # Loop through unique time groups
 

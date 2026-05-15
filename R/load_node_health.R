@@ -9,13 +9,16 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' load_node_health_files("path/to/health_data", start_time, stop_time)
+#' }
 load_node_health_files <- function(directory,
                                    start_time = NULL,
                                    stop_time = NULL) {
     run_start_time <- Sys.time()
     files <- list.files(path = directory, pattern = "*.csv")
-    print(length(files))
-    print("Finding files within time range...")
+    message(length(files))
+    message("Finding files within time range...")
     file_df <- data.frame()
     for (f in files) {
         file <- f
@@ -41,7 +44,7 @@ load_node_health_files <- function(directory,
         file_df <- subset.data.frame(file_df, file_df$time <= day_after)
     }
     files <- file_df$file_name
-    print(paste("Loading", length(files), "file(s) from", directory))
+    message(paste("Loading", length(files), "file(s) from", directory))
 
     # combine full path with file name
     files <- lapply(files, function(x) {
@@ -49,13 +52,13 @@ load_node_health_files <- function(directory,
     })
     # read all of the files into a data frame
     df <- rbindlist(lapply(files, fread))
-    print(paste("Finished Reading Files!", nrow(df), "total health records found."))
-    print("Removing duplicates...")
+    message(paste("Finished Reading Files!", nrow(df), "total health records found."))
+    message("Removing duplicates...")
     # Remove all dupiclate rows
     # (same health record but was picked up by multiple radios on the station)
     df <- df %>% distinct(NodeId, Time, RecordedAt, .keep_all = TRUE)
 
-    print("Removing malformed records...")
+    message("Removing malformed records...")
     df <- subset.data.frame(df, df$Latitude <= 90.0 | is.na(df$Latitude))
     df <- subset.data.frame(df, df$Latitude >= -90.0 | is.na(df$Latitude))
     df <- subset.data.frame(df, df$Longitude <= 180.0 | is.na(df$Longitude))
@@ -69,9 +72,9 @@ load_node_health_files <- function(directory,
         df <- subset.data.frame(df, df$Time <= stop_time)
     }
 
-    print(paste("Finished loading node health files!", nrow(df), "health records found."))
+    message(paste("Finished loading node health files!", nrow(df), "health records found."))
     run_end_time <- Sys.time()
-    print(paste("Load time = ", run_end_time - run_start_time, "seconds"))
+    message(paste("Load time = ", run_end_time - run_start_time, "seconds"))
     return(df)
 }
 

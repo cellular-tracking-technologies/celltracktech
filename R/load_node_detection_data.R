@@ -8,13 +8,16 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' load_node_detection_data("path/to/node_data", start_time, stop_time)
+#' }
 load_node_detection_data <- function(directory,
                                      start_time = NULL,
                                      stop_time = NULL) {
     run_start_time <- Sys.time()
     files <- list.files(path = directory, pattern = "*.csv")
-    print(length(files))
-    print("Finding files with data within time range...")
+    message(length(files))
+    message("Finding files with data within time range...")
     file_df <- data.frame()
     for (f in files) {
         file <- f
@@ -43,17 +46,17 @@ load_node_detection_data <- function(directory,
     }
     files <- file_df$file_name
 
-    print(paste("Loading", length(files), "file(s) from", directory))
+    message(paste("Loading", length(files), "file(s) from", directory))
     # combine full path with file name
     files <- lapply(files, function(x) {
         return(paste(directory, x, sep = ""))
     })
     # read all of the files into a data frame
     df <- rbindlist(lapply(files, fread))
-    print(paste("Finished Reading Files!",
+    message(paste("Finished Reading Files!",
                 nrow(df),
                 "total detection records found."))
-    print("Removing duplicates...")
+    message("Removing duplicates...")
     # Remove all dupiclate rows
     # (same detection data but was picked up by multiple radios on the station)
     df <- df %>% distinct(TagId,
@@ -72,11 +75,11 @@ load_node_detection_data <- function(directory,
                                 df$Time <= stop_time)
     }
 
-    print(paste("Finished!",
+    message(paste("Finished!",
                 nrow(df),
                 "unique detection records found."))
     run_end_time <- Sys.time()
-    print(paste("Load time = ",
+    message(paste("Load time = ",
                 run_end_time - run_start_time,
                 "seconds"))
     return(df)

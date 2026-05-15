@@ -19,3 +19,8 @@ df
 \description{
 Load Node Health
 }
+\examples{
+\dontrun{
+load_node_health_files("path/to/health_data", start_time, stop_time)
+}
+}

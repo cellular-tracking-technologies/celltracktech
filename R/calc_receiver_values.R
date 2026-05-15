@@ -44,8 +44,8 @@ calc_receiver_values <- function(
     #########################################################
     # Get all detections up to this time
 
-    print('station tag df')
-    print(station_tag_df)
+    # message('station tag df')
+    # message(station_tag_df)
 
     if ('time' %in% colnames(station_tag_df)) {
       station_tag_df$time_value = station_tag_df$time

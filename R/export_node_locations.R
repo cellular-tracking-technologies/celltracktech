@@ -14,7 +14,7 @@ export_node_locations <- function(
     node_locs) {
     header_string <- "node_id,lat,sd_lat,lon,sd_lon"
     get_line <- function(node_loc) {
-        print(node_loc)
+        message(node_loc)
         line_string <- sprintf(
             "%s,%s,%s,%s,%s",
             node_loc["node_id"],

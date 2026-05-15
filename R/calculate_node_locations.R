@@ -32,9 +32,9 @@ calculate_node_locations <- function(node_health_df) {
         n_lon <- length(lon_values)
 
         if (n_lat != n_lon) {
-            print("Error: different number lat & lon values!!!")
+            message("Error: different number lat & lon values!!!")
         } else if (n_lat == 0) {
-            print("No valid locations for this node")
+            message("No valid locations for this node")
         } else {
             avg_lat <- mean(lat_values)
             avg_lon <- mean(lon_values)

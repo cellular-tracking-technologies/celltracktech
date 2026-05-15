@@ -12,7 +12,7 @@ load_sidekick_data <- function(sidekick_file_path) {
     df <- read.csv(sidekick_file_path)
 
     num_cols <- ncol(df)
-    print(num_cols)
+    message(num_cols)
 
     if (num_cols == 8) {
         colnames(df) <- c("tag_type", "tag_id", "time_utc", "rssi", "lat", "lon", "heading", "antenna_angle")
@@ -25,7 +25,7 @@ load_sidekick_data <- function(sidekick_file_path) {
     # Convert to date object
     # df <- transform(df, time_utc = as.POSIXct(time_utc, tz = "GMT"))
     df$time_utc = lubridate::ymd_hms(df$time_utc)
-    print('sidekick time after transform')
-    print(df$time_utc)
+    message('sidekick time after transform')
+    message(df$time_utc)
     return(df)
 }

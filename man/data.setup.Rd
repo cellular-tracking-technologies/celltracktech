@@ -2,6 +2,7 @@
 % Please edit documentation in R/data.setup.R
 \name{data.setup}
 \alias{data.setup}
+\alias{data_setup}
 \title{Combine Detection Data and Sidekick Calibration Data}
 \usage{
 data.setup(
@@ -20,6 +21,8 @@ data.setup(
   fileloc,
   filetype
 )
+
+data_setup(...)
 }
 \arguments{
 \item{test}{Sidekick calibration dataframe (loaded from file)}
@@ -57,7 +60,7 @@ combined.data - dataframe
 Combine Detection Data and Sidekick Calibration Data
 }
 \examples{
-combined_data <- data.setup(mytest,
+combined_data <- data_setup(mytest,
                             testdata,
                             nodes,
                             tag_col = "tag_id",

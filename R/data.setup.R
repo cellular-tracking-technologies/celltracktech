@@ -19,7 +19,7 @@
 #' @export
 #'
 #' @examples
-#' combined_data <- data.setup(mytest,
+#' combined_data <- data_setup(mytest,
 #'                             testdata,
 #'                             nodes,
 #'                             tag_col = "tag_id",
@@ -178,4 +178,10 @@ data.setup <- function(test,
     dplyr::left_join(test.UTM[, c("TestId", "lat", "lon")])
 
   return(combined.data)
+}
+
+#' @rdname data.setup
+#' @export
+data_setup <- function(...) {
+  data.setup(...)
 }

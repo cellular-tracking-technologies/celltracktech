@@ -64,7 +64,7 @@ calculate_track <- function(
     )
 
     for (i in 1:num_steps) {
-        print(paste("Starting: ", i, "/", num_steps))
+        message(paste("Starting: ", i, "/", num_steps))
         # Get the time range for this bin
         #  -Stop at the current bin time
         #  -Take all detections within one time_window prior to current bin time
@@ -72,7 +72,7 @@ calculate_track <- function(
         # bin_start_value <- bin_stop_value - det_time_window
 
         # For all detections in this bin calculate the avg rssi in each receiver
-        print("Calculating receiver values...")
+        message("Calculating receiver values...")
 
         rec_df <- calc_receiver_values(
             current_time = bin_stop_value,
@@ -112,17 +112,25 @@ calculate_track <- function(
         lat = reduced_rec_df[['lat']]
         lon = reduced_rec_df[['lon']]
 
-        multilat_fit <- nls(list_exp_dist ~ haversine(lat,
-                                                      lon,
-                                                      ml_lat,
-                                                      ml_lon
-                                                      ),
-                      data = reduced_rec_df,
-                      start = list(ml_lat = node_w_max$lat, ml_lon = node_w_max$lon),
-                      control = nls.control(warnOnly = T,
-                                            minFactor=1/65536,
-                                            maxiter = 100)
-                    )
+        multilat_fit <- tryCatch(
+          nls(list_exp_dist ~ haversine(lat,
+                                        lon,
+                                        ml_lat,
+                                        ml_lon
+                                        ),
+              data = reduced_rec_df,
+              start = list(ml_lat = node_w_max$lat, ml_lon = node_w_max$lon),
+              control = nls.control(warnOnly = T,
+                                    minFactor=1/65536,
+                                    maxiter = 100)
+          ),
+          error = function(e) {
+            message(paste("nls failed at step", i, ":", conditionMessage(e)))
+            return(NULL)
+          }
+        )
+
+        if (is.null(multilat_fit)) next
 
         co <- coef(summary(multilat_fit))
         ##################################
@@ -132,7 +140,7 @@ calculate_track <- function(
         nodes_with_dets <- sum(rec_df$n > 0)
         if (nodes_with_dets >= 3) {
             # Calculate the "grid value" for each spatial bin in the grid
-            print("Calculating grid values...")
+            message("Calculating grid values...")
             grid_values <- calc_grid_values(grid_df, rec_df, rssi_coefs)
 
             # Find the bin with best "grid value"
@@ -163,10 +171,10 @@ calculate_track <- function(
             #     mapshot(map, file = map_file_path)
             # }
         } else {
-            print("Skipping time bin due to not enough detections")
+            message("Skipping time bin due to not enough detections")
         }
     }
 
-    print("Track calulcation complete!!!")
+    message("Track calulcation complete!!!")
     return(track_df)
 }

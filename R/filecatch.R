@@ -12,7 +12,7 @@ findfiles <- function(outpath, dest) {
   lapply(all, function(e) {
     contents <- tryCatch({
     if (file.size(e) > 0) {
-      read_csv(e, col_names = TRUE)
+      read_csv(e, col_names = TRUE, show_col_types = FALSE)
     } else {file.copy(e, dest)}
     }, error = function(err) {
     return(NULL)

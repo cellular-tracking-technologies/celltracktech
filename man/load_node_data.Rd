@@ -17,6 +17,14 @@ load_node_data(e, conn, outpath, myproject, station_id)
 
 \item{station_id}{sensor station id - string}
 }
+\value{
+NULL on success, or a list containing error details
+}
 \description{
 Load Node Data
+}
+\examples{
+\dontrun{
+load_node_data(e, conn, outpath, myproject, station_id)
+}
 }

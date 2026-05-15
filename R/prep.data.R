@@ -13,6 +13,9 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' prep_data(x, y, SLIDE.TIME, GROUP.TIME, K, a, S)
+#' }
 prep.data <- function(x,
                       y,
                       SLIDE.TIME,
@@ -21,9 +24,6 @@ prep.data <- function(x,
                       a,
                       S,
                       startval = NULL) {
-
-  # supress warnings
-  options(warn = -1)
 
   # Sliding window over RSSI values for a given TagId and NodeId
   # 1st argument: vector to iterate over and apply function
@@ -76,4 +76,10 @@ prep.data <- function(x,
 
   return(beep.grouped[order(beep.grouped$Time.group),])
 
+}
+
+#' @rdname prep.data
+#' @export
+prep_data <- function(...) {
+  prep.data(...)
 }

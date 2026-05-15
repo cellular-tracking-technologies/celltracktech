@@ -23,3 +23,8 @@ map
 \description{
 Map Single Solution
 }
+\examples{
+\dontrun{
+map_single_solution(node_locs, rec_df, grid_values, solution, tile_url)
+}
+}

@@ -2,13 +2,16 @@
 % Please edit documentation in R/trilateration.TestData.NoFilter.R
 \name{trilateration.TestData.NoFilter}
 \alias{trilateration.TestData.NoFilter}
+\alias{trilateration_testdata_nofilter}
 \title{Trilateration - Test Data No Filter}
 \usage{
 trilateration.TestData.NoFilter(x)
+
+trilateration_testdata_nofilter(...)
 }
 \arguments{
 \item{x}{\itemize{
-\item combined.data dataframe produced by estimate.distance function
+\item combined.data dataframe produced by estimate_distance function
 }}
 }
 \value{
@@ -18,5 +21,5 @@ list
 Trilateration - Test Data No Filter
 }
 \examples{
-no.filters <- trilateration.TestData.NoFilter(combined_data)
+no.filters <- trilateration_testdata_nofilter(combined_data)
 }

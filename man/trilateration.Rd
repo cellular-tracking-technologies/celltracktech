@@ -7,7 +7,7 @@
 trilateration(x, nodes, RSS.FILTER)
 }
 \arguments{
-\item{x}{Dataframe with tag detections (raw or blu), produced by prep.data function}
+\item{x}{Dataframe with tag detections (raw or blu), produced by prep_data function}
 
 \item{nodes}{Nodes dataframe}
 
@@ -18,4 +18,9 @@ estimated.location_results
 }
 \description{
 Trilateration
+}
+\examples{
+\dontrun{
+trilateration(x, nodes, RSS.FILTER)
+}
 }

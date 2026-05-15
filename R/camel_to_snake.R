@@ -8,7 +8,7 @@ snake_case_string <- gsub("([A-Z])", "_\\L\\1", string, perl = TRUE)
 snake_case_string <- tolower(snake_case_string)
 snake_case_string <- gsub("^_", "", snake_case_string)
 
-print(snake_case_string)
+message(snake_case_string)
 
 return(snake_case_string)
 }

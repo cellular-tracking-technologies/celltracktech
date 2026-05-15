@@ -7,11 +7,18 @@
 predict_rssi(rssi_coefs, dist)
 }
 \arguments{
-\item{dist}{}
+\item{rssi_coefs}{Numeric vector of RSSI model coefficients (a, b, c)}
+
+\item{dist}{Distance value}
 }
 \value{
 rssi_coefs
 }
 \description{
 RSSI Coefficients
+}
+\examples{
+\dontrun{
+predict_rssi(c(-95, 60, 0.05), 100)
+}
 }

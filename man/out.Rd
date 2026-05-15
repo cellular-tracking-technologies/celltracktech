@@ -9,6 +9,8 @@ out(x, contents, timezone)
 \arguments{
 \item{x}{Dataframe}
 
+\item{contents}{Dataframe containing the data}
+
 \item{timezone}{Timezone, UTC}
 }
 \value{
@@ -16,4 +18,9 @@ newtimecol
 }
 \description{
 Out
+}
+\examples{
+\dontrun{
+out("time", contents, "UTC")
+}
 }

@@ -1,18 +1,15 @@
 #' Trilateration - Test Data RSS Filter
 #'
-#' @param x combined.data dataframe produced by estimate.distance function
+#' @param x combined.data dataframe produced by estimate_distance function
 #' @param RSS.FILTER List
 #'
 #' @returns list
 #' @export
 #'
 #' @examples
-#' RSS.filters <- trilateration.TestData.RSS.Filter(combined_data, c(-80, -85, -90, -95))
+#' RSS.filters <- trilateration_testdata_rss_filter(combined_data, c(-80, -85, -90, -95))
 
 trilateration.TestData.RSS.Filter <- function(x, RSS.FILTER) {
-
-  # supress warnings
-  options(warn = -1)
 
   # Empty data frame to populate with summary results
   summary.stats_results <- data.frame(n.est.tests = numeric(), avg.no.nodes = numeric(), avg.diff = numeric(), sd.diff = numeric(),
@@ -128,4 +125,10 @@ trilateration.TestData.RSS.Filter <- function(x, RSS.FILTER) {
 
   return(list(combined_results_final,summary.stats_results))
 
+}
+
+#' @rdname trilateration.TestData.RSS.Filter
+#' @export
+trilateration_testdata_rss_filter <- function(...) {
+  trilateration.TestData.RSS.Filter(...)
 }

@@ -1,6 +1,6 @@
 Package: celltracktech
 Title: Cellular Tracking Technologies
-Version: 1.0.0.0000
+Version: 2.0.0
 Authors@R: 
     person(given = "Jessica",
            family = "Gorzo",
@@ -8,12 +8,12 @@ Authors@R:
            email = "jessica.gorzo@celltracktech.com",
            comment = c(ORCID = "0000-0002-3715-8229"))
 Description: Tools for analyzing data from CTT products.
-Depends: 
-    R (>= 3.5),
+Depends:
+    R (>= 3.5)
+Imports:
     httr,
     DBI,
     RPostgres,
-    tidyverse (>= 0.4.2),
     rjson,
     dplyr,
     tidyr,
@@ -28,9 +28,18 @@ Depends:
     data.table,
     nlstools,
     slider,
-    padr
+    padr,
+    stringr,
+    R.utils,
+    ggplot2,
+    lubridate
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
+Config/testthat/edition: 3

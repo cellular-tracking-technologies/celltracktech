@@ -26,6 +26,14 @@ map_latest_solution(
 
 \item{tile_url}{Map URL}
 }
+\value{
+map
+}
 \description{
 Map Latest Solution
+}
+\examples{
+\dontrun{
+map_latest_solution(node_locs, rec_df, grid_values, solution, track_df, tile_url)
+}
 }

@@ -39,7 +39,7 @@ calculate_tag_activity <- function(tag_dets, tag_beep_interval) {
         tag_activity <- rbind(tag_activity, result)
     }
     end_time <- Sys.time()
-    print(paste("Calculation time = ", end_time - start_time, "seconds"))
+    message(paste("Calculation time = ", end_time - start_time, "seconds"))
     return(tag_activity)
 }
 
