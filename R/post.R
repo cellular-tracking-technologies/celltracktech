@@ -3,11 +3,14 @@ post <- function(endpoint, payload = NULL, show_progress = FALSE) {
   if (!is.null(payload)) {
     payload_to_send <- c(payload_to_send, payload)
   }
+  start <- Sys.time()
   if (show_progress) {
     response <- httr::POST(host, path = endpoint, body = payload_to_send, encode = "json", httr::timeout(60), httr::progress())
   } else {
     response <- httr::POST(host, path = endpoint, body = payload_to_send, encode = "json", httr::timeout(60))
   }
+  elapsed <- round(as.numeric(difftime(Sys.time(), start, units = "secs")), 2)
+  # message(sprintf("[%s] %s — %ss", httr::status_code(response), endpoint, elapsed))
   if (httr::status_code(response) == 503) {
     warning("Server query timeout \u2014 try narrowing your date range or using pagination")
   }

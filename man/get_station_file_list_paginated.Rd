@@ -9,7 +9,7 @@ get_station_file_list_paginated(
   begin,
   filetypes = NULL,
   end = NULL,
-  page_size = 10,
+  chunk_days = 30,
   max_retries = 3
 )
 }
@@ -20,9 +20,9 @@ get_station_file_list_paginated(
 
 \item{filetypes}{optional file type filter}
 
-\item{end}{optional end date}
+\item{end}{optional end date (defaults to today)}
 
-\item{page_size}{number of files per page (default 500)}
+\item{chunk_days}{number of days per request (default 30)}
 
 \item{max_retries}{number of times to retry after a timeout (default 3)}
 }
@@ -30,6 +30,6 @@ get_station_file_list_paginated(
 list of file metadata
 }
 \description{
-For stations with many files, retrieves results in pages to avoid
-server timeouts. Falls back to unbounded request for small stations.
+For stations with many files, retrieves results in date-based chunks
+to avoid server timeouts.
 }

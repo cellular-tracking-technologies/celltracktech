@@ -102,7 +102,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
       if (filetype == "raw") {
         contents <- httr::content(contents, type = "text", encoding = "UTF-8", col_types = list(NodeId = "c"))
       } else if(filetype == "blu") {
-        contents <- httr::content(contents, encoding = "UTF-8")
+        contents <- httr::content(contents, type = "text", encoding = "UTF-8")
       } else {
         contents <- httr::content(contents, type = "text", encoding = "UTF-8")
       }
@@ -138,7 +138,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
   for (i in seq_len(total)) {
     result <- tryCatch(
       {
-        get_files(filesget$ids[i], filesget$file_names[i])
+        invisible(capture.output(suppressWarnings(suppressMessages(get_files(filesget$ids[i], filesget$file_names[i])))))
         list(status = "success", file = filesget$file_names[i])
       },
       error = function(e) {
@@ -154,7 +154,9 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     remaining_time <- avg_per_file * (total - i)
     mins <- floor(remaining_time / 60)
     secs <- round(remaining_time %% 60)
-    cat(sprintf("\r%s %3d%%  %d/%d downloaded, %d remaining  ETA: %dm %ds", bar, pct, i, total, total - i, mins, secs))
+    line <- sprintf("\r%s %3d%%  %d/%d downloaded, %d remaining  ETA: %dm %ds", bar, pct, i, total, total - i, mins, secs)
+    cat(sprintf("\r%s", strrep(" ", 100)))
+    cat(line)
     flush.console()
   }
   cat("\n")

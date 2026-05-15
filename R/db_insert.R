@@ -62,7 +62,8 @@ db_insert <- function(contents, filetype, conn, sensor=NA, y, begin=NULL) {
         # error handler picks up where error was generated, in Bob's script it breaks if header is missing
         # myquery <- paste("INSERT INTO ", filetype, " (", vars, ") VALUES ($", vals, ")
         # ON CONFLICT DO NOTHING", sep = "")
-        myquery <- paste("INSERT INTO ", filetype, " (", vars, ") VALUES ($", vals, ")", sep = "")
+        myquery <- paste("INSERT INTO ", filetype, " (", vars, ") VALUES ($", vals, ")
+                        ON CONFLICT DO NOTHING", sep = "")
         insertnew <- DBI::dbSendQuery(conn, myquery)
         DBI::dbBind(insertnew, params = unname(contents))
         DBI::dbClearResult(insertnew)
