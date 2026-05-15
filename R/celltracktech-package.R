@@ -8,5 +8,6 @@
 #' @import readr
 #' @import tibble
 #' @import leaflet
+#' @import lubridate
 #' @importFrom data.table setDT rbindlist fread `:=`
 NULL

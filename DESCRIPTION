@@ -31,7 +31,8 @@ Imports:
     padr,
     stringr,
     R.utils,
-    ggplot2
+    ggplot2,
+    lubridate
 Suggests:
     testthat (>= 3.0.0),
     knitr,

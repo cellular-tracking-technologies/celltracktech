@@ -112,17 +112,25 @@ calculate_track <- function(
         lat = reduced_rec_df[['lat']]
         lon = reduced_rec_df[['lon']]
 
-        multilat_fit <- nls(list_exp_dist ~ haversine(lat,
-                                                      lon,
-                                                      ml_lat,
-                                                      ml_lon
-                                                      ),
-                      data = reduced_rec_df,
-                      start = list(ml_lat = node_w_max$lat, ml_lon = node_w_max$lon),
-                      control = nls.control(warnOnly = T,
-                                            minFactor=1/65536,
-                                            maxiter = 100)
-                    )
+        multilat_fit <- tryCatch(
+          nls(list_exp_dist ~ haversine(lat,
+                                        lon,
+                                        ml_lat,
+                                        ml_lon
+                                        ),
+              data = reduced_rec_df,
+              start = list(ml_lat = node_w_max$lat, ml_lon = node_w_max$lon),
+              control = nls.control(warnOnly = T,
+                                    minFactor=1/65536,
+                                    maxiter = 100)
+          ),
+          error = function(e) {
+            message(paste("nls failed at step", i, ":", conditionMessage(e)))
+            return(NULL)
+          }
+        )
+
+        if (is.null(multilat_fit)) next
 
         co <- coef(summary(multilat_fit))
         ##################################
