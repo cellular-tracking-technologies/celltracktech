@@ -1,0 +1,433 @@
+openapi: 3.0.3
+info:
+  title: CTT Internet of Wildlife API
+  description: |
+    REST API for downloading, managing, and accessing wildlife tracking data from
+    Cellular Tracking Technologies (CTT) sensor stations.
+
+    ## Authentication
+    All endpoints require an API token passed in the JSON request body as `token`.
+    The token is loaded from a `.env` file via `dotenv` and accessed with `Sys.getenv("MY_TOKEN")` in R.
+
+    ## Typical Workflow
+    ```
+    1. Authenticate          load_dot_env() -> Sys.getenv("MY_TOKEN")
+    2. List projects         POST /station/api/projects
+    3. List stations         POST /station/api/stations/        (per project)
+    4. List files            POST /station/api/file-list         (per station, paginated)
+    5. Download files        POST /station/api/download-file/    (per file)
+    6. (Optional) Import     file_handle() -> db_prep() -> db_insert()
+    ```
+
+    The `get_my_data()` function in `R/get_my_data.R` orchestrates this entire workflow in a single call.
+
+    ## Generic POST Wrapper
+    All endpoints (except direct calls in `get_my_projects` and `project_list`) go through the
+    `post()` function in `R/post.R`, which:
+    - Automatically injects `token = my_token` into every request
+    - Applies a 60-second timeout
+    - Detects HTTP 503 and emits a warning suggesting narrower date ranges or pagination
+    - Calls `httr::stop_for_status()` to raise on other HTTP errors
+    - Supports an optional progress bar via `httr::progress()`
+  version: 2.0.0
+  contact:
+    name: Cellular Tracking Technologies
+    url: https://celltracktech.com
+
+servers:
+  - url: https://api.internetofwildlife.com
+    description: Production API
+
+tags:
+  - name: Projects
+    description: Retrieve project information
+  - name: Stations
+    description: Retrieve station information for a project
+  - name: Files
+    description: List and download data files from stations
+
+paths:
+  /station/api/projects:
+    post:
+      tags:
+        - Projects
+      operationId: listProjects
+      summary: List Projects
+      description: |
+        Retrieves all projects associated with the authenticated user's account.
+
+        **Used by:**
+        - `get_my_projects()` in `R/get_my_projects.R` — returns a character vector of project names
+        - `project_list()` in `R/project_list.R` — returns filtered project list with optional name matching
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: API authentication token
+                  example: "YOUR_API_TOKEN"
+            example:
+              token: "YOUR_API_TOKEN"
+      responses:
+        "200":
+          description: Successful response with list of projects
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: Unique project identifier
+                        name:
+                          type: string
+                          description: Human-readable project name
+              example:
+                projects:
+                  - id: "abc123"
+                    name: "My Wildlife Project"
+                  - id: "def456"
+                    name: "Raptor Tracking Study"
+        "401":
+          description: |
+            **Unauthorized** — Invalid or expired API token.
+
+            `httr::stop_for_status()` raises: `"Unauthorized (HTTP 401)"`
+
+            **Common cause:** `.env` file is missing or `MY_TOKEN` is not set. `Sys.getenv("MY_TOKEN")` silently returns `""` if unset, which the API rejects.
+        "503":
+          description: |
+            **Service Unavailable** — Server overloaded or temporarily down.
+
+            R package emits warning: `"Server query timeout — try narrowing your date range or using pagination"`, then execution stops.
+
+  /station/api/stations/:
+    post:
+      tags:
+        - Stations
+      operationId: listStations
+      summary: List Stations
+      description: |
+        Retrieves all sensor stations deployed under a given project.
+
+        Each station entry includes:
+        - `station.id` — unique station identifier
+        - `deploy-at` — ISO 8601 deployment start timestamp
+        - `end-at` — ISO 8601 deployment end timestamp (may be null for active stations)
+
+        **Used by:**
+        - `get_stations()` in `R/get_stations.R`
+        - `get_data()` in `R/get_data.R` — iterates stations to build file lists
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - project-id
+              properties:
+                token:
+                  type: string
+                  description: API authentication token
+                  example: "YOUR_API_TOKEN"
+                project-id:
+                  type: string
+                  description: Project identifier obtained from the List Projects endpoint
+                  example: "abc123"
+            example:
+              token: "YOUR_API_TOKEN"
+              project-id: "abc123"
+      responses:
+        "200":
+          description: Successful response with list of stations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        station:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              description: Unique station identifier
+                        deploy-at:
+                          type: string
+                          format: date-time
+                          description: ISO 8601 deployment start timestamp
+                        end-at:
+                          type: string
+                          format: date-time
+                          nullable: true
+                          description: ISO 8601 deployment end timestamp (null if station is still active)
+              example:
+                stations:
+                  - station:
+                      id: "STATION-001"
+                    deploy-at: "2024-01-15T00:00:00.000Z"
+                    end-at: "2024-06-01T00:00:00.000Z"
+                  - station:
+                      id: "STATION-002"
+                    deploy-at: "2024-03-01T00:00:00.000Z"
+                    end-at: null
+        "401":
+          description: |
+            **Unauthorized** — Invalid or expired API token.
+
+            `httr::stop_for_status()` raises: `"Unauthorized (HTTP 401)"`
+        "404":
+          description: |
+            **Not Found** — The `project-id` does not exist or the user lacks access.
+
+            `httr::stop_for_status()` stops execution with an HTTP error.
+        "503":
+          description: |
+            **Service Unavailable** — Server overloaded or temporarily down.
+
+            R package emits warning: `"Server query timeout — try narrowing your date range or using pagination"`, then execution stops.
+
+  /station/api/file-list:
+    post:
+      tags:
+        - Files
+      operationId: listStationFiles
+      summary: List Station Files
+      description: |
+        Retrieves metadata for data files available from a specific station, with optional
+        date range and file type filtering. Supports pagination via `limit` and `offset`.
+
+        **Valid file types:** `data`, `node-data`, `gps`, `log`, `telemetry`, `sensorgnome`, `ble`, `blu`
+
+        **Used by:**
+        - `get_station_file_list()` in `R/get_station_file_list.R` — single request with optional pagination params
+        - `get_station_file_list_paginated()` in `R/get_station_file_list_paginated.R` — automatically chunks
+          requests into date windows (default 30 days) with retry logic for 503 timeouts
+
+        **Notes:**
+        - Large date ranges may cause 503 server timeouts. Use `get_station_file_list_paginated()` to handle this automatically.
+        - The paginated version retries failed chunks up to `max_retries` times (default 3) with exponential backoff (2s, 4s, 6s).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - station-id
+                - begin
+              properties:
+                token:
+                  type: string
+                  description: API authentication token
+                  example: "YOUR_API_TOKEN"
+                station-id:
+                  type: string
+                  description: Station identifier obtained from the List Stations endpoint
+                  example: "STATION-001"
+                begin:
+                  type: string
+                  format: date
+                  description: Start date for file search (ISO date format)
+                  example: "2024-01-01"
+                end:
+                  type: string
+                  format: date
+                  description: End date for file search (ISO date format). Defaults to today if omitted.
+                  example: "2024-02-01"
+                file-types:
+                  type: array
+                  items:
+                    type: string
+                    enum:
+                      - data
+                      - node-data
+                      - gps
+                      - log
+                      - telemetry
+                      - sensorgnome
+                      - ble
+                      - blu
+                  description: Filter results to specific file types
+                  example: ["data", "gps"]
+                limit:
+                  type: integer
+                  description: Maximum number of files to return (for pagination)
+                  example: 100
+                offset:
+                  type: integer
+                  description: Number of files to skip (for pagination)
+                  example: 0
+            examples:
+              basic:
+                summary: Basic request (required fields only)
+                value:
+                  token: "YOUR_API_TOKEN"
+                  station-id: "STATION-001"
+                  begin: "2024-01-01"
+              full:
+                summary: Full request with all options
+                value:
+                  token: "YOUR_API_TOKEN"
+                  station-id: "STATION-001"
+                  begin: "2024-01-01"
+                  end: "2024-02-01"
+                  file-types: ["data", "gps"]
+                  limit: 100
+                  offset: 0
+      responses:
+        "200":
+          description: Successful response with list of file metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  files:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: Unique file identifier (used with the Download File endpoint)
+                        name:
+                          type: string
+                          description: Original filename
+              example:
+                files:
+                  - id: "file-789"
+                    name: "CTT-STATION001-data.csv.gz"
+                  - id: "file-790"
+                    name: "CTT-STATION001-gps.csv.gz"
+        "401":
+          description: |
+            **Unauthorized** — Invalid or expired API token.
+
+            `httr::stop_for_status()` raises: `"Unauthorized (HTTP 401)"`
+        "422":
+          description: |
+            **Invalid file type** — A value in `file-types` is not one of the 8 valid types.
+
+            R package emits warning: `"WARNING: invalid file type specified - ignoring: <type>"`.
+            The invalid type is silently dropped and the request proceeds with only the valid types.
+        "503":
+          description: |
+            **Service Unavailable** — Date range too large; server times out processing the query.
+
+            R package emits warning: `"Server query timeout — try narrowing your date range or using pagination"`, then execution stops.
+
+            The paginated wrapper (`get_station_file_list_paginated()`) catches this and retries with message:
+            `"Request timed out, retrying (attempt X of Y)..."`. If all retries are exhausted, the original
+            error is re-thrown via `stop(e)`, halting execution.
+
+  /station/api/download-file/:
+    post:
+      tags:
+        - Files
+      operationId: downloadFile
+      summary: Download File
+      description: |
+        Downloads the contents of a single data file by its ID.
+
+        **Used by:**
+        - `download_files()` in `R/download_files.R`
+        - Called from `get_data()` in `R/get_data.R` for each file in the download queue
+
+        **Error recovery:** On initial failure, `download_files()` automatically retries with
+        `bypass-encoding = "plain"` added to the payload. If the retry also fails, `get_data()`
+        catches the error per-file and records `status = "failed"` in the results dataframe,
+        then continues with remaining files.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - file-id
+              properties:
+                token:
+                  type: string
+                  description: API authentication token
+                  example: "YOUR_API_TOKEN"
+                file-id:
+                  type: string
+                  description: File identifier obtained from the List Station Files endpoint
+                  example: "file-789"
+                bypass-encoding:
+                  type: string
+                  description: Set to `"plain"` to bypass encoding. Used automatically as a fallback on retry when the first download attempt fails.
+                  enum:
+                    - plain
+                  example: "plain"
+            examples:
+              basic:
+                summary: Basic download
+                value:
+                  token: "YOUR_API_TOKEN"
+                  file-id: "file-789"
+              bypass:
+                summary: With bypass encoding (fallback on error)
+                value:
+                  token: "YOUR_API_TOKEN"
+                  file-id: "file-789"
+                  bypass-encoding: "plain"
+      responses:
+        "200":
+          description: |
+            Raw file content returned as CSV text (UTF-8 encoded).
+
+            In batch downloads via `get_data()`, each file result is tracked in a dataframe.
+            Final summary prints: `"Download complete: X succeeded, Y failed out of Z files"`
+          content:
+            text/csv:
+              schema:
+                type: string
+                description: Raw CSV file content
+              example: |
+                TagId,NodeId,TagRSSI,Validated,Time
+                TAG-001,NODE-A,-70,1,2024-01-15 12:00:00
+                TAG-001,NODE-B,-85,1,2024-01-15 12:00:00
+        "401":
+          description: |
+            **Unauthorized** — Invalid or expired API token.
+
+            `httr::stop_for_status()` raises: `"Unauthorized (HTTP 401)"`
+        "404":
+          description: |
+            **Not Found** — The `file-id` does not match any file on the server.
+
+            `httr::stop_for_status()` stops execution with an HTTP error.
+        "500":
+          description: |
+            **Encoding error** — File content has encoding issues the server can't handle.
+
+            `download_files()` prints `"Here's the original error message:"` followed by the error detail,
+            then automatically retries with `bypass-encoding = "plain"`. If the retry also fails, the error
+            propagates up; `get_data()` catches it per-file and records `status = "failed"` with the error
+            message in the results dataframe. Remaining files continue downloading.
+        "503":
+          description: |
+            **Service Unavailable** — Server overloaded or temporarily down.
+
+            R package emits warning: `"Server query timeout — try narrowing your date range or using pagination"`, then execution stops.

@@ -1,0 +1,755 @@
+---
+title: "CTT Internet of Wildlife API Documentation"
+subtitle: "celltracktech R Package v2.0.0"
+output:
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 3
+    highlight: tango
+    css: !expr NULL
+    number_sections: false
+    self_contained: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+```{css}
+/* Method badges */
+.method-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 13px;
+  font-family: monospace;
+  color: #fff;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.method-post {
+  background-color: #49cc90;
+}
+
+/* Endpoint path */
+.endpoint-path {
+  font-family: monospace;
+  font-size: 15px;
+  font-weight: bold;
+  color: #333;
+  vertical-align: middle;
+}
+
+/* Endpoint header bar */
+.endpoint-header {
+  background-color: #f7f7f7;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+/* Parameter tables */
+.param-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 14px;
+}
+.param-table th {
+  background-color: #4b4b4b;
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+}
+.param-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #e8e8e8;
+}
+.param-table tr:hover {
+  background-color: #f5f5f5;
+}
+.param-required {
+  color: #e74c3c;
+  font-weight: bold;
+  font-size: 11px;
+}
+.param-optional {
+  color: #7f8c8d;
+  font-size: 11px;
+}
+.param-type {
+  font-family: monospace;
+  color: #8e44ad;
+  font-size: 13px;
+}
+
+/* Error tables */
+.error-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13px;
+}
+.error-table th {
+  background-color: #e74c3c;
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+}
+.error-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #e8e8e8;
+  vertical-align: top;
+}
+.error-table tr:hover {
+  background-color: #fdf2f2;
+}
+.error-code {
+  font-family: monospace;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+/* Response section */
+.response-section {
+  border-left: 4px solid #49cc90;
+  padding-left: 16px;
+  margin: 16px 0;
+}
+
+/* Info box */
+.info-box {
+  background-color: #eaf4fc;
+  border-left: 4px solid #3498db;
+  padding: 12px 16px;
+  border-radius: 0 6px 6px 0;
+  margin: 16px 0;
+  font-size: 14px;
+}
+
+/* Section divider */
+.section-divider {
+  border: none;
+  border-top: 2px solid #e0e0e0;
+  margin: 32px 0;
+}
+
+/* Tag label */
+.tag-label {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.tag-projects { background-color: #3498db; }
+.tag-stations { background-color: #e67e22; }
+.tag-files { background-color: #9b59b6; }
+
+/* Used-by section */
+.used-by {
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 10px 14px;
+  margin: 12px 0;
+  font-size: 13px;
+}
+.used-by code {
+  background-color: #eef;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+```
+
+## Overview {.tabset}
+
+<div class="info-box">
+**Base URL:** `https://api.internetofwildlife.com`
+&nbsp;&bull;&nbsp; **Protocol:** HTTPS
+&nbsp;&bull;&nbsp; **Method:** All endpoints use POST
+&nbsp;&bull;&nbsp; **Encoding:** JSON
+&nbsp;&bull;&nbsp; **Timeout:** 60 seconds per request
+</div>
+
+### Authentication
+
+All endpoints require an API token passed in the JSON request body as `token`.
+
+```r
+# Load token from .env file
+library(dotenv)
+load_dot_env()
+my_token <- Sys.getenv("MY_TOKEN")
+```
+
+### Workflow
+
+```
+1. Authenticate       load_dot_env() -> Sys.getenv("MY_TOKEN")
+2. List projects      POST /station/api/projects
+3. List stations      POST /station/api/stations/         (per project)
+4. List files         POST /station/api/file-list          (per station, paginated)
+5. Download files     POST /station/api/download-file/     (per file)
+6. (Optional) Import  file_handle() -> db_prep() -> db_insert()
+```
+
+The `get_my_data()` function in `R/get_my_data.R` orchestrates this entire workflow in a single call.
+
+### POST Wrapper
+
+All endpoints (except direct calls in `get_my_projects` and `project_list`) go through the `post()` function in `R/post.R`:
+
+```r
+post(endpoint, payload = NULL, show_progress = FALSE)
+```
+
+- Automatically injects `token = my_token` into every request
+- 60-second timeout on all requests
+- Detects HTTP 503 and emits a warning suggesting narrower date ranges or pagination
+- Calls `httr::stop_for_status()` to raise on other HTTP errors
+- Optional progress bar via `httr::progress()`
+
+## {-}
+
+<hr class="section-divider">
+
+## Endpoints
+
+---
+
+### List Projects <span class="tag-label tag-projects">Projects</span> {.tabset}
+
+<div class="endpoint-header">
+<span class="method-badge method-post">POST</span>
+<span class="endpoint-path">/station/api/projects</span>
+</div>
+
+Retrieves all projects associated with the authenticated user's account.
+
+#### Parameters
+
+<table class="param-table">
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>token</code></td>
+  <td><span class="param-type">string</span></td>
+  <td><span class="param-required">REQUIRED</span></td>
+  <td>API authentication token</td>
+</tr>
+</tbody>
+</table>
+
+#### curl Example
+
+```bash
+curl -X POST https://api.internetofwildlife.com/station/api/projects \
+  -H "Content-Type: application/json" \
+  -d '{"token": "YOUR_API_TOKEN"}'
+```
+
+#### Response
+
+<div class="response-section">
+
+**200 OK**
+
+```json
+{
+  "projects": [
+    {
+      "id": "abc123",
+      "name": "My Wildlife Project"
+    },
+    {
+      "id": "def456",
+      "name": "Raptor Tracking Study"
+    }
+  ]
+}
+```
+
+</div>
+
+#### Errors
+
+<table class="error-table">
+<thead>
+<tr><th>Status</th><th>Cause</th><th>What You See</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><span class="error-code">401</span></td>
+  <td>Invalid or expired API token</td>
+  <td><code>httr::stop_for_status()</code> raises: <code>"Unauthorized (HTTP 401)"</code></td>
+</tr>
+<tr>
+  <td><span class="error-code">503</span></td>
+  <td>Server overloaded or temporarily down</td>
+  <td>Warning: <code>"Server query timeout — try narrowing your date range or using pagination"</code>, then execution stops</td>
+</tr>
+<tr>
+  <td><span class="error-code">Timeout</span></td>
+  <td>Network issue or server unreachable</td>
+  <td>R error: <code>"Timeout was reached"</code> after 60 seconds</td>
+</tr>
+<tr>
+  <td><span class="error-code">Empty token</span></td>
+  <td><code>.env</code> file missing or <code>MY_TOKEN</code> not set</td>
+  <td>API returns auth error; <code>Sys.getenv("MY_TOKEN")</code> silently returns <code>""</code> if unset</td>
+</tr>
+<tr>
+  <td><span class="error-code">Not found</span></td>
+  <td>Specified <code>myproject</code> name doesn't match any project</td>
+  <td><code>"The project you entered is not found in your project list. Check your spelling and if you have access to the project."</code></td>
+</tr>
+</tbody>
+</table>
+
+#### Used By
+
+<div class="used-by">
+
+- `get_my_projects()` in `R/get_my_projects.R` — returns a character vector of project names
+- `project_list()` in `R/project_list.R` — returns filtered project list with optional name matching
+
+</div>
+
+### {-}
+
+<hr class="section-divider">
+
+### List Stations <span class="tag-label tag-stations">Stations</span> {.tabset}
+
+<div class="endpoint-header">
+<span class="method-badge method-post">POST</span>
+<span class="endpoint-path">/station/api/stations/</span>
+</div>
+
+Retrieves all sensor stations deployed under a given project.
+
+#### Parameters
+
+<table class="param-table">
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>token</code></td>
+  <td><span class="param-type">string</span></td>
+  <td><span class="param-required">REQUIRED</span></td>
+  <td>API authentication token</td>
+</tr>
+<tr>
+  <td><code>project-id</code></td>
+  <td><span class="param-type">string</span></td>
+  <td><span class="param-required">REQUIRED</span></td>
+  <td>Project identifier obtained from the List Projects endpoint</td>
+</tr>
+</tbody>
+</table>
+
+#### curl Example
+
+```bash
+curl -X POST https://api.internetofwildlife.com/station/api/stations/ \
+  -H "Content-Type: application/json" \
+  -d '{"token": "YOUR_API_TOKEN", "project-id": "YOUR_PROJECT_ID"}'
+```
+
+#### Response
+
+<div class="response-section">
+
+**200 OK**
+
+```json
+{
+  "stations": [
+    {
+      "station": {
+        "id": "STATION-001"
+      },
+      "deploy-at": "2024-01-15T00:00:00.000Z",
+      "end-at": "2024-06-01T00:00:00.000Z"
+    },
+    {
+      "station": {
+        "id": "STATION-002"
+      },
+      "deploy-at": "2024-03-01T00:00:00.000Z",
+      "end-at": null
+    }
+  ]
+}
+```
+
+Each station entry includes:
+
+- **`station.id`** — unique station identifier
+- **`deploy-at`** — ISO 8601 deployment start timestamp
+- **`end-at`** — ISO 8601 deployment end timestamp (null for active stations)
+
+</div>
+
+#### Errors
+
+<table class="error-table">
+<thead>
+<tr><th>Status</th><th>Cause</th><th>What You See</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><span class="error-code">401</span></td>
+  <td>Invalid or expired API token</td>
+  <td><code>httr::stop_for_status()</code> raises: <code>"Unauthorized (HTTP 401)"</code></td>
+</tr>
+<tr>
+  <td><span class="error-code">404</span></td>
+  <td><code>project-id</code> does not exist or user lacks access</td>
+  <td><code>httr::stop_for_status()</code> stops execution with an HTTP error</td>
+</tr>
+<tr>
+  <td><span class="error-code">503</span></td>
+  <td>Server overloaded or temporarily down</td>
+  <td>Warning: <code>"Server query timeout — try narrowing your date range or using pagination"</code>, then execution stops</td>
+</tr>
+<tr>
+  <td><span class="error-code">Timeout</span></td>
+  <td>Network issue or server unreachable</td>
+  <td>R error: <code>"Timeout was reached"</code> after 60 seconds</td>
+</tr>
+<tr>
+  <td><span class="error-code">Empty list</span></td>
+  <td>Project exists but has no deployed stations</td>
+  <td>Response returns <code>"stations": []</code>; downstream code in <code>get_data()</code> skips processing</td>
+</tr>
+</tbody>
+</table>
+
+#### Used By
+
+<div class="used-by">
+
+- `get_stations()` in `R/get_stations.R`
+- `get_data()` in `R/get_data.R` — iterates stations to build file lists
+
+</div>
+
+### {-}
+
+<hr class="section-divider">
+
+### List Station Files <span class="tag-label tag-files">Files</span> {.tabset}
+
+<div class="endpoint-header">
+<span class="method-badge method-post">POST</span>
+<span class="endpoint-path">/station/api/file-list</span>
+</div>
+
+Retrieves metadata for data files available from a specific station, with optional date range and file type filtering. Supports pagination via `limit` and `offset`.
+
+#### Parameters
+
+<table class="param-table">
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>token</code></td>
+  <td><span class="param-type">string</span></td>
+  <td><span class="param-required">REQUIRED</span></td>
+  <td>API authentication token</td>
+</tr>
+<tr>
+  <td><code>station-id</code></td>
+  <td><span class="param-type">string</span></td>
+  <td><span class="param-required">REQUIRED</span></td>
+  <td>Station identifier obtained from the List Stations endpoint</td>
+</tr>
+<tr>
+  <td><code>begin</code></td>
+  <td><span class="param-type">date</span></td>
+  <td><span class="param-required">REQUIRED</span></td>
+  <td>Start date for file search (ISO date format, e.g. <code>2024-01-01</code>)</td>
+</tr>
+<tr>
+  <td><code>end</code></td>
+  <td><span class="param-type">date</span></td>
+  <td><span class="param-optional">optional</span></td>
+  <td>End date for file search. Defaults to today if omitted.</td>
+</tr>
+<tr>
+  <td><code>file-types</code></td>
+  <td><span class="param-type">string[]</span></td>
+  <td><span class="param-optional">optional</span></td>
+  <td>Filter by file types: <code>data</code>, <code>node-data</code>, <code>gps</code>, <code>log</code>, <code>telemetry</code>, <code>sensorgnome</code>, <code>ble</code>, <code>blu</code></td>
+</tr>
+<tr>
+  <td><code>limit</code></td>
+  <td><span class="param-type">integer</span></td>
+  <td><span class="param-optional">optional</span></td>
+  <td>Maximum number of files to return (for pagination)</td>
+</tr>
+<tr>
+  <td><code>offset</code></td>
+  <td><span class="param-type">integer</span></td>
+  <td><span class="param-optional">optional</span></td>
+  <td>Number of files to skip (for pagination)</td>
+</tr>
+</tbody>
+</table>
+
+#### curl Examples
+
+**Basic request (required fields only):**
+
+```bash
+curl -X POST https://api.internetofwildlife.com/station/api/file-list \
+  -H "Content-Type: application/json" \
+  -d '{"token": "YOUR_API_TOKEN", "station-id": "YOUR_STATION_ID", "begin": "2024-01-01"}'
+```
+
+**Full request with all options:**
+
+```bash
+curl -X POST https://api.internetofwildlife.com/station/api/file-list \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "YOUR_API_TOKEN",
+    "station-id": "YOUR_STATION_ID",
+    "begin": "2024-01-01",
+    "end": "2024-02-01",
+    "file-types": ["data", "gps"],
+    "limit": 100,
+    "offset": 0
+  }'
+```
+
+#### Response
+
+<div class="response-section">
+
+**200 OK**
+
+```json
+{
+  "files": [
+    {
+      "id": "file-789",
+      "name": "CTT-STATION001-data.csv.gz"
+    },
+    {
+      "id": "file-790",
+      "name": "CTT-STATION001-gps.csv.gz"
+    }
+  ]
+}
+```
+
+</div>
+
+<div class="info-box">
+**Note:** Large date ranges may cause 503 server timeouts. Use <code>get_station_file_list_paginated()</code> to handle this automatically. The paginated version retries failed chunks up to <code>max_retries</code> times (default 3) with exponential backoff (2s, 4s, 6s).
+</div>
+
+#### Errors
+
+<table class="error-table">
+<thead>
+<tr><th>Status</th><th>Cause</th><th>What You See</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><span class="error-code">401</span></td>
+  <td>Invalid or expired API token</td>
+  <td><code>httr::stop_for_status()</code> raises: <code>"Unauthorized (HTTP 401)"</code></td>
+</tr>
+<tr>
+  <td><span class="error-code">503</span></td>
+  <td>Date range too large; server times out</td>
+  <td>Warning: <code>"Server query timeout — try narrowing your date range or using pagination"</code>. The paginated wrapper catches this and retries: <code>"Request timed out, retrying (attempt X of Y)..."</code></td>
+</tr>
+<tr>
+  <td><span class="error-code">Timeout</span></td>
+  <td>Network issue or server unreachable</td>
+  <td>R error: <code>"Timeout was reached"</code> after 60 seconds. Paginated wrapper retries up to <code>max_retries</code> times with exponential backoff.</td>
+</tr>
+<tr>
+  <td><span class="error-code">Invalid type</span></td>
+  <td>A value in <code>file-types</code> is not one of the 8 valid types</td>
+  <td>Warning: <code>"WARNING: invalid file type specified - ignoring: &lt;type&gt;"</code>. Invalid types are dropped; request proceeds with valid types only.</td>
+</tr>
+<tr>
+  <td><span class="error-code">404</span></td>
+  <td><code>station-id</code> does not exist</td>
+  <td><code>httr::stop_for_status()</code> stops execution with an HTTP error</td>
+</tr>
+<tr>
+  <td><span class="error-code">Empty result</span></td>
+  <td>Station has no files for the given date range</td>
+  <td><code>get_data()</code> prints <code>"no files found from API"</code> and returns an empty list</td>
+</tr>
+<tr>
+  <td><span class="error-code">Max retries</span></td>
+  <td>Paginated wrapper exhausts all retry attempts on a chunk</td>
+  <td>The original error is re-thrown via <code>stop(e)</code>, halting execution</td>
+</tr>
+</tbody>
+</table>
+
+#### Used By
+
+<div class="used-by">
+
+- `get_station_file_list()` in `R/get_station_file_list.R` — single request with optional pagination params
+- `get_station_file_list_paginated()` in `R/get_station_file_list_paginated.R` — automatic date-chunked pagination with retry logic
+
+</div>
+
+### {-}
+
+<hr class="section-divider">
+
+### Download File <span class="tag-label tag-files">Files</span> {.tabset}
+
+<div class="endpoint-header">
+<span class="method-badge method-post">POST</span>
+<span class="endpoint-path">/station/api/download-file/</span>
+</div>
+
+Downloads the contents of a single data file by its ID.
+
+#### Parameters
+
+<table class="param-table">
+<thead>
+<tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>token</code></td>
+  <td><span class="param-type">string</span></td>
+  <td><span class="param-required">REQUIRED</span></td>
+  <td>API authentication token</td>
+</tr>
+<tr>
+  <td><code>file-id</code></td>
+  <td><span class="param-type">string</span></td>
+  <td><span class="param-required">REQUIRED</span></td>
+  <td>File identifier obtained from the List Station Files endpoint</td>
+</tr>
+<tr>
+  <td><code>bypass-encoding</code></td>
+  <td><span class="param-type">string</span></td>
+  <td><span class="param-optional">optional</span></td>
+  <td>Set to <code>"plain"</code> to bypass encoding. Used automatically as a fallback on retry.</td>
+</tr>
+</tbody>
+</table>
+
+#### curl Examples
+
+**Basic download:**
+
+```bash
+curl -X POST https://api.internetofwildlife.com/station/api/download-file/ \
+  -H "Content-Type: application/json" \
+  -d '{"token": "YOUR_API_TOKEN", "file-id": "YOUR_FILE_ID"}'
+```
+
+**With bypass encoding (fallback on error):**
+
+```bash
+curl -X POST https://api.internetofwildlife.com/station/api/download-file/ \
+  -H "Content-Type: application/json" \
+  -d '{"token": "YOUR_API_TOKEN", "file-id": "YOUR_FILE_ID", "bypass-encoding": "plain"}'
+```
+
+#### Response
+
+<div class="response-section">
+
+**200 OK** — Raw file content (CSV text, UTF-8 encoded)
+
+```
+TagId,NodeId,TagRSSI,Validated,Time
+TAG-001,NODE-A,-70,1,2024-01-15 12:00:00
+TAG-001,NODE-B,-85,1,2024-01-15 12:00:00
+```
+
+In batch downloads via `get_data()`, each file result is tracked in a dataframe. Final summary prints:
+`"Download complete: X succeeded, Y failed out of Z files"`
+
+</div>
+
+#### Errors
+
+<table class="error-table">
+<thead>
+<tr><th>Status</th><th>Cause</th><th>What You See</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><span class="error-code">401</span></td>
+  <td>Invalid or expired API token</td>
+  <td><code>httr::stop_for_status()</code> raises: <code>"Unauthorized (HTTP 401)"</code></td>
+</tr>
+<tr>
+  <td><span class="error-code">404</span></td>
+  <td><code>file-id</code> does not match any file on the server</td>
+  <td><code>httr::stop_for_status()</code> stops execution with an HTTP error</td>
+</tr>
+<tr>
+  <td><span class="error-code">500</span></td>
+  <td>File content has encoding issues the server can't handle</td>
+  <td><code>download_files()</code> prints <code>"Here's the original error message:"</code> followed by the error detail, then automatically retries with <code>bypass-encoding = "plain"</code></td>
+</tr>
+<tr>
+  <td><span class="error-code">500 (retry)</span></td>
+  <td>File is corrupted or unrecoverable (retry also fails)</td>
+  <td>Error propagates up; <code>get_data()</code> catches it per-file and records <code>status = "failed"</code> in results dataframe</td>
+</tr>
+<tr>
+  <td><span class="error-code">503</span></td>
+  <td>Server overloaded or temporarily down</td>
+  <td>Warning: <code>"Server query timeout — try narrowing your date range or using pagination"</code>, then execution stops</td>
+</tr>
+<tr>
+  <td><span class="error-code">Timeout</span></td>
+  <td>Network issue or server unreachable</td>
+  <td>R error: <code>"Timeout was reached"</code> after 60 seconds</td>
+</tr>
+<tr>
+  <td><span class="error-code">Batch failure</span></td>
+  <td>Any error during a single file download within <code>get_data()</code></td>
+  <td>File is marked <code>"failed"</code> in the results dataframe; remaining files continue. Final summary: <code>"Download complete: X succeeded, Y failed out of Z files"</code></td>
+</tr>
+</tbody>
+</table>
+
+#### Used By
+
+<div class="used-by">
+
+- `download_files()` in `R/download_files.R`
+- Called from `get_data()` in `R/get_data.R` for each file in the download queue
+
+</div>
+
+### {-}
