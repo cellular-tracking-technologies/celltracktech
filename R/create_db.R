@@ -65,10 +65,11 @@ create_db <- function(conn) {
     payload text,
     time TIMESTAMP with time zone NOT NULL,
     station_id TEXT
-  );
-  ALTER TABLE blu
-  ADD COLUMN IF NOT EXISTS battery_voltage_v DECIMAL(6,3)
-  ADD COLUMN IF NOT EXISTS temperature_celsius DECIMAL(6,3);")
+  )")
+
+  DBI::dbExecute(conn, "ALTER TABLE blu
+  ADD COLUMN IF NOT EXISTS battery_voltage_v DECIMAL(6,3),
+  ADD COLUMN IF NOT EXISTS temperature_celsius DECIMAL(6,3)")
 
   DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS node_health
   (
