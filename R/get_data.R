@@ -11,6 +11,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     my_stations[["stations"]] <- list(my_stations[[1]][[which(sapply(my_stations[[1]],
                                                                      function(x) x[["station"]][["id"]] == my_station))]])
   }
+  file_list_start <- Sys.time()
   files_avail <- lapply(my_stations[["stations"]], function(station, mybeginning = beginning, myending = ending) {
     message(paste0("processing station: ", station[["station"]][["id"]]))
     if (is.null(mybeginning)) {
@@ -37,6 +38,8 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     message(paste0('outfiles: ', length(outfiles), ' files found'))
     return(outfiles)
   })
+  file_list_elapsed <- round(as.numeric(difftime(Sys.time(), file_list_start, units = "secs")), 1)
+  message(sprintf("file list generated in %.1f seconds", file_list_elapsed))
   message("getting files available for those stations...")
   extract_files <- function(x) {
     if (is.list(x) && !is.null(x[["id"]]) && !is.null(x[["name"]])) {
