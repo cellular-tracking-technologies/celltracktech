@@ -43,8 +43,10 @@ fixrow <- function(rowlen, rowfix, e, correct, DatePattern, filetype) {
   return(getrow[1, ])
 }
 
-host <- "https://api.internetofwildlife.com/"
+# host <- "https://api.internetofwildlife.com/"
+host <- 'http://localhost:3000/'
 project <- "/station/api/projects"
 stations <- "/station/api/stations/"
+checkins <- "/station/api/station-checkins/"
 files <- "/station/api/file-list"
 file_types <- c("data", "node-data", "gps", "log", "telemetry", "sensorgnome", "ble", "blu")
