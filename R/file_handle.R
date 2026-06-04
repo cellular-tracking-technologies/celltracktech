@@ -19,6 +19,10 @@ file_handle <- function(e, filetype) {
 
     # e_parsed = paste0(stringr::str_remove(e, '.gz'), "_parsed.csv")
     e_parsed = paste0(stringr::str_remove(e, '.gz'))
+    if (!file.exists(e_parsed)) {
+      message(paste("Skipping blu file (no parsed output):", e))
+      return(list(NULL, 2, c(), NULL))
+    }
     e_gzip = R.utils::gzip(e_parsed,
                            overwrite=TRUE)
     rm(e_parsed)
