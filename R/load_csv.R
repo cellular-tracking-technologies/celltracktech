@@ -10,11 +10,16 @@
 #' load_csv('./data/blu-file.csv')
 #' load_csv('./data/blu-file.csv.gz')
 load_csv <- function(file_path) {
+  if (!file.exists(file_path) || file.size(file_path) == 0) {
+    return(data.frame())
+  }
   if (grepl("\\.gz$", file_path)) {
-    # If the file is compressed (CSV.GZ), use gzfile()
+    con <- gzfile(file_path, "rt")
+    first_line <- readLines(con, n = 1)
+    close(con)
+    if (length(first_line) == 0) return(data.frame())
     data <- read.csv(gzfile(file_path))
   } else {
-    # Otherwise, load it directly as a CSV
     data <- read.csv(file_path)
   }
   return(data)

@@ -13,7 +13,9 @@ file_handle <- function(e, filetype) {
         return(NULL)
       })
   } else if (filetype == 'blu') {
-    process_file(e, dirname(e))
+    tryCatch(process_file(e, dirname(e)), error = function(err) {
+      message(paste("Skipping empty/invalid blu file:", e))
+    })
 
     # e_parsed = paste0(stringr::str_remove(e, '.gz'), "_parsed.csv")
     e_parsed = paste0(stringr::str_remove(e, '.gz'))
@@ -46,7 +48,7 @@ file_handle <- function(e, filetype) {
     ignore <- TRUE
   }
 
-  if (!is.null(contents) & nrow(contents > 0)) {
+  if (!is.null(contents) && nrow(contents) > 0) {
     if(filetype %in% c("raw", "node_health", "gps", "blu")) {
       delete.columns <- grep("[[:digit:]]", colnames(contents), perl = T)
       if (length(delete.columns) > 0) {

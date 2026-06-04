@@ -110,11 +110,38 @@ message(Sys.time() - start)
 #' # "My Project"
 #' import_node_data(conn, outpath, myproject="My Project")
 
-import_node_data <- function(d, outpath, myproject=NULL, station_id) {
+import_node_data <- function(
+    d,
+    outpath,
+    myproject=NULL,
+    station_id) {
+  # ensure large values fit in integer columns
+  is_duckdb <- length(grep("duckdb", format(d))) > 0
+  if (is_duckdb) {
+    tryCatch(
+      DBI::dbExecute(d, "ALTER TABLE node_health ALTER COLUMN cumulative_solar_current TYPE BIGINT"),
+      error = function(e) NULL
+    )
+    tryCatch(
+      DBI::dbExecute(d, "ALTER TABLE node_health_from_node ALTER COLUMN energy_used_mah TYPE BIGINT"),
+      error = function(e) NULL
+    )
+  } else {
+    tryCatch(
+      DBI::dbExecute(d, "ALTER TABLE node_health ALTER COLUMN cumulative_solar_current TYPE bigint"),
+      error = function(e) NULL
+    )
+    tryCatch(
+      DBI::dbExecute(d, "ALTER TABLE node_health_from_node ALTER COLUMN energy_used_mah TYPE bigint"),
+      error = function(e) NULL
+    )
+  }
+
   myout <- outpath
   if(!is.null(myproject)) {
     myout <- file.path(outpath,myproject)
   }
+  print(myout)
   # myfiles <- list.files(file.path(myout, "nodes"), pattern="beep.*csv",recursive = TRUE, full.names = TRUE)
   myfiles <- list.files(file.path(myout, "nodes"),
                         pattern=".*csv",
@@ -225,11 +252,20 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       #colnames(x) <- c("time", "id", "rssi")
       #return(x)
     })
-  message('dataframe')
-  message(df)
+  message(paste('dataframe loaded:', nrow(df), 'rows'))
+  if (is.null(df) || nrow(df) == 0) {
+    message(paste("Skipping empty file:", e))
+    z <- list('No Data in File', NULL, y)
+    return(z)
+  }
   # remove corrupted data
-  df_bad = df %>%
-    filter(if_any(everything(), ~ str_detect(., "[^\\x00-\\x7F]+") == TRUE))
+  char_cols <- names(df)[sapply(df, is.character)]
+  if (length(char_cols) > 0) {
+    df_bad <- df %>%
+      filter(if_any(all_of(char_cols), ~ grepl("[^\\x00-\\x7F]", ., perl = TRUE)))
+  } else {
+    df_bad <- df[0, ]
+  }
 
   message('removing corrupted data')
   df_anti_join = anti_join(df, df_bad)
@@ -328,7 +364,7 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       df$node_id = toupper(df$NodeId)
       df$gps_at = df$Time
       # get existing data table from database
-      test <- dbGetQuery(conn,
+      test <- DBI::dbGetQuery(conn,
                          paste0("SELECT * FROM node_gps ",
                                 "WHERE gps_at >= '", start,
                                 "'AND gps_at <= '", end, "'"))
@@ -382,7 +418,7 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
 
     } else if (filetype == 'health') {
       # get existing data table from database
-      test <- dbGetQuery(conn,
+      test <- DBI::dbGetQuery(conn,
                          paste0("SELECT * FROM node_health_from_node ",
                                 "WHERE time >= '", start,
                                 "'AND time <= '", end, "'"))
@@ -490,7 +526,7 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       end <- df_last_row$time
 
       # get existing data table from database
-      test <- dbGetQuery(conn,
+      test <- DBI::dbGetQuery(conn,
                          paste0("SELECT * FROM node_raw ",
                                 "WHERE time >= '", start,
                                 "'AND time <= '", end, "'"))
@@ -541,7 +577,7 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       message(paste('start: ', start, 'end: ', end))
 
       # get existing data table from database
-      test <- dbGetQuery(conn,
+      test <- DBI::dbGetQuery(conn,
                          paste0("SELECT * FROM node_blu ",
                                 "WHERE time >= '", start,
                                 "'AND time <= '", end, "'"))
@@ -573,8 +609,7 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
 
       df2 <- dplyr::anti_join(df, test)
 
-      message('df2 after join')
-      message(df2, width = Inf)
+      message(paste('df2 after join:', nrow(df2), 'rows'))
 
       z <- db_insert(contents=df2,
                      filetype='node_blu',
@@ -613,7 +648,7 @@ combine_data_duck <- function(df,
     start <- min(df$time, na.rm=T)
     end <- max(df$time, na.rm=T)
 
-    test <- dbGetQuery(conn,
+    test <- DBI::dbGetQuery(conn,
                        paste0("SELECT * FROM blu ",
                               "WHERE time >= '", start,
                               "'AND time <= '", end, "'"))
@@ -626,7 +661,7 @@ combine_data_duck <- function(df,
                    y=y,
                    begin=begin)
 
-    dbSendQuery(conn,
+    DBI::dbSendQuery(conn,
                 'ALTER TABLE blu
                 ALTER COLUMN time
                 TYPE TIMESTAMP WITH TIME ZONE')
@@ -650,7 +685,7 @@ combine_data_duck <- function(df,
                    y=y,
                    begin=begin)
 
-    dbSendQuery(conn,
+    DBI::dbSendQuery(conn,
                 'ALTER TABLE raw
                 ALTER COLUMN time
                 TYPE TIMESTAMP WITH TIME ZONE')
@@ -659,7 +694,7 @@ combine_data_duck <- function(df,
     start <- min(df$gps_at, na.rm=T)
     end <- max(df$gps_at, na.rm=T)
 
-    test <- dbGetQuery(conn,
+    test <- DBI::dbGetQuery(conn,
                        paste0("SELECT * FROM gps ",
                               "WHERE gps_at >= '", start,
                               "'AND gps_at <= '", end, "'"))
@@ -684,7 +719,7 @@ combine_data_duck <- function(df,
     start <- min(df$time, na.rm=T)
     end <- max(df$time, na.rm=T)
 
-    test <- dbGetQuery(conn,
+    test <- DBI::dbGetQuery(conn,
                        paste0("SELECT * FROM node_health ",
                               "WHERE time >= '", start,
                               "'AND time <= '", end, "'"))
@@ -728,7 +763,7 @@ combine_data_postgres <- function(df,
     start <- min(df$time, na.rm=T)
     end <- max(df$time, na.rm=T)
 
-    test <- dbGetQuery(conn,
+    test <- DBI::dbGetQuery(conn,
                        paste0("SELECT * FROM blu ",
                               "WHERE time >= '", start,
                               "'AND time <= '", end, "'"))
@@ -741,7 +776,7 @@ combine_data_postgres <- function(df,
                    y=y,
                    begin=begin)
 
-    dbSendQuery(conn,
+    DBI::dbSendQuery(conn,
                 'ALTER TABLE blu
                 ALTER COLUMN time
                 TYPE TIMESTAMP WITH TIME ZONE')
@@ -766,7 +801,7 @@ combine_data_postgres <- function(df,
                    y=y,
                    begin=begin)
 
-    dbSendQuery(conn,
+    DBI::dbSendQuery(conn,
                 'ALTER TABLE raw
                 ALTER COLUMN time
                 TYPE TIMESTAMP WITH TIME ZONE')
@@ -775,7 +810,7 @@ combine_data_postgres <- function(df,
     start <- min(df$gps_at, na.rm=T)
     end <- max(df$gps_at, na.rm=T)
 
-    test <- dbGetQuery(conn,
+    test <- DBI::dbGetQuery(conn,
                        paste0("SELECT * FROM gps ",
                               "WHERE gps_at >= '", start,
                               "'AND gps_at <= '", end, "'"))
@@ -800,7 +835,7 @@ combine_data_postgres <- function(df,
     start <- min(df$time, na.rm=T)
     end <- max(df$time, na.rm=T)
 
-    test <- dbGetQuery(conn,
+    test <- DBI::dbGetQuery(conn,
                        paste0("SELECT * FROM node_health ",
                               "WHERE time >= '", start,
                               "'AND time <= '", end, "'"))

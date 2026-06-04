@@ -10,6 +10,20 @@
 #' update_db(conn, "~/mydata", myproject = "Project Name from CTT Account", fix = FALSE)
 update_db <- function(d, outpath, myproject, fix = FALSE) {
 
+  # ensure cumulative_solar_current can hold large values
+  is_duckdb <- length(grep("duckdb", format(d))) > 0
+  if (is_duckdb) {
+    tryCatch(
+      DBI::dbExecute(d, "ALTER TABLE node_health ALTER COLUMN cumulative_solar_current TYPE BIGINT"),
+      error = function(e) NULL
+    )
+  } else {
+    tryCatch(
+      DBI::dbExecute(d, "ALTER TABLE node_health ALTER COLUMN cumulative_solar_current TYPE bigint"),
+      error = function(e) NULL
+    )
+  }
+
   ### NEED TO ADD NODE COLUMN CONDITIONAL
   if ('CumulativeSolarCurrent' %in% colnames(df)) {
     df <- df %>%

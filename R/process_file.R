@@ -12,6 +12,11 @@
 process_file <- function(file_path, output_dir) {
   blu <- load_csv(file_path)
 
+  if (nrow(blu) == 0) {
+    message(paste("Skipping empty file:", basename(file_path)))
+    return(invisible(NULL))
+  }
+
   # Identify the payload column
   payload_column <- if ("Payload" %in% colnames(blu)) {
     "Payload"

@@ -82,7 +82,7 @@ create_duck <- function(conn) {
     firmware TEXT,
     solar_volts NUMERIC(4,2),
     solar_current smallint,
-    cumulative_solar_current integer,
+    cumulative_solar_current BIGINT,
     latitude NUMERIC(8,6),
     longitude NUMERIC(9,6),
     station_id TEXT,
@@ -92,6 +92,8 @@ create_duck <- function(conn) {
         ON DELETE NO ACTION
         ON UPDATE NO ACTION
   )")
+
+  DBI::dbExecute(conn, "ALTER TABLE node_health ALTER COLUMN cumulative_solar_current TYPE BIGINT")
 
   DBI::dbExecute(conn, "CREATE TABLE IF NOT EXISTS gps
   (
@@ -160,7 +162,7 @@ create_duck <- function(conn) {
     charge_ma smallint,
     charge_temp_c smallint,
     node_temp_c smallint,
-    energy_used_mah smallint,
+    energy_used_mah BIGINT,
     sd_free smallint,
     sub_ghz_det smallint,
     ble_det smallint,
