@@ -365,7 +365,7 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       df$gps_at = df$Time
       # get existing data table from database
       test <- DBI::dbGetQuery(conn,
-                         paste0("SELECT * FROM node_gps ",
+                         paste0("SELECT gps_at, station_id, node_id FROM node_gps ",
                                 "WHERE gps_at >= '", start,
                                 "'AND gps_at <= '", end, "'"))
       # df$time = df$Time
@@ -384,8 +384,8 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
                  satellites = 'Satellites',
                  on_time = 'OnTime')
       } else {
-        df$navigation_mode = NA
-        df$satellites = NA
+        df$navigation_mode = NA_integer_
+        df$satellites = NA_real_
       }
 
       # get other columns that exist in database
@@ -419,7 +419,7 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
     } else if (filetype == 'health') {
       # get existing data table from database
       test <- DBI::dbGetQuery(conn,
-                         paste0("SELECT * FROM node_health_from_node ",
+                         paste0("SELECT time, station_id, node_id FROM node_health_from_node ",
                                 "WHERE time >= '", start,
                                 "'AND time <= '", end, "'"))
 
@@ -527,31 +527,27 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
 
       # get existing data table from database
       test <- DBI::dbGetQuery(conn,
-                         paste0("SELECT * FROM node_raw ",
+                         paste0("SELECT time, tag_id, node_id, station_id, tag_rssi FROM node_raw ",
                                 "WHERE time >= '", start,
                                 "'AND time <= '", end, "'"))
-
-      test$radio_id = as.numeric(test$radio_id)
 
       df$path = y
       df$station_id = station_id
       df$node_id = df$NodeId
       df$time = df$Time
-      df$radio_id = 4
-      df$validated = NA
+      df$radio_id = 4L
+      df$validated = NA_integer_
 
-      check_db_type(df,
-                    'raw',
-                     conn,
-                     y,
-                     begin)
-
-      # test$radio_id = as.numeric(test$radio_id)
-
-      df2 <- dplyr::anti_join(df, test)
+      df2 <- dplyr::anti_join(df, test, by = c('time', 'tag_id', 'node_id', 'station_id', 'tag_rssi'))
 
       z <- db_insert(contents=df2,
                      filetype='node_raw',
+                     conn=conn,
+                     y=y,
+                     begin=begin)
+
+      z <- db_insert(contents=df2,
+                     filetype='raw',
                      conn=conn,
                      y=y,
                      begin=begin)
@@ -578,7 +574,7 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
 
       # get existing data table from database
       test <- DBI::dbGetQuery(conn,
-                         paste0("SELECT * FROM node_blu ",
+                         paste0("SELECT time, tag_id, node_id, station_id FROM node_blu ",
                                 "WHERE time >= '", start,
                                 "'AND time <= '", end, "'"))
 
@@ -586,9 +582,9 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       df$path = y
       df$station_id = station_id
       df$node_id = df$NodeId
-      df$radio_id = NA
-      df$usb_port = NA
-      df$blu_radio_id = NA
+      df$radio_id = NA_integer_
+      df$usb_port = NA_integer_
+      df$blu_radio_id = NA_integer_
       df$battery_voltage_v = df$Battery_Voltage_V
       df$temperature_celsius = df$Temperature_Celsius
       # df$battery_voltage = parseit
@@ -601,18 +597,18 @@ load_node_data <- function(e, conn, outpath, myproject, station_id) {
       # df$battery_voltage <- parsed[, 1]
       # df$temperature <- parsed[, 2]
 
-      check_db_type(df,
-                    'blu',
-                     conn,
-                     y,
-                     begin)
-
-      df2 <- dplyr::anti_join(df, test)
+      df2 <- dplyr::anti_join(df, test, by = c('time', 'tag_id', 'node_id', 'station_id'))
 
       message(paste('df2 after join:', nrow(df2), 'rows'))
 
       z <- db_insert(contents=df2,
                      filetype='node_blu',
+                     conn=conn,
+                     y=y,
+                     begin=begin)
+
+      z <- db_insert(contents=df2,
+                     filetype='blu',
                      conn=conn,
                      y=y,
                      begin=begin)
@@ -649,11 +645,11 @@ combine_data_duck <- function(df,
     end <- max(df$time, na.rm=T)
 
     test <- DBI::dbGetQuery(conn,
-                       paste0("SELECT * FROM blu ",
+                       paste0("SELECT time, tag_id, node_id, station_id FROM blu ",
                               "WHERE time >= '", start,
                               "'AND time <= '", end, "'"))
 
-    df2 = anti_join(df, test)
+    df2 = anti_join(df, test, by = c('time', 'tag_id', 'node_id', 'station_id'))
 
     z <- db_insert(contents=df2,
                    filetype='blu',
@@ -661,23 +657,17 @@ combine_data_duck <- function(df,
                    y=y,
                    begin=begin)
 
-    DBI::dbSendQuery(conn,
+    DBI::dbExecute(conn,
                 'ALTER TABLE blu
                 ALTER COLUMN time
                 TYPE TIMESTAMP WITH TIME ZONE')
 
   } else if (filetype == 'raw') {
-    DBI::dbSendQuery(conn, 'ALTER TABLE node_raw ALTER radio_id TYPE smallint')
+    DBI::dbExecute(conn, 'ALTER TABLE node_raw ALTER radio_id TYPE smallint')
 
     start <- min(df$time, na.rm=T)
     end <- max(df$time, na.rm=T)
     message(paste('combine duck data start: ', start, 'end: ', end))
-
-
-    test <- DBI::dbGetQuery(conn,
-                       paste0("SELECT * FROM raw ",
-                              "WHERE time >= '", start,
-                              "'AND time <= '", end, "'"))
 
     z <- db_insert(contents=df,
                    filetype='raw',
@@ -685,7 +675,7 @@ combine_data_duck <- function(df,
                    y=y,
                    begin=begin)
 
-    DBI::dbSendQuery(conn,
+    DBI::dbExecute(conn,
                 'ALTER TABLE raw
                 ALTER COLUMN time
                 TYPE TIMESTAMP WITH TIME ZONE')
@@ -694,8 +684,10 @@ combine_data_duck <- function(df,
     start <- min(df$gps_at, na.rm=T)
     end <- max(df$gps_at, na.rm=T)
 
+    gps_cols <- DBI::dbListFields(conn, "gps")
+
     test <- DBI::dbGetQuery(conn,
-                       paste0("SELECT * FROM gps ",
+                       paste0("SELECT gps_at, station_id FROM gps ",
                               "WHERE gps_at >= '", start,
                               "'AND gps_at <= '", end, "'"))
 
@@ -705,7 +697,7 @@ combine_data_duck <- function(df,
                   mean_lat = NA,
                   mean_lng = NA,
                   n_fixes = NA) |>
-                  select(colnames(test))
+                  select(all_of(gps_cols))
 
     df2 = anti_join(df, test, by = c('gps_at', 'station_id'))
 
@@ -719,8 +711,10 @@ combine_data_duck <- function(df,
     start <- min(df$time, na.rm=T)
     end <- max(df$time, na.rm=T)
 
+    nh_cols <- DBI::dbListFields(conn, "node_health")
+
     test <- DBI::dbGetQuery(conn,
-                       paste0("SELECT * FROM node_health ",
+                       paste0("SELECT time, station_id, node_id FROM node_health ",
                               "WHERE time >= '", start,
                               "'AND time <= '", end, "'"))
 
@@ -730,15 +724,15 @@ combine_data_duck <- function(df,
              solar_current = 'charge_ma',
              cumulative_solar_current = 'energy_used_mah',
              battery = 'batt_mv') |>
-      mutate(radio_id = 4,
-             latitude = NA,
-             longitude = NA,
+      mutate(radio_id = 4L,
+             latitude = NA_real_,
+             longitude = NA_real_,
              solar_volts = solar_volts/1000,
              battery = battery/1000,
-             node_rssi = NA,
-             recorded_at = NA,
-             firmware = NA) |>
-      select(colnames(test))
+             node_rssi = NA_integer_,
+             recorded_at = as.POSIXct(NA),
+             firmware = NA_character_) |>
+      select(all_of(nh_cols))
 
     df2 = anti_join(df, test, by = c('time', 'station_id', 'node_id'))
 
@@ -764,11 +758,11 @@ combine_data_postgres <- function(df,
     end <- max(df$time, na.rm=T)
 
     test <- DBI::dbGetQuery(conn,
-                       paste0("SELECT * FROM blu ",
+                       paste0("SELECT time, tag_id, node_id, station_id FROM blu ",
                               "WHERE time >= '", start,
                               "'AND time <= '", end, "'"))
 
-    df2 = anti_join(df, test)
+    df2 = anti_join(df, test, by = c('time', 'tag_id', 'node_id', 'station_id'))
 
     z <- db_insert(contents=df2,
                    filetype='blu',
@@ -776,13 +770,13 @@ combine_data_postgres <- function(df,
                    y=y,
                    begin=begin)
 
-    DBI::dbSendQuery(conn,
+    DBI::dbExecute(conn,
                 'ALTER TABLE blu
                 ALTER COLUMN time
                 TYPE TIMESTAMP WITH TIME ZONE')
 
   } else if (filetype == 'raw') {
-    DBI::dbSendQuery(conn,
+    DBI::dbExecute(conn,
                      'ALTER TABLE node_raw
                      ALTER COLUMN radio_id
                      TYPE smallint
@@ -790,18 +784,13 @@ combine_data_postgres <- function(df,
     start <- min(df$time, na.rm=T)
     end <- max(df$time, na.rm=T)
 
-    test <- DBI::dbGetQuery(conn,
-                            paste0("SELECT * FROM raw ",
-                                   "WHERE time >= '", start,
-                                   "'AND time <= '", end, "'"))
-
     z <- db_insert(contents=df,
                    filetype='raw',
                    conn=conn,
                    y=y,
                    begin=begin)
 
-    DBI::dbSendQuery(conn,
+    DBI::dbExecute(conn,
                 'ALTER TABLE raw
                 ALTER COLUMN time
                 TYPE TIMESTAMP WITH TIME ZONE')
@@ -810,8 +799,10 @@ combine_data_postgres <- function(df,
     start <- min(df$gps_at, na.rm=T)
     end <- max(df$gps_at, na.rm=T)
 
+    gps_cols <- DBI::dbListFields(conn, "gps")
+
     test <- DBI::dbGetQuery(conn,
-                       paste0("SELECT * FROM gps ",
+                       paste0("SELECT gps_at, station_id FROM gps ",
                               "WHERE gps_at >= '", start,
                               "'AND gps_at <= '", end, "'"))
 
@@ -821,7 +812,7 @@ combine_data_postgres <- function(df,
              mean_lat = NA,
              mean_lng = NA,
              n_fixes = NA) |>
-      select(colnames(test))
+      select(all_of(gps_cols))
 
     df2 = anti_join(df, test, by = c('gps_at', 'station_id'))
 
@@ -835,8 +826,10 @@ combine_data_postgres <- function(df,
     start <- min(df$time, na.rm=T)
     end <- max(df$time, na.rm=T)
 
+    nh_cols <- DBI::dbListFields(conn, "node_health")
+
     test <- DBI::dbGetQuery(conn,
-                       paste0("SELECT * FROM node_health ",
+                       paste0("SELECT time, station_id, node_id FROM node_health ",
                               "WHERE time >= '", start,
                               "'AND time <= '", end, "'"))
 
@@ -846,15 +839,15 @@ combine_data_postgres <- function(df,
              solar_current = 'charge_ma',
              cumulative_solar_current = 'energy_used_mah',
              battery = 'batt_mv') |>
-      mutate(radio_id = 4,
-             latitude = NA,
-             longitude = NA,
+      mutate(radio_id = 4L,
+             latitude = NA_real_,
+             longitude = NA_real_,
              solar_volts = solar_volts/1000,
              battery = battery/1000,
-             node_rssi = NA,
-             recorded_at = NA,
-             firmware = NA) |>
-      select(colnames(test))
+             node_rssi = NA_integer_,
+             recorded_at = as.POSIXct(NA),
+             firmware = NA_character_) |>
+      select(all_of(nh_cols))
 
     df2 = anti_join(df, test, by = c('time', 'station_id', 'node_id'))
 
