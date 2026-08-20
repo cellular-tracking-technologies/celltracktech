@@ -72,7 +72,7 @@ build_grid <- function(node_locs,
                 lat2 = lat1 + d_lat,
                 lon2 = lon1 + d_lon,
                 center_lat = lat1 + d_lat / 2,
-                center_lon = lon1 + d_lat / 2
+                center_lon = lon1 + d_lon / 2
             )
             grid_data_frame <- rbind(grid_data_frame, grid_bin)
             bin_count <- bin_count + 1
