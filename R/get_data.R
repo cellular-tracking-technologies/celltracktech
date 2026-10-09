@@ -42,7 +42,7 @@ get_data <- function(thisproject, outpath, f = NULL, my_station, beginning, endi
     if (is.list(x) && !is.null(x[["id"]]) && !is.null(x[["name"]])) {
       return(data.frame(id = x[["id"]], name = x[["name"]], stringsAsFactors = FALSE))
     } else if (is.list(x)) {
-      return(do.call(rbind, lapply(x, extract_files)))
+      return(dplyr::bind_rows(lapply(x, extract_files)))
     } else {
       return(NULL)
     }
