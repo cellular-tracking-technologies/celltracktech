@@ -24,8 +24,8 @@ get_station_file_list_paginated <- function(station_id, begin, filetypes = NULL,
   all_files <- list()
   chunk_start <- begin
 
-  while (chunk_start < end) {
-    chunk_end <- min(chunk_start + chunk_days, end)
+  while (chunk_start <= end) {
+    chunk_end <- min(chunk_start + chunk_days, end + 1)
     message(paste0("fetching files from ", chunk_start, " to ", chunk_end))
 
     result <- NULL
